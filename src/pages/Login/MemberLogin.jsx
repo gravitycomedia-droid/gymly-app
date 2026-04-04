@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP } from '../../firebase/auth';
-import { getUser } from '../../firebase/firestore';
+import { getUser, linkMemberAccount } from '../../firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import './Login.css';
@@ -117,14 +117,21 @@ const MemberLogin = () => {
       // Step 1: Verify OTP with Firebase Auth
       const user = await verifyOTP(confirmationResult, code);
 
-      // Step 2: Try to fetch user doc from Firestore
+      // Step 2: Ensure any unlinked member doc from Owner Dashboard is linked to this Auth UID
+      const fullPhone = `${countryCode}${phone.replace(/\s/g, '')}`;
+      try {
+          await linkMemberAccount(user.uid, fullPhone);
+      } catch (linkErr) {
+          console.warn('Failed to link account (perhaps rules or network):', linkErr);
+      }
+
+      // Step 3: Fetch the newly linked (or already existing) user doc
       let userDoc = null;
       try {
         userDoc = await getUser(user.uid);
         await refreshUserDoc(user.uid);
       } catch (firestoreErr) {
         console.warn('Firestore read failed (likely rules not set):', firestoreErr.code);
-        // If Firestore denies read, user hasn't been added by gym owner
       }
 
       if (userDoc && userDoc.role === 'member') {

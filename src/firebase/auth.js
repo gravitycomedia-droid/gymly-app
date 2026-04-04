@@ -1,25 +1,23 @@
 import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from 'firebase/auth';
 import { auth } from './config';
 
-let recaptchaVerifier = null;
-
 export const setupRecaptcha = (containerId = 'recaptcha-container') => {
   if (!auth) throw new Error('Firebase Auth not initialized');
 
-  if (recaptchaVerifier) {
-    recaptchaVerifier.clear();
-    recaptchaVerifier = null;
+  if (!window.recaptchaVerifier) {
+    window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+      size: 'invisible',
+      callback: () => {},
+      'expired-callback': () => {
+        if (window.recaptchaVerifier) {
+          window.recaptchaVerifier.clear();
+          window.recaptchaVerifier = null;
+        }
+      },
+    });
   }
 
-  recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-    size: 'invisible',
-    callback: () => {},
-    'expired-callback': () => {
-      recaptchaVerifier = null;
-    },
-  });
-
-  return recaptchaVerifier;
+  return window.recaptchaVerifier;
 };
 
 export const sendOTP = async (phoneNumber) => {

@@ -132,6 +132,35 @@ export const getGymMembersRealtime = (gymId, callback, onError) => {
 };
 
 /**
+ * Links an owner-created member document (random ID) to the actual Firebase Auth UID
+ * which is generated when the member logs in via Phone Auth for the first time.
+ */
+export const linkMemberAccount = async (uid, phone) => {
+  const q = query(collection(db, 'users'), where('phone', '==', phone), limit(1));
+  const snap = await getDocs(q);
+  
+  if (!snap.empty) {
+    const oldDocSnap = snap.docs[0];
+    const oldDocId = oldDocSnap.id;
+    
+    // If the doc ID is already the UID, no need to link
+    if (oldDocId === uid) return;
+
+    const data = oldDocSnap.data();
+    
+    // Create new doc with real UID
+    await setDoc(doc(db, 'users', uid), {
+      ...data,
+      auth_uid: uid,
+      linked_at: serverTimestamp(),
+    });
+    
+    // Delete the old unauthenticated document
+    await deleteDoc(doc(db, 'users', oldDocId));
+  }
+};
+
+/**
  * Create a new member document.
  */
 export const createMember = async (data) => {
