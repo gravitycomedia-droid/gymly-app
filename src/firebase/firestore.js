@@ -139,25 +139,29 @@ export const linkMemberAccount = async (uid, phone) => {
   const q = query(collection(db, 'users'), where('phone', '==', phone), limit(1));
   const snap = await getDocs(q);
   
-  if (!snap.empty) {
-    const oldDocSnap = snap.docs[0];
-    const oldDocId = oldDocSnap.id;
-    
-    // If the doc ID is already the UID, no need to link
-    if (oldDocId === uid) return;
-
-    const data = oldDocSnap.data();
-    
-    // Create new doc with real UID
-    await setDoc(doc(db, 'users', uid), {
-      ...data,
-      auth_uid: uid,
-      linked_at: serverTimestamp(),
-    });
-    
-    // Delete the old unauthenticated document
-    await deleteDoc(doc(db, 'users', oldDocId));
+  if (snap.empty) {
+    return 'not_found';
   }
+
+  const oldDocSnap = snap.docs[0];
+  const oldDocId = oldDocSnap.id;
+  
+  // If the doc ID is already the UID, no need to link
+  if (oldDocId === uid) return 'already_linked';
+
+  const data = oldDocSnap.data();
+  
+  // Create new doc with real UID
+  await setDoc(doc(db, 'users', uid), {
+    ...data,
+    auth_uid: uid,
+    linked_at: serverTimestamp(),
+  });
+  
+  // Delete the old unauthenticated document
+  await deleteDoc(doc(db, 'users', oldDocId));
+  
+  return 'migrated';
 };
 
 /**

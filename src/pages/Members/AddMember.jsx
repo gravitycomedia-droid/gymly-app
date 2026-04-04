@@ -83,8 +83,9 @@ const AddMember = ({ quickAddOnly = false }) => {
 
   // Phone duplicate check
   const handlePhoneBlur = async () => {
-    const phone = `${form.countryCode}${form.phone.replace(/\s/g, '')}`;
-    if (form.phone.length < 10 || !userDoc?.gym_id) return;
+    const cleaned = form.phone.replace(/\s/g, '').replace(/^0+/, '');
+    const phone = `${form.countryCode}${cleaned}`;
+    if (cleaned.length < 9 || !userDoc?.gym_id) return;
 
     setCheckingPhone(true);
     try {
@@ -114,7 +115,8 @@ const AddMember = ({ quickAddOnly = false }) => {
     setLoading(true);
 
     try {
-      const fullPhone = `${form.countryCode}${form.phone.replace(/\s/g, '')}`;
+      const cleaned = form.phone.replace(/\s/g, '').replace(/^0+/, '');
+      const fullPhone = `${form.countryCode}${cleaned}`;
       const memberData = {
         name: form.name.trim(),
         phone: fullPhone,

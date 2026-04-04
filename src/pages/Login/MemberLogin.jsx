@@ -53,7 +53,8 @@ const MemberLogin = () => {
     setError('');
 
     try {
-      const fullPhone = `${countryCode}${phone.replace(/\s/g, '')}`;
+      const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
+      const fullPhone = `${countryCode}${cleaned}`;
       const result = await sendOTP(fullPhone);
       setConfirmationResult(result);
       setStep('otp');
@@ -118,9 +119,14 @@ const MemberLogin = () => {
       const user = await verifyOTP(confirmationResult, code);
 
       // Step 2: Ensure any unlinked member doc from Owner Dashboard is linked to this Auth UID
-      const fullPhone = `${countryCode}${phone.replace(/\s/g, '')}`;
+      const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
+      const fullPhone = `${countryCode}${cleaned}`;
+      let linkStatus = 'none';
       try {
-          await linkMemberAccount(user.uid, fullPhone);
+          linkStatus = await linkMemberAccount(user.uid, fullPhone);
+          if (linkStatus === 'not_found') {
+              console.warn(`[Debug] Could not find pre-registered member with phone: ${fullPhone}`);
+          }
       } catch (linkErr) {
           console.warn('Failed to link account (perhaps rules or network):', linkErr);
       }
@@ -131,12 +137,15 @@ const MemberLogin = () => {
         userDoc = await getUser(user.uid);
         await refreshUserDoc(user.uid);
       } catch (firestoreErr) {
-        console.warn('Firestore read failed (likely rules not set):', firestoreErr.code);
+        console.warn('Firestore read failed:', firestoreErr.code);
       }
 
       if (userDoc && userDoc.role === 'member') {
         navigate('/member/home', { replace: true });
       } else if (!userDoc) {
+        if (linkStatus === 'not_found') {
+          showToast(`Phone ${fullPhone} not found in Gymly DB`, 'error');
+        }
         setStep('not-registered');
       } else {
         // User exists but is not a member (maybe owner) — redirect appropriately
