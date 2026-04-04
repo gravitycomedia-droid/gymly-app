@@ -51,6 +51,14 @@
       ]
     },
     {
+      "collectionGroup": "workout_plans",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "type", "order": "ASCENDING" },
+        { "fieldPath": "created_by", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "workout_logs",
       "queryScope": "COLLECTION",
       "fields": [
