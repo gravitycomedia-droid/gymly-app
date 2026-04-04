@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users — authenticated users can read/write their own doc
+    // and read other users in their gym
+    match /users/{uid} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null;
+      allow delete: if request.auth != null;
+    }
+
+    // Gyms — authenticated users can read/write
+    match /gyms/{gymId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

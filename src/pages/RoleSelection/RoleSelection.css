@@ -1,0 +1,111 @@
+.role-screen {
+  background: var(--grad-role);
+}
+
+.role-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 60px;
+  margin-bottom: 48px;
+}
+
+.role-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.role-logo svg {
+  width: 28px;
+  height: 28px;
+}
+
+.role-app-name {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.role-tagline {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.role-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.role-card {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  transition: transform 200ms, box-shadow 200ms;
+  text-decoration: none;
+}
+
+.role-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(83, 74, 183, 0.1);
+}
+
+.role-card:active {
+  transform: scale(0.98);
+}
+
+.role-icon-container {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.role-icon-owner {
+  background: #EEEDFE;
+}
+
+.role-icon-member {
+  background: #E1F5EE;
+}
+
+.role-card-text {
+  flex: 1;
+  margin-left: 14px;
+}
+
+.role-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.role-card-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.role-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.role-bottom-note {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}

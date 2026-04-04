@@ -1,0 +1,218 @@
+.checklist-screen {
+  background: var(--grad-checklist);
+}
+
+/* Confetti animation */
+.confetti-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  animation: confettiFall 1s ease-out forwards;
+  opacity: 0;
+}
+
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translateY(-20px) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100vh) rotate(720deg) scale(0.5);
+  }
+}
+
+/* Celebration header */
+.checklist-header {
+  text-align: center;
+  margin-bottom: 28px;
+  animation: scaleIn 400ms ease-out;
+}
+
+.checklist-heading {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.checklist-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* Progress ring */
+.progress-ring-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+.progress-ring-container {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+
+.progress-ring-bg {
+  fill: none;
+  stroke: rgba(83, 74, 183, 0.1);
+  stroke-width: 6;
+}
+
+.progress-ring-fill {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset 500ms ease;
+}
+
+.progress-ring-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Checklist items */
+.checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  animation: slideInLeft 300ms ease-out both;
+}
+
+.checklist-item:nth-child(1) { animation-delay: 0ms; }
+.checklist-item:nth-child(2) { animation-delay: 50ms; }
+.checklist-item:nth-child(3) { animation-delay: 100ms; }
+.checklist-item:nth-child(4) { animation-delay: 150ms; }
+.checklist-item:nth-child(5) { animation-delay: 200ms; }
+
+.checklist-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checklist-icon.done {
+  background: rgba(29, 158, 117, 0.12);
+}
+
+.checklist-icon.pending {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.checklist-text {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.checklist-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.checklist-subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.checklist-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.checklist-badge.done {
+  background: rgba(29, 158, 117, 0.1);
+  color: var(--success);
+}
+
+.checklist-badge.pending {
+  background: none;
+  color: var(--primary);
+  cursor: pointer;
+}
+
+.checklist-badge.pending:hover {
+  text-decoration: underline;
+}
+
+.checklist-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Upload Modal */
+.upload-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 20px;
+  animation: fadeIn 200ms ease-out;
+}
+
+.upload-modal {
+  width: 100%;
+  max-width: 380px;
+  padding: 24px;
+  animation: scaleIn 200ms ease-out;
+}
+
+.upload-modal h3 {
+  margin-bottom: 16px;
+}
+
+.upload-modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.upload-modal-actions button {
+  flex: 1;
+}

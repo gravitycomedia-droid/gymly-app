@@ -1,0 +1,119 @@
+.staff-screen {
+  background: var(--grad-staff);
+  padding-bottom: 80px;
+}
+
+/* Staff groups */
+.staff-group {
+  margin-bottom: 24px;
+}
+
+.staff-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Staff card */
+.staff-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 8px;
+}
+
+.staff-avatar {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.staff-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.staff-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.staff-role-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 3px;
+}
+
+.staff-phone {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.staff-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 200ms;
+}
+
+.staff-menu-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+/* Permissions preview */
+.permissions-preview {
+  padding: 14px;
+  margin-top: 16px;
+}
+
+.permissions-title {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.permissions-list {
+  list-style: none;
+  padding: 0;
+}
+
+.permissions-list li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 3px 0;
+  padding-left: 16px;
+  position: relative;
+}
+
+.permissions-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Duplicate card in staff */
+.duplicate-card {
+  padding: 12px;
+  margin-bottom: 16px;
+  border-left: 3px solid;
+}
