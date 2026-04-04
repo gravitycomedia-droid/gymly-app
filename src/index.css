@@ -436,7 +436,7 @@ h3, .heading-3 {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  z-index: 100;
+  z-index: 2000;
   animation: fadeIn 150ms ease-out;
 }
 
