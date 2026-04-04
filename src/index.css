@@ -928,3 +928,96 @@ h3, .heading-3 {
   background: var(--primary);
   transition: width 500ms ease-out;
 }
+
+/* ── Floating Bottom Nav (Apple-style) ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: auto;
+  min-width: fit-content;
+  max-width: 90vw;
+  animation: slideNavUp 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bottom-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1.2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 40px;
+  padding: 6px 10px;
+  box-shadow: 
+    0 10px 40px rgba(0, 0, 0, 0.12),
+    0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 16px;
+  border-radius: 30px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  font-family: 'Inter', sans-serif;
+  transition: all 400ms cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.92);
+}
+
+.bottom-nav-item.active {
+  color: var(--primary);
+  background: rgba(83, 74, 183, 0.08);
+}
+
+.bottom-nav-item.active svg {
+  transform: scale(1.1);
+  transition: transform 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.bottom-nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Active indicator dot */
+.bottom-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 4px;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 50%;
+  animation: fadeIn 300ms ease-out;
+}
+
+@keyframes slideNavUp {
+  from {
+    transform: translate(-50%, 100px);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+}
+
+/* ── Screen Safe Padding ── */
+.screen {
+  padding-bottom: 100px !important;
+}
