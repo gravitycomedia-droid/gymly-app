@@ -1,0 +1,250 @@
+.member-home-screen {
+  background: linear-gradient(150deg, #e8f5f0, #f0e8ff, #e8f4ff);
+  min-height: 100vh;
+}
+
+.member-greeting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  animation: fadeInDown 400ms ease-out;
+}
+
+.member-greeting-text {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.member-greeting-date {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.member-greeting-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.membership-card {
+  padding: 20px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  position: relative;
+  overflow: hidden;
+}
+
+.membership-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%;
+}
+.membership-card.status-active::before { background: var(--success); }
+.membership-card.status-expiring::before { background: var(--amber); }
+.membership-card.status-expired::before { background: var(--danger); }
+
+.membership-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.membership-gym-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.status-badge-mini {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.status-badge-mini.active { background: rgba(29, 158, 117, 0.1); color: var(--success); }
+.status-badge-mini.expiring { background: rgba(239, 159, 39, 0.1); color: var(--amber); }
+.status-badge-mini.expired { background: rgba(226, 75, 74, 0.1); color: var(--danger); }
+
+.membership-plan-name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.membership-days-pill {
+  display: inline-block;
+  background: rgba(83, 74, 183, 0.1);
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.status-expired .membership-days-pill {
+  background: rgba(226, 75, 74, 0.1);
+  color: var(--danger);
+}
+
+.membership-expiry {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.membership-renew-link {
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.today-workout {
+  padding: 18px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  transition: transform 200ms ease;
+  background: rgba(255, 255, 255, 0.7);
+}
+.today-workout:active { transform: scale(0.98); }
+
+.today-workout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.today-completed-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success);
+  background: rgba(29, 158, 117, 0.1);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.today-workout-day {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.today-workout-focus {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.today-workout-meta {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(83, 74, 183, 0.06);
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.today-rest-badge {
+  font-size: 13px;
+  font-weight: 600;
+  color: #633806;
+  background: #FAEEDA;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.quick-stats-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.quick-stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 8px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.quick-stat-icon {
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.quick-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.quick-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* BMI Section */
+.bmi-section {
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.bmi-bar {
+  display: flex;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+  margin: 12px 0 8px;
+}
+
+.bmi-zone { flex: 1; }
+.bmi-zone.under { background: #60A5FA; }
+.bmi-zone.normal { background: var(--success); }
+.bmi-zone.over { background: var(--amber); }
+.bmi-zone.obese { background: var(--danger); }
+
+.bmi-marker {
+  position: absolute;
+  top: -4px;
+  width: 4px;
+  height: 16px;
+  background: var(--text-primary);
+  border-radius: 2px;
+  transform: translateX(-50%);
+  box-shadow: 0 0 0 2px white;
+  transition: left 500ms ease-out;
+}
+
+.bmi-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.gym-info-card {
+  padding: 16px;
+  margin-bottom: 80px;
+  text-align: center;
+}

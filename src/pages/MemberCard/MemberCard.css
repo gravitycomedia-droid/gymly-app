@@ -1,0 +1,165 @@
+.member-card-screen {
+  background: linear-gradient(150deg, #1A1A1A, #2C2859, #1A1A1A);
+  min-height: 100vh;
+  color: white;
+}
+
+.member-card-screen .top-bar-title { color: white; }
+.member-card-screen .back-btn { color: white; background: rgba(255,255,255,0.1); }
+
+.id-card-wrapper {
+  width: 100%;
+  max-width: 360px;
+  padding: 10px;
+  border-radius: 24px;
+}
+
+.id-card {
+  width: 100%;
+  aspect-ratio: 1.586; /* Credit card aspect ratio */
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #1A1A1A;
+}
+
+.id-card-blob {
+  position: absolute;
+  filter: blur(30px);
+  opacity: 0.15;
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.id-card.type-active .blob-1 { background: var(--success); width: 200px; height: 200px; top: -50px; right: -50px; }
+.id-card.type-active .blob-2 { background: var(--primary); width: 150px; height: 150px; bottom: -30px; left: -30px; }
+
+.id-card.type-expiring .blob-1 { background: var(--amber); width: 200px; height: 200px; top: -50px; right: -50px; }
+.id-card.type-expiring .blob-2 { background: var(--primary); width: 150px; height: 150px; bottom: -30px; left: -30px; }
+
+.id-card.type-expired .blob-1 { background: var(--danger); width: 200px; height: 200px; top: -50px; right: -50px; }
+.id-card.type-expired .blob-2 { background: #1A1A1A; width: 150px; height: 150px; bottom: -30px; left: -30px; }
+
+.id-card-content {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 20px 24px;
+}
+
+.id-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.id-gym-name {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #1A1A1A;
+}
+
+.id-logo-text {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  color: rgba(0,0,0,0.3);
+}
+
+.id-card-middle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1;
+}
+
+.id-member-name {
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.id-plan-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  background: rgba(83, 74, 183, 0.08);
+  padding: 4px 10px;
+  border-radius: 8px;
+  display: inline-block;
+}
+
+.id-qr-box {
+  background: white;
+  padding: 6px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.id-card-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.id-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgba(0,0,0,0.4);
+  margin-bottom: 2px;
+}
+
+.id-value {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.id-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.status-dot.active { background: var(--success); }
+.status-dot.expiring { background: var(--amber); }
+.status-dot.expired { background: var(--danger); }
+
+.id-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.id-card-actions .btn-primary {
+  background: white;
+  color: #1A1A1A;
+  box-shadow: 0 4px 20px rgba(255,255,255,0.2);
+}
+
+.id-card-actions .btn-ghost.share-btn {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+}

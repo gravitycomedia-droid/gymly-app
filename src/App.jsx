@@ -21,7 +21,25 @@ import AddStaff from './pages/Staff/AddStaff';
 import TrainerDashboard from './pages/RoleDashboards/TrainerDashboard';
 import ReceptionistDashboard from './pages/RoleDashboards/ReceptionistDashboard';
 
+// Phase 3 imports
+import WorkoutPlanList from './pages/Trainer/WorkoutPlanList';
+import WorkoutPlanBuilder from './pages/Trainer/WorkoutPlanBuilder';
+import AssignWorkout from './pages/Trainer/AssignWorkout';
+import MemberWorkoutScreen from './pages/MemberWorkout/MemberWorkout';
+import MemberProgressScreen from './pages/MemberProgress/MemberProgress';
+import MemberProfileScreen from './pages/MemberProfile/MemberProfile';
+import MemberCardScreen from './pages/MemberCard/MemberCard';
+import PublicCardScreen from './pages/PublicCard/PublicCard';
+
+import { seedPredefinedPlans } from './data/seedPlans';
+import { useEffect } from 'react';
+
 function App() {
+  useEffect(() => {
+    // Seed predefined plans on first load
+    seedPredefinedPlans();
+  }, []);
+
   return (
     <BrowserRouter>
       <AuthProvider>
@@ -34,6 +52,7 @@ function App() {
             <Route path="/select-role" element={<RoleSelection />} />
             <Route path="/owner/login" element={<OwnerLogin />} />
             <Route path="/member/login" element={<MemberLogin />} />
+            <Route path="/public/member/:id" element={<PublicCardScreen />} />
 
             {/* Owner registration */}
             <Route path="/owner/register" element={<GymRegistration />} />
@@ -99,6 +118,22 @@ function App() {
               path="/trainer/members/:id"
               element={<ProtectedRoute requiredPermission="view_assigned_members"><MemberProfile readOnly /></ProtectedRoute>}
             />
+            <Route
+              path="/trainer/workout-plans"
+              element={<ProtectedRoute requiredPermission="view_assigned_members"><WorkoutPlanList /></ProtectedRoute>}
+            />
+            <Route
+              path="/trainer/workout-plans/create"
+              element={<ProtectedRoute requiredPermission="view_assigned_members"><WorkoutPlanBuilder /></ProtectedRoute>}
+            />
+            <Route
+              path="/trainer/workout-plans/:planId"
+              element={<ProtectedRoute requiredPermission="view_assigned_members"><WorkoutPlanBuilder /></ProtectedRoute>}
+            />
+            <Route
+              path="/trainer/assign/:id"
+              element={<ProtectedRoute requiredPermission="view_assigned_members"><AssignWorkout /></ProtectedRoute>}
+            />
 
             {/* Receptionist routes */}
             <Route
@@ -114,6 +149,22 @@ function App() {
             <Route
               path="/member/home"
               element={<ProtectedRoute><MemberHome /></ProtectedRoute>}
+            />
+            <Route
+              path="/member/workout"
+              element={<ProtectedRoute><MemberWorkoutScreen /></ProtectedRoute>}
+            />
+            <Route
+              path="/member/progress"
+              element={<ProtectedRoute><MemberProgressScreen /></ProtectedRoute>}
+            />
+            <Route
+              path="/member/profile"
+              element={<ProtectedRoute><MemberProfileScreen /></ProtectedRoute>}
+            />
+            <Route
+              path="/member/card"
+              element={<ProtectedRoute><MemberCardScreen /></ProtectedRoute>}
             />
           </Routes>
         </ToastProvider>

@@ -255,4 +255,189 @@ export const markAttendance = async (uid) => {
   });
 };
 
+// ─── Workout Plans ───
+
+export const getWorkoutPlans = async (gymId = null) => {
+  const constraints = gymId
+    ? [where('gym_id', 'in', [gymId, null]), where('is_active', '==', true)]
+    : [where('is_active', '==', true)];
+  const q = query(collection(db, 'workout_plans'), ...constraints);
+  const snap = await getDocs(q);
+  const plans = [];
+  snap.forEach(d => plans.push({ id: d.id, ...d.data() }));
+  return plans;
+};
+
+export const getPredefinedPlans = async () => {
+  const q = query(
+    collection(db, 'workout_plans'),
+    where('type', '==', 'predefined'),
+    where('created_by', '==', 'system')
+  );
+  const snap = await getDocs(q);
+  const plans = [];
+  snap.forEach(d => plans.push({ id: d.id, ...d.data() }));
+  return plans;
+};
+
+export const getGymCustomPlans = async (gymId) => {
+  const q = query(
+    collection(db, 'workout_plans'),
+    where('gym_id', '==', gymId),
+    where('type', '==', 'custom')
+  );
+  const snap = await getDocs(q);
+  const plans = [];
+  snap.forEach(d => plans.push({ id: d.id, ...d.data() }));
+  return plans;
+};
+
+export const getWorkoutPlan = async (planId) => {
+  const docSnap = await getDoc(doc(db, 'workout_plans', planId));
+  if (docSnap.exists()) return { id: docSnap.id, ...docSnap.data() };
+  return null;
+};
+
+export const createWorkoutPlan = async (data) => {
+  const docRef = await addDoc(collection(db, 'workout_plans'), {
+    ...data,
+    created_at: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+export const updateWorkoutPlan = async (planId, data) => {
+  await updateDoc(doc(db, 'workout_plans', planId), data);
+};
+
+// ─── Workout Days ───
+
+export const getWorkoutDays = async (planId) => {
+  const q = query(
+    collection(db, 'workout_days'),
+    where('plan_id', '==', planId),
+    orderBy('day_number', 'asc')
+  );
+  const snap = await getDocs(q);
+  const days = [];
+  snap.forEach(d => days.push({ id: d.id, ...d.data() }));
+  return days;
+};
+
+export const getWorkoutDay = async (planId, dayNumber) => {
+  const q = query(
+    collection(db, 'workout_days'),
+    where('plan_id', '==', planId),
+    where('day_number', '==', dayNumber)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const first = snap.docs[0];
+  return { id: first.id, ...first.data() };
+};
+
+export const createWorkoutDay = async (data) => {
+  const docRef = await addDoc(collection(db, 'workout_days'), data);
+  return docRef.id;
+};
+
+export const updateWorkoutDay = async (dayId, data) => {
+  await updateDoc(doc(db, 'workout_days', dayId), data);
+};
+
+// ─── Workout Logs ───
+
+export const createWorkoutLog = async (data) => {
+  const docRef = await addDoc(collection(db, 'workout_logs'), {
+    ...data,
+    log_date: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+export const getMemberWorkoutLogs = async (memberId, limitCount = 10) => {
+  const q = query(
+    collection(db, 'workout_logs'),
+    where('member_id', '==', memberId),
+    orderBy('log_date', 'desc'),
+    limit(limitCount)
+  );
+  const snap = await getDocs(q);
+  const logs = [];
+  snap.forEach(d => logs.push({ id: d.id, ...d.data() }));
+  return logs;
+};
+
+export const getWorkoutLog = async (logId) => {
+  const docSnap = await getDoc(doc(db, 'workout_logs', logId));
+  if (docSnap.exists()) return { id: docSnap.id, ...docSnap.data() };
+  return null;
+};
+
+export const getMemberTodayLog = async (memberId, planId, dayNumber) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  const q = query(
+    collection(db, 'workout_logs'),
+    where('member_id', '==', memberId),
+    where('plan_id', '==', planId),
+    where('day_number', '==', dayNumber),
+    orderBy('log_date', 'desc'),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const log = { id: snap.docs[0].id, ...snap.docs[0].data() };
+  const logDate = log.log_date?.toDate ? log.log_date.toDate() : null;
+  if (logDate && logDate >= today && logDate < tomorrow) return log;
+  return null;
+};
+
+// ─── Progress Logs ───
+
+export const createProgressLog = async (data) => {
+  const docRef = await addDoc(collection(db, 'progress_logs'), {
+    ...data,
+    logged_at: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+export const getMemberProgressLogs = async (memberId, limitCount = 50) => {
+  const q = query(
+    collection(db, 'progress_logs'),
+    where('member_id', '==', memberId),
+    orderBy('logged_at', 'desc'),
+    limit(limitCount)
+  );
+  const snap = await getDocs(q);
+  const logs = [];
+  snap.forEach(d => logs.push({ id: d.id, ...d.data() }));
+  return logs;
+};
+
+// ─── Member plan helpers ───
+
+export const assignWorkoutPlanToMember = async (memberId, planId) => {
+  await updateDoc(doc(db, 'users', memberId), {
+    workout_plan_id: planId,
+  });
+};
+
+export const getPlanByName = async (planName) => {
+  const q = query(
+    collection(db, 'workout_plans'),
+    where('name', '==', planName),
+    where('type', '==', 'predefined'),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+};
+
 export { serverTimestamp, Timestamp };
+

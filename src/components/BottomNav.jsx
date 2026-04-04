@@ -15,12 +15,19 @@ const NAV_CONFIGS = {
   trainer: [
     { id: 'home', label: 'Home', path: '/trainer/members', icon: 'home' },
     { id: 'members', label: 'My Members', path: '/trainer/members', icon: 'members' },
+    { id: 'plans', label: 'Plans', path: '/trainer/workout-plans', icon: 'workout' },
     { id: 'settings', label: 'Settings', path: '/trainer/settings', icon: 'settings' },
   ],
   receptionist: [
     { id: 'home', label: 'Home', path: '/receptionist/members', icon: 'home' },
     { id: 'members', label: 'Members', path: '/receptionist/members', icon: 'members' },
     { id: 'settings', label: 'Settings', path: '/receptionist/settings', icon: 'settings' },
+  ],
+  member: [
+    { id: 'home', label: 'Home', path: '/member/home', icon: 'home' },
+    { id: 'workout', label: 'Workout', path: '/member/workout', icon: 'workout' },
+    { id: 'progress', label: 'Progress', path: '/member/progress', icon: 'progress' },
+    { id: 'profile', label: 'Profile', path: '/member/profile', icon: 'profile' },
   ],
 };
 
@@ -50,6 +57,22 @@ const icons = {
       <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" strokeWidth="2" fill="none" />
     </svg>
   ),
+  workout: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M6 3v18M18 3v18M2 6h8M14 6h8M2 18h8M14 18h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
+  progress: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
+  profile: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+      <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  )
 };
 
 const BottomNav = ({ activeTab, role = 'owner' }) => {

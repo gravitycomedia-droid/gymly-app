@@ -1,0 +1,44 @@
+.trainer-screen { background: var(--grad-role); }
+
+.plan-card { padding: 16px 18px; margin-bottom: 12px; cursor: pointer; transition: transform 200ms ease; }
+.plan-card:active { transform: scale(0.98); }
+.plan-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+.plan-card-name { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+.plan-badges { display: flex; gap: 6px; flex-shrink: 0; }
+.plan-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
+.plan-badge.goal { background: rgba(83,74,183,0.08); color: var(--primary); }
+.plan-badge.exp { background: rgba(29,158,117,0.08); color: #1D9E75; }
+.plan-card-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 6px; }
+.plan-template-btn { font-size: 12px; margin-top: 10px; padding: 6px 14px; width: auto; }
+
+/* Plan Builder */
+.day-card { margin-bottom: 12px; padding: 16px; }
+.day-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; cursor: pointer; }
+.day-card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.day-card-focus { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.day-rest-badge { font-size: 11px; color: var(--text-muted); background: rgba(0,0,0,0.04); padding: 4px 10px; border-radius: 8px; }
+
+.exercise-item { padding: 12px; margin-bottom: 8px; border: 1px solid rgba(83,74,183,0.06); border-radius: 12px; background: rgba(255,255,255,0.4); }
+.exercise-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.exercise-item-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.exercise-remove { background: none; border: none; color: #E24B4A; cursor: pointer; padding: 4px; font-size: 16px; }
+.exercise-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.exercise-fields .input-group { margin-bottom: 0; }
+.exercise-fields .input-field { font-size: 12px; padding: 8px 10px; }
+.exercise-fields .input-label { font-size: 11px; }
+
+.add-exercise-btn { width: 100%; padding: 10px; border: 1.5px dashed rgba(83,74,183,0.2); border-radius: 12px; background: none; color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 200ms; }
+.add-exercise-btn:hover { background: rgba(83,74,183,0.04); }
+
+/* Exercise Library Sheet */
+.exercise-lib-sheet { max-height: 60vh; overflow-y: auto; }
+.exercise-lib-group { margin-bottom: 16px; }
+.exercise-lib-group-title { font-size: 12px; font-weight: 600; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.exercise-lib-item { padding: 10px 12px; border-radius: 10px; font-size: 13px; color: var(--text-primary); cursor: pointer; transition: background 200ms; }
+.exercise-lib-item:hover { background: rgba(83,74,183,0.06); }
+
+/* Assign Workout */
+.assign-current { margin-bottom: 16px; padding: 14px 16px; }
+.assign-current-label { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.assign-current-plan { font-size: 15px; font-weight: 600; color: var(--primary); }
+.plan-card.selected { border: 2px solid var(--primary); background: rgba(83,74,183,0.04); }

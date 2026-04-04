@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { createMember, getMemberByPhone, getGym, getTrainers, Timestamp } from '../../firebase/firestore';
+import { createMember, getMemberByPhone, getGym, getTrainers, Timestamp, getPlanByName, assignWorkoutPlanToMember } from '../../firebase/firestore';
 import { addDays, formatDate, calculateBMI } from '../../utils/helpers';
+import { getRecommendedPlanName } from '../../data/exerciseLibrary';
 import './AddMember.css';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -146,6 +147,20 @@ const AddMember = ({ quickAddOnly = false }) => {
       };
 
       const id = await createMember(memberData);
+      
+      // Auto-assign workout plan based on goal/experience
+      try {
+        const goalKey = form.goal ? form.goal.replace(' gain', '').replace(' fitness', '').replace(' ', '_').toLowerCase() : 'general';
+        const expKey = form.experience ? form.experience.toLowerCase() : 'beginner';
+        const planName = getRecommendedPlanName(expKey, goalKey);
+        const planToAssign = await getPlanByName(planName);
+        if (planToAssign) {
+          await assignWorkoutPlanToMember(id, planToAssign.id);
+        }
+      } catch (assignErr) {
+        console.error('Failed to auto-assign workout plan:', assignErr);
+      }
+
       setNewMemberId(id);
       setShowSuccess(true);
       showToast('Member added successfully', 'success');

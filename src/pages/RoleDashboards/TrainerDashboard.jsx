@@ -57,12 +57,26 @@ const TrainerDashboard = () => {
                 <div className="member-card-avatar" style={{ background: avatarColor.bg, color: avatarColor.text }}>
                   {getInitials(member.name)}
                 </div>
-                <div className="member-card-info">
+                <div className="member-card-info" style={{ flex: 1 }}>
                   <div className="member-card-name">{member.name}</div>
                   <div className="member-card-plan">{getPlanName(gym, member.plan_id)}</div>
                   <div className={`member-card-expiry ${type}`}>{daysText}</div>
+                  <div style={{ marginTop: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: member.workout_plan_id ? 'var(--primary)' : 'var(--amber)', background: member.workout_plan_id ? 'rgba(83,74,183,0.1)' : 'rgba(239, 159, 39, 0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                      {member.workout_plan_id ? 'Plan Assigned' : 'No Plan Assigned'}
+                    </span>
+                  </div>
                 </div>
-                <StatusBadge type={type} label={label} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+                  <StatusBadge type={type} label={label} />
+                  <button 
+                    className="btn-ghost" 
+                    style={{ fontSize: 11, padding: '4px 10px', height: 'auto', minHeight: 0, borderRadius: 6, border: '1px solid currentColor', width: 'auto' }}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/trainer/assign/${member.id}`); }}
+                  >
+                    Assign
+                  </button>
+                </div>
               </div>
             );
           })
