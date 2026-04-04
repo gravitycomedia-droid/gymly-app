@@ -41,6 +41,10 @@ const MemberList = ({ role = 'owner' }) => {
     const unsubscribe = getGymMembersRealtime(userDoc.gym_id, (membersList) => {
       setMembers(membersList);
       setLoading(false);
+    }, (error) => {
+      console.error('Realtime members error:', error);
+      showToast(`Database syncing... (${error.code})`, 'error');
+      setLoading(false);
     });
     return () => unsubscribe();
   }, [userDoc?.gym_id]);

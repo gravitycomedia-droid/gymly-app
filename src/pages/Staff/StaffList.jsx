@@ -30,6 +30,7 @@ const StaffList = () => {
       setStaff(data);
     } catch (err) {
       console.error('Staff fetch error:', err);
+      showToast('Database syncing... ' + err.code, 'error');
     } finally {
       setLoading(false);
     }

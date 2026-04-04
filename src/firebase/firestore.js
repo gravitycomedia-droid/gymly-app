@@ -110,7 +110,7 @@ export const getGymMembers = async (gymId, lastDoc = null, pageSize = 20) => {
  * Real-time listener for all gym members.
  * Returns unsubscribe function.
  */
-export const getGymMembersRealtime = (gymId, callback) => {
+export const getGymMembersRealtime = (gymId, callback, onError) => {
   const q = query(
     collection(db, 'users'),
     where('gym_id', '==', gymId),
@@ -126,6 +126,7 @@ export const getGymMembersRealtime = (gymId, callback) => {
     callback(members);
   }, (error) => {
     console.error('Members realtime error:', error);
+    if (onError) onError(error);
     callback([]);
   });
 };
