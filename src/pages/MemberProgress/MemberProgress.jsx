@@ -62,6 +62,10 @@ const MemberProgress = () => {
         type: 'weight',
         notes: ''
       });
+      // CRITICAL: Also update the weight on the user document itself!
+      const { updateUser } = await import('../../firebase/firestore');
+      await updateUser(user.uid, { weight: Number(newWeight) });
+
       showToast('Weight logged successfully', 'success');
       setShowLogWeight(false);
       setNewWeight('');
@@ -163,7 +167,7 @@ const MemberProgress = () => {
           </div>
           
           <div className="chart-container">
-            {chartLogs.length > 1 ? (
+            {chartLogs.length > 0 ? (
               <Line data={chartData} options={chartOptions} />
             ) : (
               <div className="empty-chart">

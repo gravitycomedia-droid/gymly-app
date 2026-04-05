@@ -6,6 +6,8 @@ import {
   createWorkoutPlan, createWorkoutDay, getWorkoutPlan, getWorkoutDays,
   updateWorkoutPlan, updateWorkoutDay,
 } from '../../firebase/firestore';
+import { db } from '../../firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import { EXERCISE_LIBRARY, MUSCLE_GROUPS } from '../../data/exerciseLibrary';
 import './Trainer.css';
 
@@ -14,6 +16,14 @@ const LEVELS = ['beginner', 'intermediate', 'advanced'];
 const REST_OPTIONS = [30, 45, 60, 90, 120, 180];
 
 const uid = () => Math.random().toString(36).substring(2, 10);
+
+const ExerciseThumbnail = ({ name }) => {
+  const libData = EXERCISE_LIBRARY[name] || {};
+  const gifUrl = libData.gif_url;
+
+  if (!gifUrl) return <div style={{width: 48, height: 48, background: 'rgba(255,255,255,0.05)', borderRadius: 8}} />;
+  return <img src={gifUrl} alt={name} style={{width: 48, height: 48, objectFit: 'cover', borderRadius: 8}} />;
+};
 
 const WorkoutPlanBuilder = () => {
   const navigate = useNavigate();
@@ -84,14 +94,20 @@ const WorkoutPlanBuilder = () => {
     setDays(prev => prev.map((d, i) => i === idx ? { ...d, [field]: value } : d));
   };
 
-  const addExercise = (dayIdx, exerciseName, muscleGroup) => {
+  const addExercise = (dayIdx, exerciseName, pseudoGroup) => {
+    const exLib = EXERCISE_LIBRARY[exerciseName] || {};
     setDays(prev => prev.map((d, i) => {
       if (i !== dayIdx) return d;
       return {
         ...d, exercises: [...d.exercises, {
-          id: uid(), name: exerciseName, muscle_group: muscleGroup,
+          id: uid(), name: exerciseName, muscle_group: pseudoGroup,
           difficulty: plan.target_experience, sets: 3, reps: '10',
-          weight: '', rest_seconds: 90, video_url: null, instructions: '',
+          weight: '', rest_seconds: 90, 
+          // Inject new visual API metadata
+          exercisedb_name: exLib.exercisedb_name || '',
+          youtube_id: exLib.youtube_id || '',
+          primary_muscle: exLib.primary_muscle || '',
+          secondary_muscles: exLib.secondary_muscles || [],
           order: d.exercises.length + 1,
         }],
       };
@@ -148,11 +164,22 @@ const WorkoutPlanBuilder = () => {
 
   const filteredExercises = () => {
     const results = {};
-    MUSCLE_GROUPS.forEach(group => {
-      const list = EXERCISE_LIBRARY[group].filter(name =>
-        name.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      if (list.length > 0) results[group] = list;
+    const mapPrimaryToBroad = (primary) => {
+      if (['pectorals'].includes(primary)) return 'Chest';
+      if (['lats', 'upper back', 'lower back', 'traps', 'rhomboids'].includes(primary)) return 'Back';
+      if (['quads', 'hamstrings', 'glutes', 'calves'].includes(primary)) return 'Legs';
+      if (['anterior deltoid', 'lateral deltoid'].includes(primary)) return 'Shoulders';
+      if (['biceps', 'triceps'].includes(primary)) return 'Arms';
+      if (['abs'].includes(primary)) return 'Core';
+      return 'Other';
+    };
+
+    Object.entries(EXERCISE_LIBRARY).forEach(([name, data]) => {
+      if (name.toLowerCase().includes(searchTerm.toLowerCase())) {
+        const group = mapPrimaryToBroad(data.primary_muscle);
+        if (!results[group]) results[group] = [];
+        results[group].push({ name, ...data });
+      }
     });
     return results;
   };
@@ -312,10 +339,18 @@ const WorkoutPlanBuilder = () => {
               {Object.entries(filteredExercises()).map(([group, exercises]) => (
                 <div key={group} className="exercise-lib-group">
                   <div className="exercise-lib-group-title">{group}</div>
-                  {exercises.map(name => (
-                    <div key={name} className="exercise-lib-item"
-                      onClick={() => addExercise(showExerciseLib, name, group.charAt(0).toUpperCase() + group.slice(1))}>
-                      {name}
+                  {exercises.map(ex => (
+                    <div key={ex.name} className="exercise-lib-item"
+                      onClick={() => addExercise(showExerciseLib, ex.name, group)}
+                      style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <ExerciseThumbnail name={ex.name} />
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600 }}>{ex.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                           <span style={{ display:'inline-block', width:6, height:6, borderRadius:'50%', background:'#534AB7', marginRight:4 }} />
+                           {ex.primary_muscle.replace('_', ' ')}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

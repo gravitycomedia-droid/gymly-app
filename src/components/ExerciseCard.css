@@ -1,0 +1,487 @@
+.exercise-card-collapsed, .exercise-card-expanded {
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.exercise-card-collapsed:hover, .exercise-card-expanded:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.done-state {
+  border-color: rgba(29, 158, 117, 0.4);
+}
+
+/* Collapsed State */
+.exercise-card-collapsed {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+}
+
+.ec-collapsed-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ec-muscle-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.ec-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.ec-title-large {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.ec-subtitle {
+  font-size: 12px;
+  color: var(--text-muted, #7a7a9a);
+}
+
+.ec-check-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bolx;
+  color: transparent;
+  transition: all 0.2s;
+}
+
+.ec-check-circle.checked {
+  background: #1D9E75;
+  border-color: #1D9E75;
+  color: white;
+}
+
+/* Expanded State */
+.exercise-card-expanded {
+  padding: 16px;
+  cursor: default;
+}
+
+.ec-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  cursor: pointer;
+}
+
+.ec-badges {
+  display: flex;
+  gap: 8px;
+}
+
+.ec-badge {
+  padding: 4px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.ec-badge.diff-badge {
+  background: rgba(142, 45, 226, 0.1);
+  color: #8E2DE2;
+  border: 1px solid rgba(142, 45, 226, 0.2);
+}
+
+/* Stats */
+.ec-quick-stats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ec-stat-chip {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ec-stat-val {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+/* YouTube Shorts Vertical Player */
+.ec-video-container {
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+  height: 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+  margin-bottom: 24px;
+}
+
+.ec-youtube-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.ec-no-video {
+  height: 315px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7a7a9a;
+  font-size: 14px;
+}
+
+/* Toggles & Tabs */
+.ec-view-toggle {
+  display: flex;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+  margin-bottom: 20px;
+  padding: 4px;
+}
+
+.ec-toggle-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #7a7a9a;
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ec-toggle-btn.active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* Media Areas */
+.ec-dynamic-area {
+  min-height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.ec-gif-img, .ec-muscle-img {
+  width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.ec-gif-skeleton {
+  width: 100%;
+  height: 280px;
+}
+
+.ec-gif-error {
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+.ec-muscle-labels {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ec-muscle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ec-m-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ec-m-pill {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-transform: capitalize;
+}
+
+.primary-pill {
+  background: rgba(83, 74, 183, 0.2);
+  color: #8c83e6;
+  font-weight: 600;
+}
+
+.secondary-pill {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+}
+
+/* Instructions */
+.ec-instructions-wrapper {
+  margin-bottom: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 16px;
+}
+
+.ec-instructions-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 0;
+}
+
+.ec-instructions-content {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ec-step {
+  display: flex;
+  gap: 12px;
+  animation: slideFadeIn 0.3s ease both;
+}
+
+.ec-step-num {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  background: #534AB7;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ec-step-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #1a1a1a;
+  flex: 1;
+}
+
+/* Logging */
+.ec-logging-section {
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 16px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ec-log-header {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.ec-log-inputs-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ec-input-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+/* Multi-Set Builder Styles */
+.ec-set-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  background: #fff;
+  padding: 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ec-set-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #888;
+  text-transform: uppercase;
+  width: 45px;
+}
+
+.ec-set-input {
+  flex: 1;
+  background: #f8f9fa;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #000;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.ec-set-input:focus {
+  background: #fff;
+  border-color: #534AB7;
+  box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.1);
+}
+
+.ec-set-input::placeholder {
+  color: #bbb;
+  font-weight: 400;
+  font-size: 13px;
+}
+
+.ec-remove-set {
+  background: none;
+  border: none;
+  color: #E24B4A;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.ec-add-set-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 4px;
+  margin-bottom: 16px;
+  background: rgba(83, 74, 183, 0.1);
+  color: #534AB7;
+  border: 2px dashed #534AB7;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ec-add-set-btn:hover {
+  background: rgba(83, 74, 183, 0.2);
+}
+
+.ec-input-group label {
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.ec-input-group input {
+  background: white;
+  border-radius: 4px;
+  border: none;
+  color: #000;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  width: 100%;
+  outline: none;
+  padding: 4px 0;
+}
+
+.ec-input-group input:focus {
+  color: #000;
+  box-shadow: 0 0 0 2px rgba(83, 74, 183, 0.4);
+}
+
+.ec-log-notes textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px;
+  color: white;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+
+.ec-mark-btn {
+  width: 100%;
+  background: #534AB7;
+  color: white;
+  font-weight: 700;
+  padding: 14px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+  transition: all 0.2s;
+}
+
+.ec-mark-btn:active {
+  transform: scale(0.98);
+}
+
+.ec-mark-done {
+  background: #1D9E75;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideFadeIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}

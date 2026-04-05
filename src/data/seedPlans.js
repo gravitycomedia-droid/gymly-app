@@ -2,7 +2,7 @@
  * Seed predefined workout plans to Firestore.
  * Idempotent — only seeds if no predefined plans exist.
  */
-import { collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, addDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { PREDEFINED_PLANS } from './predefinedPlans';
 
@@ -13,7 +13,7 @@ export async function seedPredefinedPlans() {
   hasSeeded = true;
 
   try {
-    // Check if already seeded
+    // Check if already seeded and delete old plans to refresh data structure
     const q = query(
       collection(db, 'workout_plans'),
       where('type', '==', 'predefined'),
@@ -21,8 +21,16 @@ export async function seedPredefinedPlans() {
     );
     const snap = await getDocs(q);
     if (!snap.empty) {
-      console.log('Predefined plans already exist, skipping seed.');
-      return;
+      console.log('Replacing existing predefined plans...');
+      for (const planDoc of snap.docs) {
+        // Delete associated days
+        const daysQuery = query(collection(db, 'workout_days'), where('plan_id', '==', planDoc.id));
+        const daysSnap = await getDocs(daysQuery);
+        for (const dayDoc of daysSnap.docs) {
+          await deleteDoc(dayDoc.ref);
+        }
+        await deleteDoc(planDoc.ref);
+      }
     }
 
     console.log('Seeding predefined workout plans...');

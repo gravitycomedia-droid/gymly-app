@@ -22,6 +22,9 @@ const MemberHome = () => {
   const [todayDay, setTodayDay] = useState(null);
   const [todayDayNumber, setTodayDayNumber] = useState(1);
   const [recentLogs, setRecentLogs] = useState([]);
+  const [caloriesToday, setCaloriesToday] = useState(0);
+  const [totalSetsToday, setTotalSetsToday] = useState(0);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const now = new Date();
@@ -47,6 +50,24 @@ const MemberHome = () => {
         setGym(gymData);
         setWorkoutPlan(planData);
         setRecentLogs(logs);
+
+        // Calculate today's caloric summary
+        const todayStr = new Date().toDateString();
+        const logsToday = logs.filter(l => {
+          const d = l.log_date?.toDate ? l.log_date.toDate() : null;
+          return d && d.toDateString() === todayStr;
+        });
+
+        let setsCount = 0;
+        logsToday.forEach(log => {
+          log.exercises?.forEach(ex => {
+            if (ex.sets && Array.isArray(ex.sets)) setsCount += ex.sets.length;
+            else if (ex.actual && Array.isArray(ex.actual)) setsCount += ex.actual.length;
+            else setsCount += 1;
+          });
+        });
+        setTotalSetsToday(setsCount);
+        setCaloriesToday(setsCount * 15); // Simple estimation
 
         if (planData && userDoc.start_date) {
           const dayNum = getTodaysDayNumber(userDoc.start_date, planData.total_days);
@@ -112,7 +133,16 @@ const MemberHome = () => {
         {/* Membership card */}
         <div className={`membership-card glass-card status-${statusType}`}>
           <div className="membership-card-top">
-            <span className="membership-gym-name">{gym?.name || 'My Gym'}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span className="membership-gym-name">{gym?.name || 'My Gym'}</span>
+              <button 
+                className="qr-mini-btn"
+                onClick={() => setShowQRCode(true)}
+                title="Member QR Code"
+              >
+                <span role="img" aria-label="qr">QR</span>
+              </button>
+            </div>
             <span className={`status-badge-mini ${statusType}`}>{statusLabel}</span>
           </div>
           <div className="membership-plan-name">{getPlanName(gym, userDoc?.plan_id) || 'No plan'}</div>
@@ -171,6 +201,29 @@ const MemberHome = () => {
           </div>
         </div>
 
+        {/* Calorie Tracking Widget - RE-DESIGNED CALM VERSION */}
+        <div className="calorie-summary-calm glass-card">
+          <div className="csc-header">
+             <div className="csc-icon">🔥</div>
+             <div className="csc-title">Energy Burned Today</div>
+          </div>
+          <div className="csc-metrics">
+             <div className="csc-metric">
+                <span className="csc-val">{caloriesToday}</span>
+                <span className="csc-lbl">kcal burned</span>
+             </div>
+             <div className="csc-divider" />
+             <div className="csc-metric">
+                <span className="csc-val">{totalSetsToday}</span>
+                <span className="csc-lbl">sets logged</span>
+             </div>
+          </div>
+          <div className="csc-progress-track">
+             <div className="csc-progress-bar" style={{ width: `${Math.min((caloriesToday / 500) * 100, 100)}%` }} />
+          </div>
+          <p className="csc-footer">Progress based on your set volume today</p>
+        </div>
+
         {/* BMI */}
         {bmi && (
           <div className="bmi-section glass-card">
@@ -205,6 +258,29 @@ const MemberHome = () => {
           </div>
         )}
       </div>
+
+      {/* QR Code Modal */}
+      {showQRCode && (
+        <div className="modal-overlay" onClick={() => setShowQRCode(false)}>
+          <div className="qr-modal glass-card" onClick={e => e.stopPropagation()}>
+            <div className="qr-modal-header">
+              <h3>Gym Check-in</h3>
+              <button className="qr-close" onClick={() => setShowQRCode(false)}>×</button>
+            </div>
+            <div className="qr-container">
+              {/* Using a placeholder SVG or image for QR */}
+              <div className="qr-placeholder">
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${user?.uid}`} alt="Check-in QR" />
+              </div>
+              <p className="qr-help">Show this code at the reception to log your attendance</p>
+            </div>
+            <div className="qr-member-info">
+              <span className="qr-name">{userDoc?.name}</span>
+              <span className="qr-id">ID: {user?.uid.substring(0, 8)}...</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNav activeTab="home" role="member" />
     </div>

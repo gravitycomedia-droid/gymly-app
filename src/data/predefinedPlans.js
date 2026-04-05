@@ -3,13 +3,22 @@
  * 4 plans with full day/exercise detail.
  */
 
+import { EXERCISE_LIBRARY } from './exerciseLibrary';
+
 const uid = () => Math.random().toString(36).substring(2, 10);
 
 // ─── Exercise helpers ───
-const ex = (name, muscle_group, sets, reps, weight, rest_seconds, difficulty = 'beginner', order = 0) => ({
-  id: uid(), name, muscle_group, difficulty, sets, reps, weight, rest_seconds,
-  video_url: null, instructions: '', order,
-});
+const ex = (name, muscle_group, sets, reps, weight, rest_seconds, difficulty = 'beginner', order = 0) => {
+  const lib = EXERCISE_LIBRARY[name] || {};
+  return {
+    id: uid(), name, muscle_group, difficulty, sets, reps, weight, rest_seconds,
+    order,
+    exercisedb_name: lib.exercisedb_name || '',
+    youtube_id: lib.youtube_id || '',
+    primary_muscle: lib.primary_muscle || '',
+    secondary_muscles: lib.secondary_muscles || []
+  };
+};
 
 // ─── Plan 1: Full Body Beginner ───
 const fullBodyA = [
