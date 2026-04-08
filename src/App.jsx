@@ -31,6 +31,17 @@ import MemberProfileScreen from './pages/MemberProfile/MemberProfile';
 import MemberCardScreen from './pages/MemberCard/MemberCard';
 import PublicCardScreen from './pages/PublicCard/PublicCard';
 
+// Phase 4 imports
+import PaymentList from './pages/Payments/PaymentList';
+import AddPayment from './pages/Payments/AddPayment';
+import PaymentDetail from './pages/Payments/PaymentDetail';
+import Analytics from './pages/Analytics/Analytics';
+import WhatsAppLogs from './pages/WhatsApp/WhatsAppLogs';
+import AttendanceLogs from './pages/Attendance/AttendanceLogs';
+import QRScanner from './pages/Scanner/QRScanner';
+import TabletMode from './pages/Scanner/TabletMode';
+import OwnerSettings from './pages/Settings/OwnerSettings';
+
 import { seedPredefinedPlans } from './data/seedPlans';
 import { useEffect } from 'react';
 
@@ -165,6 +176,48 @@ function App() {
             <Route
               path="/member/card"
               element={<ProtectedRoute><MemberCardScreen /></ProtectedRoute>}
+            />
+
+            {/* Phase 4 — Payments */}
+            <Route
+              path="/owner/payments"
+              element={<ProtectedRoute><PaymentList /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/payments/add"
+              element={<ProtectedRoute><AddPayment /></ProtectedRoute>}
+            />
+            <Route
+              path="/owner/payments/:id"
+              element={<ProtectedRoute><PaymentDetail /></ProtectedRoute>}
+            />
+
+            {/* Phase 4 — Analytics */}
+            <Route
+              path="/owner/analytics"
+              element={<ProtectedRoute><Analytics /></ProtectedRoute>}
+            />
+
+            {/* Phase 4 — WhatsApp */}
+            <Route
+              path="/owner/whatsapp"
+              element={<ProtectedRoute><WhatsAppLogs /></ProtectedRoute>}
+            />
+
+            {/* Phase 4 — Attendance */}
+            <Route
+              path="/owner/attendance"
+              element={<ProtectedRoute><AttendanceLogs /></ProtectedRoute>}
+            />
+
+            {/* Phase 4 — QR Scanner */}
+            <Route path="/scan" element={<ProtectedRoute><QRScanner /></ProtectedRoute>} />
+            <Route path="/tablet" element={<ProtectedRoute><TabletMode /></ProtectedRoute>} />
+
+            {/* Settings */}
+            <Route
+              path="/owner/settings"
+              element={<ProtectedRoute><OwnerSettings /></ProtectedRoute>}
             />
           </Routes>
         </ToastProvider>

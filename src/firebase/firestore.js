@@ -1,4 +1,4 @@
-import {
+import { 
   doc,
   getDoc,
   setDoc,
@@ -15,8 +15,28 @@ import {
   onSnapshot,
   serverTimestamp,
   increment,
-  Timestamp,
+  Timestamp 
 } from 'firebase/firestore';
+
+export { 
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  getDocs,
+  onSnapshot,
+  serverTimestamp,
+  increment,
+  Timestamp 
+};
 import { db } from './config';
 
 // ─── Users ───
@@ -429,6 +449,75 @@ export const getMemberTodayLog = async (memberId, planId, dayNumber) => {
   return null;
 };
 
+/**
+ * Incrementally updates or creates a workout session log.
+ * Used for real-time saving as exercises are completed.
+ */
+export const incrementallyUpdateWorkoutLog = async (memberId, planId, muscleGroup, exerciseData) => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+
+  // Find if a log exists for today/plan
+  const q = query(
+    collection(db, 'workout_logs'),
+    where('member_id', '==', memberId),
+    where('plan_id', '==', planId),
+    where('day_number', '==', muscleGroup),
+    orderBy('log_date', 'desc'),
+    limit(1)
+  );
+  
+  const snap = await getDocs(q);
+  let logId = null;
+  let existingExercises = [];
+  let existingCalories = 0;
+
+  if (!snap.empty) {
+    const doc = snap.docs[0];
+    const logDate = doc.data().log_date?.toDate();
+    if (logDate && logDate >= today && logDate < tomorrow) {
+      logId = doc.id;
+      existingExercises = doc.data().exercises || [];
+      existingCalories = doc.data().total_calories || 0;
+    }
+  }
+
+  // Update or Add the exercise in the array
+  const exerciseIdx = existingExercises.findIndex(e => e.id === exerciseData.id);
+  let newExercises = [...existingExercises];
+  
+  if (exerciseIdx >= 0) {
+    newExercises[exerciseIdx] = exerciseData;
+  } else {
+    newExercises.push(exerciseData);
+  }
+
+  // Aggregate stats
+  const totalCalories = newExercises.reduce((sum, ex) => sum + (ex.calories || 0), 0);
+
+  const data = {
+    member_id: memberId,
+    plan_id: planId,
+    day_number: muscleGroup,
+    exercises: newExercises,
+    completed_count: newExercises.filter(e => e.completed).length,
+    total_calories: totalCalories,
+    log_date: serverTimestamp(),
+    client_date: new Date().toISOString(),
+    is_active: true
+  };
+
+  if (logId) {
+    await updateDoc(doc(db, 'workout_logs', logId), data);
+    return logId;
+  } else {
+    const docRef = await addDoc(collection(db, 'workout_logs'), data);
+    return docRef.id;
+  }
+};
+
 // ─── Progress Logs ───
 
 export const createProgressLog = async (data) => {
@@ -472,5 +561,89 @@ export const getPlanByName = async (planName) => {
   return { id: snap.docs[0].id, ...snap.docs[0].data() };
 };
 
-export { serverTimestamp, Timestamp };
+// ─── Soreness Logs ───
+
+export const saveSorenessLog = async (data) => {
+  const docRef = await addDoc(collection(db, 'soreness_logs'), {
+    ...data,
+    logged_at: serverTimestamp(),
+  });
+  return docRef.id;
+};
+
+export const getRecentMuscleSoreness = async (memberId) => {
+  const q = query(
+    collection(db, 'soreness_logs'),
+    where('member_id', '==', memberId),
+    orderBy('logged_at', 'desc'),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+};
+
+// ─── PR System ───
+
+export const checkAndUpdatePR = async (memberId, exerciseId, log) => {
+  const prRef = doc(db, 'personal_records', `${memberId}_${exerciseId}`);
+  const prSnap = await getDoc(prRef);
+
+  // volume = weight * reps * sets_count
+  const weight = log.sets.reduce((max, s) => Math.max(max, parseFloat(s.weight) || 0), 0);
+  const volume = log.sets.reduce((sum, s) => sum + ((parseFloat(s.weight) || 0) * (parseInt(s.reps) || 0)), 0);
+  const reps = log.sets.reduce((max, s) => Math.max(max, parseInt(s.reps) || 0), 0);
+
+  if (!prSnap.exists()) {
+    const prData = {
+      member_id: memberId,
+      exercise_id: exerciseId,
+      exercise_name: log.name || '',
+      best_weight: weight,
+      best_reps: reps,
+      best_volume: volume,
+      achieved_at: serverTimestamp(),
+      previous_best: null
+    };
+    await setDoc(prRef, prData);
+    return { is_pr: true, type: "first_time", weight, reps, volume };
+  }
+
+  const current = prSnap.data();
+  const isPRWeight = weight > (current.best_weight || 0);
+  const isPRVolume = volume > (current.best_volume || 0);
+
+  if (isPRWeight || isPRVolume) {
+    const updateData = {
+      best_weight: Math.max(weight, (current.best_weight || 0)),
+      best_reps: Math.max(reps, (current.best_reps || 0)),
+      best_volume: Math.max(volume, (current.best_volume || 0)),
+      achieved_at: serverTimestamp(),
+      previous_best: {
+        weight: current.best_weight,
+        reps: current.best_reps,
+        volume: current.best_volume,
+        date: current.achieved_at
+      }
+    };
+    await updateDoc(prRef, updateData);
+    return { 
+      is_pr: true, 
+      type: isPRWeight ? "weight_pr" : "volume_pr", 
+      improvement: isPRWeight ? weight - current.best_weight : volume - current.best_volume,
+      weight, volume 
+    };
+  }
+
+  return { is_pr: false };
+};
+
+export const getMemberPRs = async (memberId) => {
+  const q = query(collection(db, 'personal_records'), where('member_id', '==', memberId));
+  const snap = await getDocs(q);
+  const prs = {};
+  snap.forEach(d => { prs[d.data().exercise_id] = d.data(); });
+  return prs;
+};
+
 

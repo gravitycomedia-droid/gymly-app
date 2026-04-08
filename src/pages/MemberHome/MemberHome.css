@@ -432,3 +432,82 @@
   margin-bottom: 80px;
   text-align: center;
 }
+
+/* SORENESS CHECK CARD */
+.soreness-check-card {
+  padding: 20px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-left: 4px solid #F59E0B;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1);
+  animation: slideUp 0.4s ease-out;
+}
+
+.soreness-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #92400E;
+  margin-bottom: 12px;
+}
+
+.soreness-question {
+  font-size: 13px;
+  color: #1a1a1a;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+.soreness-muscles {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.soreness-muscle-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.soreness-muscle-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  text-transform: capitalize;
+}
+
+.soreness-levels {
+  display: flex;
+  gap: 8px;
+}
+
+.soreness-btn {
+  flex: 1;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.soreness-btn.active-0 { background: #ECFDF5; color: #059669; border-color: #10B981; }
+.soreness-btn.active-1 { background: #FFFBEB; color: #D97706; border-color: #FBBF24; }
+.soreness-btn.active-2 { background: #FEF2F2; color: #DC2626; border-color: #EF4444; }
+
+.soreness-submit {
+  width: 100%;
+  margin-top: 16px;
+  background: #534AB7;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+

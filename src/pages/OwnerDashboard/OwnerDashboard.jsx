@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
+import { getPaymentsRealtime } from '../../firebase/firestore-payments';
 import { logout } from '../../firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { getInitials, getAvatarColor, getExpiryStatus, getPlanName } from '../../utils/helpers';
+import { getInitials, getAvatarColor, getExpiryStatus, getPlanName, formatDate } from '../../utils/helpers';
 import StatusBadge from '../../components/StatusBadge';
 import BottomNav from '../../components/BottomNav';
 import './OwnerDashboard.css';
@@ -16,6 +17,7 @@ const OwnerDashboard = () => {
 
   const [gym, setGym] = useState(null);
   const [members, setMembers] = useState([]);
+  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
@@ -43,6 +45,13 @@ const OwnerDashboard = () => {
     return () => unsubscribe();
   }, [userDoc?.gym_id]);
 
+  // Real-time payment listener
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    const unsub = getPaymentsRealtime(userDoc.gym_id, (list) => setPayments(list));
+    return () => unsub();
+  }, [userDoc?.gym_id]);
+
   const now = new Date();
   const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -59,6 +68,20 @@ const OwnerDashboard = () => {
     const exp = m.subscription_expiry?.toDate ? m.subscription_expiry.toDate() : null;
     return !exp || exp <= now;
   }).length;
+
+  // Payment summaries
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const collectedThisMonth = payments
+    .filter(p => {
+      const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
+      return p.status === 'paid' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    })
+    .reduce((sum, p) => sum + (p.final_amount || 0), 0);
+  const pendingDues = payments
+    .filter(p => p.status === 'pending' || p.status === 'partial')
+    .reduce((sum, p) => sum + (p.pending_amount || 0), 0);
+  const recentPayments = payments.slice(0, 5);
 
   const recentMembers = [...members]
     .sort((a, b) => {
@@ -106,6 +129,21 @@ const OwnerDashboard = () => {
           >
             {getInitials(userDoc?.name)}
           </div>
+        </div>
+
+        {/* Scan QR Shortcut */}
+        <div style={{ marginBottom: 16 }}>
+          <button 
+            className="btn-primary" 
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px' }}
+            onClick={() => navigate('/scan')}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <path d="M4 7V4h3M20 7V4h-3M4 17v3h3M20 17v3h-3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <rect x="7" y="7" width="10" height="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Scan Member QR
+          </button>
         </div>
 
         {/* Stats Grid */}
@@ -233,6 +271,63 @@ const OwnerDashboard = () => {
             </button>
           </div>
         )}
+
+        {/* Recent Payments */}
+        <div className="recent-section">
+          <div className="recent-header">
+            <h3 style={{ fontSize: 16, fontWeight: 600 }}>Recent payments</h3>
+            <button className="text-link" onClick={() => navigate('/owner/payments')}>View all →</button>
+          </div>
+
+          {/* Summary mini-cards */}
+          <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+            <div className="glass-card" style={{ flex: 1, padding: '12px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>Collected this month</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#1D9E75' }}>₹{collectedThisMonth.toLocaleString('en-IN')}</div>
+            </div>
+            {pendingDues > 0 && (
+              <div className="glass-card" style={{ flex: 1, padding: '12px 14px', textAlign: 'center' }}
+                onClick={() => navigate('/owner/payments?filter=Pending')} role="button">
+                <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 4 }}>Pending dues</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#EF9F27' }}>₹{pendingDues.toLocaleString('en-IN')}</div>
+              </div>
+            )}
+          </div>
+
+          {recentPayments.length === 0 ? (
+            <div className="glass-card" style={{ padding: 20, textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
+              No payments recorded yet.{' '}
+              <button className="text-link" onClick={() => navigate('/owner/payments/add')}>Record first →</button>
+            </div>
+          ) : (
+            recentPayments.map(p => {
+              const color = getAvatarColor(p.member_name);
+              const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
+              return (
+                <div key={p.id} className="recent-member glass-card"
+                  onClick={() => navigate(`/owner/payments/${p.id}`)} role="button" tabIndex={0}>
+                  <div className="recent-member-avatar" style={{ background: color.bg, color: color.text }}>
+                    {getInitials(p.member_name)}
+                  </div>
+                  <div className="recent-member-info">
+                    <div className="recent-member-name">{p.member_name}</div>
+                    <div className="recent-member-plan">{p.plan_name} · {formatDate(d)}</div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14 }}>₹{(p.final_amount || 0).toLocaleString('en-IN')}</div>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 8,
+                      background: p.status === 'paid' ? 'rgba(29,158,117,0.1)' : p.status === 'partial' ? 'rgba(239,159,39,0.1)' : 'rgba(226,75,74,0.1)',
+                      color: p.status === 'paid' ? '#1D9E75' : p.status === 'partial' ? '#EF9F27' : '#E24B4A',
+                    }}>
+                      {p.status === 'paid' ? 'Paid' : p.status === 'partial' ? 'Partial' : 'Pending'}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       <BottomNav activeTab="home" role="owner" />

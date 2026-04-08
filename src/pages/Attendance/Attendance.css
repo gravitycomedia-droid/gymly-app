@@ -1,0 +1,160 @@
+/* ── Attendance Screen ── */
+
+.attendance-screen {
+  background: var(--grad-dashboard);
+}
+
+.attendance-live-card {
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.attendance-live-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #534AB7, #1D9E75);
+}
+
+.attendance-live-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.attendance-live-count {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 4px 0;
+}
+
+.attendance-live-avatars {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  margin-top: 10px;
+}
+
+.attendance-live-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+  border: 2px solid #fff;
+  margin-left: -6px;
+}
+
+.attendance-live-avatar:first-child {
+  margin-left: 0;
+}
+
+.attendance-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.attendance-stat-card {
+  padding: 12px;
+  text-align: center;
+}
+
+.attendance-stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.attendance-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Attendance log row */
+.attendance-log-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+}
+
+.attendance-log-row.expired-entry {
+  border-left: 3px solid #E24B4A;
+}
+
+.attendance-log-avatar {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.attendance-log-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.attendance-log-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.attendance-log-plan {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.attendance-log-time {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.attendance-expired-badge {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  background: rgba(226, 75, 74, 0.1);
+  color: #E24B4A;
+  margin-left: 6px;
+}
+
+/* Chart container */
+.attendance-chart-wrapper {
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.attendance-chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.attendance-chart-canvas {
+  width: 100%;
+  height: 200px;
+}

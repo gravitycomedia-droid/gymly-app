@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getUser, getGym, deleteMember } from '../../firebase/firestore';
+import { getMemberPaymentsRealtime, clearPaymentDue, updatePayment } from '../../firebase/firestore-payments';
 import {
   getInitials, getAvatarColor, getExpiryStatus,
   formatDate, getPlanName, calculateBMI, getDaysRemaining,
@@ -23,6 +24,8 @@ const MemberProfile = ({ readOnly = false }) => {
   const [loading, setLoading] = useState(true);
   const [showRenew, setShowRenew] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
+  const [memberPayments, setMemberPayments] = useState([]);
+  const [clearingId, setClearingId] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -41,6 +44,26 @@ const MemberProfile = ({ readOnly = false }) => {
   };
 
   useEffect(() => { fetchData(); }, [id, userDoc?.gym_id]);
+
+  // Real-time payment listener for this member
+  useEffect(() => {
+    if (!userDoc?.gym_id || !id) return;
+    const unsub = getMemberPaymentsRealtime(userDoc.gym_id, id, setMemberPayments);
+    return () => unsub();
+  }, [userDoc?.gym_id, id]);
+
+  const handleClearDue = async (payment) => {
+    setClearingId(payment.id);
+    try {
+      await clearPaymentDue(payment.id, id);
+      await updatePayment(payment.id, { paid_amount: payment.final_amount, pending_amount: 0, status: 'paid' });
+      showToast('Due cleared!', 'success');
+    } catch (e) {
+      showToast('Failed to clear due: ' + e.message, 'error');
+    } finally {
+      setClearingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -213,6 +236,85 @@ const MemberProfile = ({ readOnly = false }) => {
           <p style={{ fontSize: 13, color: member.medical_notes ? 'var(--text-primary)' : 'var(--text-muted)', lineHeight: 1.5 }}>
             {member.medical_notes || 'No medical notes added'}
           </p>
+        </div>
+
+        {/* Payment History */}
+        <div className="info-section glass-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <h3 className="info-section-title" style={{ marginBottom: 0 }}>Payment history</h3>
+            {!readOnly && (
+              <button
+                className="btn-ghost"
+                style={{ padding: '6px 12px', fontSize: 12 }}
+                onClick={() => navigate(`/owner/payments/add`)}
+              >
+                + Record
+              </button>
+            )}
+          </div>
+          {memberPayments.length === 0 ? (
+            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No payments recorded</p>
+          ) : (
+            memberPayments.map(p => {
+              const isPendingOrPartial = p.status === 'pending' || p.status === 'partial';
+              const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
+              return (
+                <div key={p.id} style={{
+                  padding: '12px 0',
+                  borderBottom: '1px solid rgba(0,0,0,0.05)',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{p.plan_name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                      {formatDate(d)} · {p.method === 'cash' ? 'Cash' : p.method === 'upi' ? 'UPI' : 'Online'}
+                      · #{p.invoice_number}
+                    </div>
+                    {isPendingOrPartial && (
+                      <div style={{ fontSize: 11, color: '#EF9F27', marginTop: 2, fontWeight: 600 }}>
+                        ₹{(p.pending_amount || 0).toLocaleString('en-IN')} pending
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700 }}>₹{(p.final_amount || 0).toLocaleString('en-IN')}</div>
+                    <span style={{
+                      fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 8, marginBottom: 4, display: 'inline-block',
+                      background: p.status === 'paid' ? 'rgba(29,158,117,0.1)' : p.status === 'partial' ? 'rgba(239,159,39,0.1)' : 'rgba(226,75,74,0.1)',
+                      color: p.status === 'paid' ? '#1D9E75' : p.status === 'partial' ? '#EF9F27' : '#E24B4A',
+                    }}>
+                      {p.status === 'paid' ? 'Paid' : p.status === 'partial' ? 'Partial' : 'Pending'}
+                    </span>
+                    {!readOnly && isPendingOrPartial && (
+                      <div>
+                        <button
+                          style={{
+                            fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 8,
+                            background: 'rgba(29,158,117,0.1)', color: '#1D9E75', border: 'none',
+                            cursor: 'pointer', marginTop: 4,
+                          }}
+                          onClick={() => handleClearDue(p)}
+                          disabled={clearingId === p.id}
+                        >
+                          {clearingId === p.id ? '...' : '✓ Clear Due'}
+                        </button>
+                      </div>
+                    )}
+                    {!isPendingOrPartial && (
+                      <div>
+                        <button
+                          style={{ fontSize: 11, color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 4 }}
+                          onClick={() => navigate(`/owner/payments/${p.id}`)}
+                        >
+                          View →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
         {/* Renewal History */}

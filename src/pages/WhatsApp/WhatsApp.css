@@ -1,0 +1,138 @@
+/* ── WhatsApp Logs Screen ── */
+
+.whatsapp-screen {
+  background: var(--grad-dashboard);
+}
+
+.whatsapp-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.whatsapp-stat-card {
+  padding: 12px;
+  text-align: center;
+}
+
+.whatsapp-stat-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.whatsapp-stat-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.whatsapp-stat-card.failed .whatsapp-stat-value {
+  color: #E24B4A;
+}
+
+/* Message row */
+.wa-message-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  transition: transform 100ms;
+}
+
+.wa-message-row.failed {
+  border-left: 3px solid #E24B4A;
+}
+
+.wa-icon-circle {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  background: rgba(37, 211, 102, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.wa-message-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.wa-message-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wa-message-type-badge {
+  display: inline-flex;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(83, 74, 183, 0.08);
+  color: var(--primary);
+  margin-top: 3px;
+  margin-right: 6px;
+}
+
+.wa-message-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wa-message-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.wa-message-time {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.wa-status-badge {
+  display: inline-flex;
+  padding: 3px 7px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.wa-status-badge.sent {
+  background: rgba(29, 158, 117, 0.1);
+  color: #1D9E75;
+}
+
+.wa-status-badge.failed {
+  background: rgba(226, 75, 74, 0.1);
+  color: #E24B4A;
+}
+
+.wa-status-badge.pending {
+  background: rgba(239, 159, 39, 0.1);
+  color: #EF9F27;
+}
+
+.wa-retry-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  background: rgba(226, 75, 74, 0.08);
+  color: #E24B4A;
+  border: none;
+  cursor: pointer;
+  margin-top: 4px;
+}

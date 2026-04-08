@@ -4,7 +4,8 @@ const NAV_CONFIGS = {
   owner: [
     { id: 'home', label: 'Home', path: '/owner/dashboard', icon: 'home' },
     { id: 'members', label: 'Members', path: '/owner/members', icon: 'members' },
-    { id: 'staff', label: 'Staff', path: '/owner/staff', icon: 'staff' },
+    { id: 'payments', label: 'Payments', path: '/owner/payments', icon: 'payments' },
+    { id: 'analytics', label: 'Analytics', path: '/owner/analytics', icon: 'analytics' },
     { id: 'settings', label: 'Settings', path: '/owner/settings', icon: 'settings' },
   ],
   manager: [
@@ -44,6 +45,16 @@ const icons = {
       <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" fill="none" />
       <path d="M23 21v-2a4 4 0 00-3-3.87" stroke="currentColor" strokeWidth="2" />
       <path d="M16 3.13a4 4 0 010 7.75" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  ),
+  payments: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  ),
+  analytics: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   ),
   staff: (

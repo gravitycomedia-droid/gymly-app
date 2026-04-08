@@ -343,44 +343,54 @@
   border-radius: 8px;
 }
 
-/* Multi-Set Builder Styles */
+/* Staggered ergonomic layout for better reachability */
 .ec-set-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-  background: #fff;
-  padding: 12px;
+  gap: 6px;
+  margin-bottom: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 6px;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  transition: all 0.2s ease;
+}
+
+.ec-set-row:focus-within {
+  border-color: #534AB7;
+  background: rgba(83, 74, 183, 0.1);
+  transform: translateX(4px);
 }
 
 .ec-set-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
-  color: #888;
+  color: #7a7a9a;
   text-transform: uppercase;
-  width: 45px;
+  width: 40px;
 }
 
 .ec-set-input {
   flex: 1;
-  background: #f8f9fa;
-  border: 1.5px solid transparent;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #000;
+  min-width: 35px;
+  max-width: 75px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 4px 2px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
   outline: none;
+  text-align: center;
   transition: all 0.2s ease;
 }
 
 .ec-set-input:focus {
-  background: #fff;
+  background: rgba(0, 0, 0, 0.5);
   border-color: #534AB7;
-  box-shadow: 0 0 0 3px rgba(83, 74, 183, 0.1);
+  box-shadow: 0 0 15px rgba(83, 74, 183, 0.3);
 }
 
 .ec-set-input::placeholder {
@@ -485,3 +495,198 @@
   from { opacity: 0; transform: translateX(-10px); }
   to { opacity: 1; transform: translateX(0); }
 }
+
+/* New Phase 3 UI Elements */
+
+.ec-pr-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  color: #FFD700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+
+.ec-progression-tip {
+  background: rgba(83, 74, 183, 0.08);
+  border-left: 3px solid #534AB7;
+  padding: 12px;
+  border-radius: 4px 10px 10px 4px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ec-tip-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #7a7a9a;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.ec-tip-text {
+  font-size: 13px;
+  color: #fff;
+  line-height: 1.4;
+}
+
+.ec-apply-tip {
+  align-self: flex-start;
+  margin-top: 4px;
+  background: #534AB7;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Form Frames Technique Section */
+.ec-form-frames {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ec-frame-card {
+  flex: 0 0 120px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.ec-frame-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #534AB7;
+  text-transform: uppercase;
+}
+
+.ec-frame-cue {
+  font-size: 11px;
+  color: #7a7a9a;
+  line-height: 1.2;
+}
+
+/* RPE Slider */
+.ec-rpe-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ec-rpe-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #7a7a9a;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.ec-rpe-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.ec-rpe-btn {
+  flex: 1;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: #7a7a9a;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.ec-rpe-btn.active {
+  background: #534AB7;
+  color: white;
+  border-color: #534AB7;
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(83, 74, 183, 0.4);
+}
+
+.ec-rpe-desc {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #534AB7;
+}
+
+/* Calorie Chip */
+.ec-cal-chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(226, 75, 74, 0.1);
+  color: #E24B4A;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* PR Celebration Layout */
+.pr-celebration-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.pr-card {
+  background: linear-gradient(135deg, #1b1b1b 0%, #2a2a2a 100%);
+  padding: 40px;
+  border-radius: 24px;
+  text-align: center;
+  border: 2px solid #FFD700;
+  box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+  transform: scale(0.9);
+  animation: prFlash 0.6s ease forwards;
+}
+
+@keyframes prFlash {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+

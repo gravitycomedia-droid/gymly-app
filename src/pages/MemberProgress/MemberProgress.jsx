@@ -21,9 +21,8 @@ const MemberProgress = () => {
   const [weightLogs, setWeightLogs] = useState([]);
   const [workoutLogs, setWorkoutLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('1m'); // 1m, 3m, 6m, all
+  const [timeRange, setTimeRange] = useState('1m'); 
   
-  // Weight logging modal
   const [showLogWeight, setShowLogWeight] = useState(false);
   const [newWeight, setNewWeight] = useState('');
   const [savingWeight, setSavingWeight] = useState(false);
@@ -34,9 +33,8 @@ const MemberProgress = () => {
       try {
         const [wLogs, wOutLogs] = await Promise.all([
           getMemberProgressLogs(user.uid),
-          getMemberWorkoutLogs(user.uid, 30) // last 30 workouts
+          getMemberWorkoutLogs(user.uid, 50) 
         ]);
-        // Sort weight logs oldest to newest for chart
         setWeightLogs(wLogs.sort((a, b) => {
           const d1 = a.logged_at?.toDate ? a.logged_at.toDate() : new Date(a.logged_at);
           const d2 = b.logged_at?.toDate ? b.logged_at.toDate() : new Date(b.logged_at);
@@ -52,6 +50,50 @@ const MemberProgress = () => {
     fetch();
   }, [user]);
 
+  // Weekly Comparison Logic
+  const getWeeklyStats = () => {
+    const now = new Date();
+    // Start of this week (Monday)
+    const thisWeekStart = new Date(now);
+    thisWeekStart.setDate(now.getDate() - (now.getDay() === 0 ? 6 : now.getDay() - 1));
+    thisWeekStart.setHours(0,0,0,0);
+
+    // Start of last week
+    const lastWeekStart = new Date(thisWeekStart);
+    lastWeekStart.setDate(thisWeekStart.getDate() - 7);
+    
+    const logsThisWeek = workoutLogs.filter(l => {
+      const d = l.log_date?.toDate ? l.log_date.toDate() : new Date(l.log_date);
+      return d >= thisWeekStart;
+    });
+
+    const logsLastWeek = workoutLogs.filter(l => {
+      const d = l.log_date?.toDate ? l.log_date.toDate() : new Date(l.log_date);
+      return d >= lastWeekStart && d < thisWeekStart;
+    });
+
+    const calculateSets = (logs) => logs.reduce((sum, l) => {
+      let s = 0;
+      l.exercises?.forEach(ex => { s += (ex.sets?.length || 0); });
+      return sum + s;
+    }, 0);
+
+    const calculateCals = (logs) => logs.reduce((sum, l) => sum + (l.total_calories || 0), 0);
+
+    const thisWeekSets = calculateSets(logsThisWeek);
+    const lastWeekSets = calculateSets(logsLastWeek);
+    const thisWeekCals = calculateCals(logsThisWeek);
+    const lastWeekCals = calculateCals(logsLastWeek);
+
+    return {
+      workouts: { current: logsThisWeek.length, prev: logsLastWeek.length },
+      calories: { current: thisWeekCals, prev: lastWeekCals },
+      sets: { current: thisWeekSets, prev: lastWeekSets }
+    };
+  };
+
+  const weeklyStats = getWeeklyStats();
+
   const handleSaveWeight = async () => {
     if (!newWeight || isNaN(newWeight)) { showToast('Invalid weight', 'error'); return; }
     setSavingWeight(true);
@@ -59,46 +101,30 @@ const MemberProgress = () => {
       await createProgressLog({
         member_id: user.uid,
         weight: Number(newWeight),
-        type: 'weight',
-        notes: ''
+        type: 'weight'
       });
-      // CRITICAL: Also update the weight on the user document itself!
-      const { updateUser } = await import('../../firebase/firestore');
-      await updateUser(user.uid, { weight: Number(newWeight) });
+      const { updateMember } = await import('../../firebase/firestore');
+      await updateMember(user.uid, { weight: Number(newWeight) });
 
-      showToast('Weight logged successfully', 'success');
+      showToast('Weight updated! 🔥', 'success');
       setShowLogWeight(false);
       setNewWeight('');
-      // Optimistic update
-      setWeightLogs(prev => [...prev, {
-        logged_at: new Date(),
-        weight: Number(newWeight)
-      }]);
       await refreshUserDoc(user.uid);
     } catch (err) {
-      console.error('Weight log error:', err);
       showToast('Failed to log weight', 'error');
     } finally {
       setSavingWeight(false);
     }
   };
 
-  // Chart data filtering
-  const getFilteredLogs = () => {
-    if (!weightLogs.length) return [];
-    if (timeRange === 'all') return weightLogs;
-    
+  const chartLogs = weightLogs.filter(log => {
+    if (timeRange === 'all') return true;
     const now = new Date();
     const months = timeRange === '1m' ? 1 : timeRange === '3m' ? 3 : 6;
     const cutoff = new Date(now.setMonth(now.getMonth() - months));
-    
-    return weightLogs.filter(log => {
-      const d = log.logged_at?.toDate ? log.logged_at.toDate() : new Date(log.logged_at);
-      return d >= cutoff;
-    });
-  };
-
-  const chartLogs = getFilteredLogs();
+    const d = log.logged_at?.toDate ? log.logged_at.toDate() : new Date(log.logged_at);
+    return d >= cutoff;
+  });
   
   const chartData = {
     labels: chartLogs.map(log => {
@@ -111,122 +137,135 @@ const MemberProgress = () => {
       borderColor: '#534AB7',
       backgroundColor: 'rgba(83,74,183,0.1)',
       borderWidth: 3,
-      pointBackgroundColor: '#534AB7',
-      pointRadius: 4,
-      pointHoverRadius: 6,
       fill: true,
       tension: 0.4
     }]
   };
 
-  const chartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: {
-      x: { grid: { display: false } },
-      y: { grid: { color: 'rgba(0,0,0,0.05)' }, border: { display: false } }
-    }
+  const getDeltaStyles = (curr, prev) => {
+    if (curr > prev) return { class: 'up', icon: '↑' };
+    if (curr < prev) return { class: 'down', icon: '↓' };
+    return { class: 'neutral', icon: '-' };
   };
 
-  const bmi = calculateBMI(userDoc?.height, userDoc?.weight);
-  const streak = userDoc?.streak || 0;
-
-  if (loading) {
-    return (
-      <div className="screen member-progress-screen">
-        <div className="screen-content spinner-center">
-          <div className="spinner spinner-primary" style={{ width: 32, height: 32 }} />
-        </div>
-      </div>
-    );
-  }
+  const getPct = (curr, prev) => {
+    if (prev === 0) return curr > 0 ? '+100%' : '0%';
+    const pct = Math.round(((curr - prev) / prev) * 100);
+    return pct >= 0 ? `+${pct}%` : `${pct}%`;
+  };
 
   return (
     <div className="screen member-progress-screen">
       <div className="screen-content">
         <div className="top-bar">
-          <h1 className="top-bar-title">Progress</h1>
+          <h1 className="top-bar-title">Performance</h1>
           <button className="top-bar-action" onClick={() => setShowLogWeight(true)}>+ Log Weight</button>
         </div>
 
-        {/* Chart Section */}
+        {/* Weekly Comparison Card */}
+        <div className="weekly-comp-section glass-card">
+          <div className="weekly-comp-header">This Week vs Last Week</div>
+          <div className="weekly-comp-grid">
+            {/* Workouts */}
+            <div className="comp-item">
+              <div className="comp-info">
+                <span className="comp-label">Workouts</span>
+                <span className="comp-sub">{weeklyStats.workouts.prev} last week</span>
+              </div>
+              <div className="comp-delta">
+                <span className={`delta-val ${getDeltaStyles(weeklyStats.workouts.current, weeklyStats.workouts.prev).class}`}>
+                  {weeklyStats.workouts.current} {getDeltaStyles(weeklyStats.workouts.current, weeklyStats.workouts.prev).icon}
+                </span>
+                <span className={`delta-pct ${getDeltaStyles(weeklyStats.workouts.current, weeklyStats.workouts.prev).class}`}>
+                  {getPct(weeklyStats.workouts.current, weeklyStats.workouts.prev)}
+                </span>
+              </div>
+            </div>
+            {/* Calories */}
+            <div className="comp-item">
+              <div className="comp-info">
+                <span className="comp-label">Energy Output</span>
+                <span className="comp-sub">{weeklyStats.calories.prev} kcal last week</span>
+              </div>
+              <div className="comp-delta">
+                <span className={`delta-val ${getDeltaStyles(weeklyStats.calories.current, weeklyStats.calories.prev).class}`}>
+                  {weeklyStats.calories.current} kcal
+                </span>
+                <span className={`delta-pct ${getDeltaStyles(weeklyStats.calories.current, weeklyStats.calories.prev).class}`}>
+                  {getPct(weeklyStats.calories.current, weeklyStats.calories.prev)}
+                </span>
+              </div>
+            </div>
+            {/* Volume/Sets */}
+            <div className="comp-item">
+              <div className="comp-info">
+                <span className="comp-label">Training Volume</span>
+                <span className="comp-sub">{weeklyStats.sets.prev} sets last week</span>
+              </div>
+              <div className="comp-delta">
+                <span className={`delta-val ${getDeltaStyles(weeklyStats.sets.current, weeklyStats.sets.prev).class}`}>
+                  {weeklyStats.sets.current} sets
+                </span>
+                <span className={`delta-pct ${getDeltaStyles(weeklyStats.sets.current, weeklyStats.sets.prev).class}`}>
+                  {getPct(weeklyStats.sets.current, weeklyStats.sets.prev)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Weights Chart */}
         <div className="glass-card chart-card">
           <div className="chart-header">
             <div>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Current Weight</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Latest Weight</div>
+              <div style={{ fontSize: 24, fontWeight: 700, color: '#534AB7' }}>
                 {userDoc?.weight ? `${userDoc.weight} kg` : '—'}
               </div>
             </div>
             <div className="chart-pills">
-              <button className={`chart-pill ${timeRange === '1m' ? 'active' : ''}`} onClick={() => setTimeRange('1m')}>1M</button>
-              <button className={`chart-pill ${timeRange === '3m' ? 'active' : ''}`} onClick={() => setTimeRange('3m')}>3M</button>
-              <button className={`chart-pill ${timeRange === '6m' ? 'active' : ''}`} onClick={() => setTimeRange('6m')}>6M</button>
+              {['1m', '3m', '6m', 'all'].map(r => (
+                <button key={r} className={`chart-pill ${timeRange === r ? 'active' : ''}`} onClick={() => setTimeRange(r)}>
+                  {r.toUpperCase()}
+                </button>
+              ))}
             </div>
           </div>
-          
           <div className="chart-container">
             {chartLogs.length > 0 ? (
-              <Line data={chartData} options={chartOptions} />
+              <Line data={chartData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: 'rgba(0,0,0,0.05)' } } } }} />
             ) : (
-              <div className="empty-chart">
-                Ask your trainer to log your weight or log it yourself to see your progress chart.
-              </div>
+              <div className="empty-chart">Log weight to visualize trend</div>
             )}
           </div>
         </div>
 
-        {/* Stats Row */}
+        {/* Stats Grid */}
         <div className="stats-row">
-          <div className="stat-card glass-card">
-            <div className="stat-icon streak-icon">🔥</div>
-            <div className="stat-value">{streak}</div>
-            <div className="stat-label">Day Streak</div>
-          </div>
-          <div className="stat-card glass-card">
-            <div className="stat-icon workout-icon">💪</div>
-            <div className="stat-value">{workoutLogs.length}</div>
-            <div className="stat-label">Workouts (30d)</div>
-          </div>
-        </div>
-
-        {/* Photos grid placeholder */}
-        <div className="photos-section glass-card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ fontSize: 16, fontWeight: 600 }}>Progress Photos</span>
-            <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>Coming soon</span>
-          </div>
-          <div className="empty-state" style={{ padding: '20px 0', border: '1px dashed rgba(83,74,183,0.2)' }}>
-            <div className="empty-icon-wrapper" style={{ margin: '0 auto 10px', width: 40, height: 40 }}>
-               📸
+            <div className="stat-card glass-card">
+                <div className="stat-icon streak-icon">🔥</div>
+                <div className="stat-value">{userDoc?.streak || 0}</div>
+                <div className="stat-label">Day Streak</div>
             </div>
-            <p className="empty-subtitle">Photo uploads require Firebase Blaze plan.</p>
-          </div>
+            <div className="stat-card glass-card">
+                <div className="stat-icon workout-icon">💪</div>
+                <div className="stat-value">{workoutLogs.length}</div>
+                <div className="stat-label">Total Logs</div>
+            </div>
         </div>
-
       </div>
 
-      {/* Log Weight Modal */}
+      {/* Log Weight sheet */}
       {showLogWeight && (
         <div className="modal-overlay" onClick={() => setShowLogWeight(false)}>
           <div className="bottom-sheet glass-card" onClick={e => e.stopPropagation()}>
             <div className="sheet-handle" />
-            <h2 className="sheet-title">Log Weight</h2>
+            <h2 className="sheet-title">Body Weight</h2>
             <div className="input-group">
-              <label className="input-label">Weight (kg)</label>
-              <input 
-                type="number" 
-                className="input-field" 
-                placeholder="e.g. 75" 
-                value={newWeight}
-                onChange={e => setNewWeight(e.target.value)}
-                autoFocus
-              />
+              <label className="input-label">Current Weight (kg)</label>
+              <input type="number" className="input-field" placeholder="75" value={newWeight} onChange={e => setNewWeight(e.target.value)} autoFocus />
             </div>
-            <button className="btn-primary" onClick={handleSaveWeight} disabled={savingWeight}>
-              {savingWeight ? <div className="spinner" /> : 'Save'}
-            </button>
+            <button className="btn-primary" onClick={handleSaveWeight} disabled={savingWeight}>{savingWeight ? 'Updating...' : 'Save Record'}</button>
           </div>
         </div>
       )}

@@ -112,3 +112,76 @@
   padding: 20px;
   margin-bottom: 80px;
 }
+
+/* Weekly Comparison Section */
+.weekly-comp-section {
+  padding: 20px;
+  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(83, 74, 183, 0.1);
+}
+
+.weekly-comp-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #534AB7;
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.weekly-comp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.comp-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.comp-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.comp-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.comp-sub {
+  font-size: 11px;
+  color: #7a7a9a;
+}
+
+.comp-delta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.delta-val {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.delta-val.up { color: #10B981; }
+.delta-val.down { color: #EF4444; }
+.delta-val.neutral { color: #7a7a9a; }
+
+.delta-pct {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.delta-pct.up { background: rgba(16, 185, 129, 0.1); color: #10B981; }
+.delta-pct.down { background: rgba(239, 68, 68, 0.1); color: #EF4444; }
+

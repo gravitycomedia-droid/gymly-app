@@ -81,6 +81,65 @@
         { "fieldPath": "member_id", "order": "ASCENDING" },
         { "fieldPath": "logged_at", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "payment_date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "payment_date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "member_id", "order": "ASCENDING" },
+        { "fieldPath": "payment_date", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" },
+        { "fieldPath": "entry_time", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "member_id", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "whatsapp_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "sent_at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
