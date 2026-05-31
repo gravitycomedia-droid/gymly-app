@@ -126,7 +126,49 @@ export function getDaysRemaining(expiryDate) {
  * Get the plan name from gym settings by plan ID.
  */
 export function getPlanName(gym, planId) {
-  if (!gym?.settings?.plans || !planId) return '—';
+  if (!gym?.settings?.plans || !planId) return null;
   const plan = gym.settings.plans.find((p) => p.id === planId);
-  return plan ? plan.name : '—';
+  return plan ? plan.name : null;
 }
+
+/**
+ * Play standard audio and vibration patterns
+ */
+export function playHapticSound(type = 'success') {
+  try {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      if (type === 'success') {
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      } else {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.05);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.5);
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+      }
+    }
+  } catch (e) {
+    console.log('Audio/Haptic not supported or blocked (need interaction)');
+  }
+}
+

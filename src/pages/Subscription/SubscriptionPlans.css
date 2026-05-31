@@ -1,0 +1,227 @@
+.subscription-public-screen {
+  min-height: 100vh;
+  width: 100%;
+  background: var(--grad-dashboard);
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  padding-bottom: 40px;
+}
+
+.subscription-public-content {
+  width: 100%;
+  max-width: 600px;
+  padding: 40px 24px;
+}
+
+/* Header Styling */
+.subscription-header {
+  margin-bottom: 40px;
+  text-align: center;
+  animation: slideInUp 400ms ease-out;
+}
+
+.gym-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.gym-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  box-shadow: 0 8px 24px var(--primary-light);
+}
+
+.gym-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.gym-location {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.gym-description {
+  font-size: 15px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* Plans Grid */
+.plan-section {
+  margin-bottom: 40px;
+  animation: slideInUp 500ms ease-out forwards;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+  padding-left: 4px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 500px) {
+  .plans-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Plan Card */
+.plan-card {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 300ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  height: 100%;
+}
+
+.plan-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px var(--primary-light);
+}
+
+.plan-header {
+  margin-bottom: 16px;
+}
+
+.plan-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.trainer-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: var(--primary-light);
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.plan-price-box {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.currency {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.price {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.duration {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.plan-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+  flex: 1;
+}
+
+.join-btn {
+  margin-top: auto;
+  border-radius: 12px;
+}
+
+/* Error Container */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 80vh;
+}
+
+.error-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+}
+
+.error-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.error-desc {
+  color: var(--text-muted);
+  max-width: 300px;
+}
+
+/* Footer */
+.subscription-footer {
+  margin-top: 60px;
+  text-align: center;
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  padding-top: 24px;
+}
+
+.subscription-footer p {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.subscription-footer span {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* No Plans State */
+.no-plans {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.no-plans p {
+  margin-bottom: 20px;
+}

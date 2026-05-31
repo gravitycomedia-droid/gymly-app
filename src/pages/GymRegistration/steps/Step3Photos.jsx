@@ -76,8 +76,8 @@ const Step3Photos = ({ data, setData }) => {
           ) : (
             <>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <path d="M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0" stroke="#534AB7" strokeWidth="1.5"/>
-                <path d="M16.01 4H7.99L6 6H3a1 1 0 00-1 1v11a1 1 0 001 1h18a1 1 0 001-1V7a1 1 0 00-1-1h-3l-1.99-2z" stroke="#534AB7" strokeWidth="1.5" fill="none"/>
+                <path d="M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0" stroke='var(--primary)' strokeWidth="1.5"/>
+                <path d="M16.01 4H7.99L6 6H3a1 1 0 00-1 1v11a1 1 0 001 1h18a1 1 0 001-1V7a1 1 0 00-1-1h-3l-1.99-2z" stroke='var(--primary)' strokeWidth="1.5" fill="none"/>
               </svg>
               <span className="upload-zone-text">Upload gym logo</span>
               <span className="upload-zone-hint">PNG or JPG, max 2MB</span>
@@ -124,7 +124,7 @@ const Step3Photos = ({ data, setData }) => {
                 </>
               ) : (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12h14" stroke="#534AB7" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M12 5v14M5 12h14" stroke='var(--primary)' strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               )}
               <input

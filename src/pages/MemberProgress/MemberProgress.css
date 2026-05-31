@@ -55,7 +55,7 @@
   padding: 20px;
   font-size: 13px;
   color: var(--text-muted);
-  border: 1px dashed rgba(83, 74, 183, 0.2);
+  border: 1px dashed var(--primary-border);
   border-radius: 12px;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .workout-icon {
-  background: rgba(83, 74, 183, 0.1);
+  background: var(--primary-light);
   color: var(--primary);
 }
 
@@ -118,13 +118,13 @@
   padding: 20px;
   margin-bottom: 20px;
   background: rgba(255, 255, 255, 0.8) !important;
-  border: 1px solid rgba(83, 74, 183, 0.1);
+  border: 1px solid var(--primary-light);
 }
 
 .weekly-comp-header {
   font-size: 14px;
   font-weight: 700;
-  color: #534AB7;
+  color: var(--primary);
   margin-bottom: 16px;
   text-transform: uppercase;
   letter-spacing: 0.5px;

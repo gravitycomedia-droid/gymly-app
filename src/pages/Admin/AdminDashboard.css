@@ -1,0 +1,272 @@
+/* src/pages/Admin/AdminDashboard.css */
+
+.admin-screen {
+  min-height: 100vh;
+  background: var(--bg);
+  padding-bottom: 40px;
+}
+
+.admin-content {
+  padding: 0 16px 40px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.admin-header {
+  padding: 56px 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.admin-header h1 {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.admin-header-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+/* ── Metric Cards ── */
+.admin-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 600px) {
+  .admin-metrics-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.admin-metric-card {
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.07);
+}
+
+.admin-metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.admin-metric-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.admin-metric-sub {
+  font-size: 11px;
+  color: #1D9E75;
+  font-weight: 600;
+}
+
+.admin-metric-sub.warn { color: #EF9F27; }
+.admin-metric-sub.danger { color: #E24B4A; }
+
+/* ── Section cards ── */
+.admin-section {
+  margin-bottom: 24px;
+}
+
+.admin-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  margin-bottom: 10px;
+}
+
+.admin-card {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.07);
+  overflow: hidden;
+}
+
+/* ── Charts Row ── */
+.admin-charts-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 700px) {
+  .admin-charts-row { grid-template-columns: 1fr 1fr; }
+}
+
+.admin-chart-card {
+  border-radius: 16px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.07);
+  padding: 16px;
+}
+
+.admin-chart-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+/* ── Payment Health ── */
+.payment-health-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+
+.payment-health-item {
+  padding: 16px;
+  text-align: center;
+  border-right: 1px solid rgba(0,0,0,0.06);
+}
+
+.payment-health-item:last-child { border-right: none; }
+
+.payment-health-value {
+  font-size: 28px;
+  font-weight: 800;
+  margin-bottom: 4px;
+}
+
+.payment-health-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+/* ── Table ── */
+.admin-table-wrap { overflow-x: auto; }
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-table th {
+  background: rgba(0,0,0,0.04);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  padding: 10px 14px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.admin-table td {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.admin-table tr:hover td { background: var(--primary-light); }
+
+.admin-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.admin-badge.green  { background: rgba(29,158,117,0.12); color: #1D9E75; }
+.admin-badge.orange { background: rgba(239,159,39,0.12); color: #EF9F27; }
+.admin-badge.red    { background: rgba(226,75,74,0.12); color: #E24B4A; }
+.admin-badge.purple { background: var(--primary-light); color: var(--primary); }
+.admin-badge.blue   { background: rgba(55,138,221,0.12); color: #378ADD; }
+.admin-badge.grey   { background: rgba(0,0,0,0.06); color: #888; }
+
+.admin-action-btn {
+  padding: 5px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--primary);
+  background: transparent;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.admin-action-btn:hover { background: var(--primary-light); }
+
+.admin-empty {
+  padding: 28px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── Manual Payment Modal ── */
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.admin-modal {
+  width: 100%;
+  max-width: 540px;
+  background: var(--surface, #fff);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 40px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.admin-modal h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0 0 20px;
+  color: var(--text-primary);
+}
+
+.admin-modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.admin-modal-btns .btn-ghost { flex: 1; text-align: center; }
+.admin-modal-btns .btn-primary { flex: 2; }
+
+/* ── Gym list table plan dot ── */
+.plan-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}

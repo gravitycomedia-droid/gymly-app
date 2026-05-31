@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { createMember, getMemberByPhone, getGym, getTrainers, Timestamp, getPlanByName, assignWorkoutPlanToMember } from '../../firebase/firestore';
+import {
+  createMember, getMemberByPhone, getGym, getTrainers,
+  Timestamp, getPlanByName, assignWorkoutPlanToMember, updateDoc, doc
+} from '../../firebase/firestore';
+import { db } from '../../firebase/config';
+import { createPayment, getNextInvoiceNumber } from '../../firebase/firestore-payments';
 import { addDays, formatDate, calculateBMI } from '../../utils/helpers';
 import { getRecommendedPlanName } from '../../data/exerciseLibrary';
-import './AddMember.css';
+import { generateInvoicePDF, uploadInvoice } from '../../utils/invoiceGenerator';
+import BottomNav from '../../components/BottomNav';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const GOALS = ['Fat loss', 'Muscle gain', 'Endurance', 'General fitness'];
@@ -16,8 +22,11 @@ const GENDERS = ['Male', 'Female', 'Other'];
 
 const AddMember = ({ quickAddOnly = false }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, userDoc } = useAuth();
   const { showToast } = useToast();
+
+  const leadData = location.state?.leadData || null;
 
   const [mode, setMode] = useState('quick');
   const [gym, setGym] = useState(null);
@@ -30,12 +39,11 @@ const AddMember = ({ quickAddOnly = false }) => {
 
   // Form state
   const [form, setForm] = useState({
-    name: '',
+    name: leadData?.name || '',
     countryCode: '+91',
-    phone: '',
+    phone: leadData?.phone ? leadData.phone.replace(/^\+91/, '') : '',
     planId: '',
-    paymentStatus: 'pending',
-    // Full profile fields
+    paymentStatus: 'paid',
     dob: '',
     gender: '',
     bloodGroup: '',
@@ -43,13 +51,27 @@ const AddMember = ({ quickAddOnly = false }) => {
     emergencyContact: '',
     height: '',
     weight: '',
-    goal: '',
+    goal: leadData?.goal || '',
     experience: '',
     lifestyle: '',
     diet: '',
     medicalNotes: '',
     trainerId: '',
   });
+
+  // Payment fields
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paidNow, setPaidNow] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [discount, setDiscount] = useState('');
+  const [upiRef, setUpiRef] = useState('');
+  const [paymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentNotes, setPaymentNotes] = useState('');
+
+  // Smart Actions
+  const [sendWhatsApp, setSendWhatsApp] = useState(true);
+  const [generateQR, setGenerateQR] = useState(false);
+  const [requireAgreement, setRequireAgreement] = useState(true);
 
   const [errors, setErrors] = useState({});
 
@@ -73,15 +95,21 @@ const AddMember = ({ quickAddOnly = false }) => {
   const plans = gym?.settings?.plans?.filter((p) => p.is_active) || [];
   const selectedPlan = plans.find((p) => p.id === form.planId);
   const calculatedExpiry = selectedPlan ? addDays(new Date(), selectedPlan.duration_days || 30) : null;
-
   const bmi = calculateBMI(Number(form.height), Number(form.weight));
+
+  // Payment calculations
+  const planPrice = selectedPlan?.price || 0;
+  const discountVal = Number(discount) || 0;
+  const finalAmount = Math.max(0, planPrice - discountVal);
+  const paidNowVal = form.paymentStatus === 'paid' ? finalAmount : Number(paidNow) || 0;
+  const pendingAmount = Math.max(0, finalAmount - paidNowVal);
+  const paymentStatusToSave = form.paymentStatus === 'paid' ? 'paid' : paidNowVal > 0 ? 'partial' : 'pending';
 
   const update = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: '' }));
   };
 
-  // Phone duplicate check
   const handlePhoneBlur = async () => {
     const cleaned = form.phone.replace(/\s/g, '').replace(/^0+/, '');
     const phone = `${form.countryCode}${cleaned}`;
@@ -117,6 +145,7 @@ const AddMember = ({ quickAddOnly = false }) => {
     try {
       const cleaned = form.phone.replace(/\s/g, '').replace(/^0+/, '');
       const fullPhone = `${form.countryCode}${cleaned}`;
+
       const memberData = {
         name: form.name.trim(),
         phone: fullPhone,
@@ -124,10 +153,17 @@ const AddMember = ({ quickAddOnly = false }) => {
         gym_id: userDoc.gym_id,
         permissions: ['view_own_profile', 'view_own_workout'],
         plan_id: form.planId,
+        plan_name: selectedPlan?.name || '',
         start_date: Timestamp.now(),
         subscription_expiry: Timestamp.fromDate(calculatedExpiry),
-        payment_status: form.paymentStatus,
+        payment_status: paymentStatusToSave,
         created_by: user.uid,
+        
+        // Smart Actions
+        send_welcome_whatsapp: sendWhatsApp,
+        qr_attendance_enabled: generateQR,
+        agreement_status: requireAgreement ? 'pending' : 'not_required',
+        
         // Profile fields
         profile_photo: null,
         date_of_birth: form.dob || null,
@@ -146,24 +182,81 @@ const AddMember = ({ quickAddOnly = false }) => {
         attendance_count: 0,
         last_seen: null,
         renewal_history: [],
+        source_lead_id: leadData?.leadId || null,
       };
 
-      const id = await createMember(memberData);
-      
-      // Auto-assign workout plan based on goal/experience
+      const memberId = await createMember(memberData);
+
+      // Auto-assign workout plan
       try {
         const goalKey = form.goal ? form.goal.replace(' gain', '').replace(' fitness', '').replace(' ', '_').toLowerCase() : 'general';
         const expKey = form.experience ? form.experience.toLowerCase() : 'beginner';
         const planName = getRecommendedPlanName(expKey, goalKey);
         const planToAssign = await getPlanByName(planName);
         if (planToAssign) {
-          await assignWorkoutPlanToMember(id, planToAssign.id);
+          await assignWorkoutPlanToMember(memberId, planToAssign.id);
         }
       } catch (assignErr) {
         console.error('Failed to auto-assign workout plan:', assignErr);
       }
 
-      setNewMemberId(id);
+      // Create payment record if plan selected
+      if (selectedPlan && finalAmount > 0) {
+        try {
+          const invoiceNumber = await getNextInvoiceNumber(userDoc.gym_id);
+          const paymentData = {
+            gym_id: userDoc.gym_id,
+            member_id: memberId,
+            member_name: form.name.trim(),
+            member_phone: fullPhone,
+            plan_id: form.planId,
+            plan_name: selectedPlan.name,
+            plan_auto_extend: false,
+            amount: planPrice,
+            discount: discountVal,
+            final_amount: finalAmount,
+            paid_amount: paidNowVal,
+            pending_amount: pendingAmount,
+            method: paymentMethod,
+            upi_ref: paymentMethod === 'upi' ? upiRef : null,
+            status: paymentStatusToSave,
+            payment_date: Timestamp.fromDate(new Date(paymentDate)),
+            due_date: dueDate ? Timestamp.fromDate(new Date(dueDate)) : null,
+            membership_start: Timestamp.now(),
+            membership_end: Timestamp.fromDate(calculatedExpiry),
+            invoice_number: invoiceNumber,
+            invoice_url: null,
+            whatsapp_sent: false,
+            recorded_by: user.uid,
+            notes: paymentNotes || null,
+          };
+          const paymentId = await createPayment(paymentData);
+
+          try {
+            const blob = await generateInvoicePDF({ ...paymentData, id: paymentId }, gym, { id: memberId, name: form.name.trim(), phone: fullPhone });
+            const invoiceUrl = await uploadInvoice(userDoc.gym_id, invoiceNumber, blob);
+            await updateDoc(doc(db, 'payments', paymentId), { invoice_url: invoiceUrl });
+          } catch (pdfErr) {
+            console.error('Invoice error (non-critical):', pdfErr);
+          }
+        } catch (payErr) {
+          console.error('Payment record error (non-critical):', payErr);
+        }
+      }
+
+      if (leadData?.leadId) {
+        try {
+          await updateDoc(doc(db, 'leads', leadData.leadId), {
+            status: 'converted',
+            member_id: memberId,
+            converted_at: new Date(),
+          });
+        } catch (leadErr) {
+          console.error('Lead update error (non-critical):', leadErr);
+        }
+      }
+
+      setNewMemberId(memberId);
       setShowSuccess(true);
       showToast('Member added successfully', 'success');
     } catch (err) {
@@ -176,7 +269,7 @@ const AddMember = ({ quickAddOnly = false }) => {
 
   const resetForm = () => {
     setForm({
-      name: '', countryCode: '+91', phone: '', planId: '', paymentStatus: 'pending',
+      name: '', countryCode: '+91', phone: '', planId: '', paymentStatus: 'paid',
       dob: '', gender: '', bloodGroup: '', address: '', emergencyContact: '',
       height: '', weight: '', goal: '', experience: '', lifestyle: '',
       diet: '', medicalNotes: '', trainerId: '',
@@ -185,33 +278,31 @@ const AddMember = ({ quickAddOnly = false }) => {
     setDuplicate(null);
     setShowSuccess(false);
     setNewMemberId(null);
+    setPaymentMethod('cash');
+    setPaidNow('');
+    setDiscount('');
+    setUpiRef('');
   };
 
-  // Success bottom sheet
+  // Success screen
   if (showSuccess) {
     return (
-      <div className="screen add-member-screen">
-        <div className="screen-content">
-          <div className="success-card glass-card">
-            <div className="success-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="#1D9E75" strokeWidth="2" fill="none"/>
-                <polyline points="8 12 11 15 16 9" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>Member added!</h2>
-            <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 24 }}>
-              {form.name} has been added to your gym.
-            </p>
-            <button className="btn-primary" onClick={resetForm} style={{ marginBottom: 10 }} id="add-another-btn">
-              Add another member
+      <div className="mesh-bg min-h-screen text-on-background font-body-md flex items-center justify-center p-4">
+        <div className="glass-panel max-w-sm w-full p-8 rounded-2xl text-center shadow-lg">
+          <div className="w-16 h-16 bg-tertiary-container/20 text-tertiary-container rounded-full flex items-center justify-center mx-auto mb-6">
+            <span className="material-symbols-outlined text-4xl">check_circle</span>
+          </div>
+          <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Member Added! 🎉</h2>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-4">
+            {form.name} has been successfully added to your gym.
+          </p>
+          
+          <div className="flex flex-col gap-3 mt-8">
+            <button onClick={resetForm} className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md hover:opacity-90 transition-opacity">
+              Add Another Member
             </button>
-            <button
-              className="btn-ghost"
-              onClick={() => navigate(`/owner/members/${newMemberId}`)}
-              id="view-profile-btn"
-            >
-              View member profile
+            <button onClick={() => navigate(`/owner/members/${newMemberId}`)} className="w-full py-3 rounded-xl glass-input text-primary font-label-md hover:bg-white/60 transition-colors">
+              View Profile
             </button>
           </div>
         </div>
@@ -220,383 +311,394 @@ const AddMember = ({ quickAddOnly = false }) => {
   }
 
   return (
-    <div className="screen add-member-screen">
-      <div className="screen-content">
-        {/* Top bar */}
-        <div className="top-bar">
-          <button className="back-btn" onClick={() => navigate(-1)} style={{ marginBottom: 0 }}>
-            ← Back
+    <div className="mesh-bg min-h-screen pb-24 md:pb-0 font-body-md antialiased pt-[80px]">
+      
+      {/* Mobile Top Header */}
+      <header className="md:hidden fixed top-0 left-0 w-full z-50 bg-surface/30 backdrop-blur-3xl px-4 h-16 flex items-center shadow-sm">
+        <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-on-surface-variant hover:text-primary transition-colors">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
+        <span className="font-display-lg text-xl ml-2 font-bold text-on-surface">Gymly</span>
+      </header>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 md:px-gutter mt-4 md:mt-0">
+        
+        {/* Header Section */}
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-1">
+              {leadData ? `Add ${leadData.name}` : 'Add Member'}
+            </h2>
+            <p className="font-body-md text-body-md text-on-surface-variant">Create a new gym membership</p>
+          </div>
+          <button onClick={() => navigate(-1)} className="hidden md:flex text-on-surface-variant hover:text-primary transition-colors items-center gap-1 font-label-md">
+            <span className="material-symbols-outlined text-[18px]">close</span> Cancel
           </button>
-          <h1 className="top-bar-title">Add member</h1>
-          <div style={{ width: 60 }} />
         </div>
 
-        {/* Mode toggle */}
+        {/* Lead notice */}
+        {leadData && (
+          <div className="glass-panel bg-primary/10 border-primary/20 rounded-xl p-4 mb-6 flex items-center gap-3">
+            <span className="material-symbols-outlined text-primary">link</span>
+            <span className="font-label-md text-label-md text-primary">Converting inquiry from Leads Dashboard — details pre-filled.</span>
+          </div>
+        )}
+
+        {/* Tabs */}
         {!quickAddOnly && (
-          <div className="mode-toggle">
-            <button
-              className={`mode-toggle-btn ${mode === 'quick' ? 'active' : ''}`}
+          <div className="flex gap-4 mb-8 border-b border-outline-variant/30 pb-2">
+            <button 
+              className={`font-label-md text-label-md pb-2 px-2 transition-colors ${mode === 'quick' ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-primary'}`}
               onClick={() => setMode('quick')}
             >
-              Quick add
+              Quick Add
             </button>
-            <button
-              className={`mode-toggle-btn ${mode === 'full' ? 'active' : ''}`}
+            <button 
+              className={`font-label-md text-label-md pb-2 px-2 transition-colors ${mode === 'full' ? 'text-primary border-b-2 border-primary' : 'text-on-surface-variant hover:text-primary'}`}
               onClick={() => setMode('full')}
             >
-              Full profile
+              Full Profile
             </button>
           </div>
         )}
 
-        {/* Form */}
-        <div className="glass-card" style={{ padding: '20px 18px' }}>
-          {/* Basic info — always shown */}
-          <div className="input-group">
-            <label className="input-label">Member name</label>
-            <input
-              type="text"
-              className={`input-field ${errors.name ? 'error' : ''}`}
-              placeholder="Full name"
-              value={form.name}
-              onChange={(e) => update('name', e.target.value)}
-              id="member-name-input"
-            />
-            {errors.name && <p className="input-error">{errors.name}</p>}
-          </div>
-
-          <div className="input-group">
-            <label className="input-label">Phone number</label>
-            <div className="phone-input-wrapper">
-              <select
-                className="country-select"
-                value={form.countryCode}
-                onChange={(e) => update('countryCode', e.target.value)}
-              >
-                <option value="+91">🇮🇳 +91</option>
-                <option value="+1">🇺🇸 +1</option>
-                <option value="+44">🇬🇧 +44</option>
-                <option value="+971">🇦🇪 +971</option>
-              </select>
-              <input
-                type="tel"
-                className={`input-field phone-number-input ${errors.phone ? 'error' : ''}`}
-                placeholder="98765 43210"
-                value={form.phone}
-                onChange={(e) => update('phone', e.target.value)}
-                onBlur={handlePhoneBlur}
-                id="member-phone-input"
-              />
-            </div>
-            {errors.phone && <p className="input-error">{errors.phone}</p>}
-            {checkingPhone && <p className="text-muted" style={{ marginTop: 4 }}>Checking...</p>}
-          </div>
-
-          {/* Duplicate check card */}
-          {duplicate && (
-            <div className="duplicate-card glass-card">
-              <div className="duplicate-info">
-                <span style={{ fontWeight: 600, fontSize: 13 }}>{duplicate.name}</span>
-                <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>This number is already registered.</span>
-              </div>
-              <div className="duplicate-actions">
-                <button
-                  className="btn-primary"
-                  style={{ padding: '8px 14px', fontSize: 12, width: 'auto' }}
-                  onClick={() => navigate(`/owner/members/${duplicate.id}`)}
-                >
-                  View profile
-                </button>
-                <button
-                  className="btn-ghost"
-                  style={{ padding: '8px 14px', fontSize: 12, width: 'auto' }}
-                  onClick={() => setDuplicate(null)}
-                >
-                  Use anyway
-                </button>
-              </div>
-            </div>
-          )}
-
-          <div className="input-group">
-            <label className="input-label">Membership plan</label>
-            <select
-              className={`input-field ${errors.planId ? 'error' : ''}`}
-              value={form.planId}
-              onChange={(e) => update('planId', e.target.value)}
-              id="plan-select"
-            >
-              <option value="">Select a plan</option>
-              {plans.map((plan) => (
-                <option key={plan.id} value={plan.id}>
-                  {plan.name} — ₹{plan.price} — {plan.duration_days} days
-                </option>
-              ))}
-            </select>
-            {errors.planId && <p className="input-error">{errors.planId}</p>}
-            {calculatedExpiry && (
-              <div className="info-chip">
-                📅 Expires on {formatDate(calculatedExpiry)}
-              </div>
-            )}
-          </div>
-
-          <div className="input-group">
-            <label className="input-label">Payment status</label>
-            <div className="payment-toggle">
-              <button
-                className={`payment-pill ${form.paymentStatus === 'paid' ? 'paid' : ''}`}
-                onClick={() => update('paymentStatus', 'paid')}
-                type="button"
-              >
-                Paid
-              </button>
-              <button
-                className={`payment-pill ${form.paymentStatus === 'pending' ? 'pending' : ''}`}
-                onClick={() => update('paymentStatus', 'pending')}
-                type="button"
-              >
-                Pending
-              </button>
-            </div>
-          </div>
-
-          {/* Full Profile Fields */}
-          {mode === 'full' && !quickAddOnly && (
-            <>
-              {/* Personal Details */}
-              <div className="section-header">
-                <span className="section-header-text">Personal details</span>
-                <div className="section-header-line" />
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Date of birth</label>
-                <input
-                  type="date"
-                  className="input-field"
-                  value={form.dob}
-                  onChange={(e) => update('dob', e.target.value)}
-                />
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Gender</label>
-                <div className="pill-group">
-                  {GENDERS.map((g) => (
-                    <button
-                      key={g}
-                      className={`pill-option ${form.gender === g.toLowerCase() ? 'selected' : ''}`}
-                      onClick={() => update('gender', g.toLowerCase())}
-                      type="button"
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+          
+          {/* Form Column */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Personal Details */}
+            <div className="glass-panel rounded-xl p-6 md:p-8">
+              <h3 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary">person</span>
+                Personal Details
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Full Name <span className="text-error">*</span></label>
+                  <input 
+                    type="text"
+                    className={`w-full rounded-lg px-4 py-3 glass-input text-on-surface placeholder:text-outline/50 font-body-md ${errors.name ? 'border-error' : ''}`}
+                    placeholder="John Doe" 
+                    value={form.name}
+                    onChange={(e) => update('name', e.target.value)}
+                  />
+                  {errors.name && <span className="text-error text-xs">{errors.name}</span>}
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Phone Number <span className="text-error">*</span></label>
+                  <div className="flex gap-2">
+                    <select 
+                      className="w-24 rounded-lg px-2 py-3 glass-input text-on-surface font-body-md appearance-none bg-transparent"
+                      value={form.countryCode}
+                      onChange={(e) => update('countryCode', e.target.value)}
                     >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Blood group</label>
-                <select
-                  className="input-field"
-                  value={form.bloodGroup}
-                  onChange={(e) => update('bloodGroup', e.target.value)}
-                >
-                  <option value="">Select</option>
-                  {BLOOD_GROUPS.map((bg) => (
-                    <option key={bg} value={bg}>{bg}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Address</label>
-                <input
-                  type="text"
-                  className="input-field"
-                  placeholder="Home address"
-                  value={form.address}
-                  onChange={(e) => update('address', e.target.value)}
-                />
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Emergency contact</label>
-                <input
-                  type="tel"
-                  className="input-field"
-                  placeholder="Emergency contact number"
-                  value={form.emergencyContact}
-                  onChange={(e) => update('emergencyContact', e.target.value)}
-                />
-              </div>
-
-              {/* Fitness Profile */}
-              <div className="section-header">
-                <span className="section-header-text">Fitness profile</span>
-                <div className="section-header-line" />
-              </div>
-
-              <div style={{ display: 'flex', gap: 10 }}>
-                <div className="input-group" style={{ flex: 1 }}>
-                  <label className="input-label">Height</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="number"
-                      className="input-field"
-                      placeholder="170"
-                      value={form.height}
-                      onChange={(e) => update('height', e.target.value)}
+                      <option value="+91">🇮🇳 +91</option>
+                      <option value="+1">🇺🇸 +1</option>
+                      <option value="+44">🇬🇧 +44</option>
+                    </select>
+                    <input 
+                      type="tel"
+                      className={`w-full rounded-lg px-4 py-3 glass-input text-on-surface placeholder:text-outline/50 font-body-md ${errors.phone ? 'border-error' : ''}`}
+                      placeholder="98765 43210" 
+                      value={form.phone}
+                      onChange={(e) => update('phone', e.target.value)}
+                      onBlur={handlePhoneBlur}
                     />
-                    <span className="unit-label">cm</span>
                   </div>
-                </div>
-                <div className="input-group" style={{ flex: 1 }}>
-                  <label className="input-label">Weight</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="number"
-                      className="input-field"
-                      placeholder="70"
-                      value={form.weight}
-                      onChange={(e) => update('weight', e.target.value)}
-                    />
-                    <span className="unit-label">kg</span>
-                  </div>
+                  {errors.phone && <span className="text-error text-xs block mt-1">{errors.phone}</span>}
+                  {checkingPhone && <span className="text-primary text-xs block mt-1">Checking...</span>}
                 </div>
               </div>
 
-              {bmi && (
-                <div className="bmi-chip" style={{ borderColor: bmi.color, color: bmi.color }}>
-                  BMI: {bmi.value} — {bmi.category}
+              {/* Duplicate Warning */}
+              {duplicate && (
+                <div className="mt-6 p-4 rounded-xl bg-error-container/50 border border-error/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div>
+                    <span className="font-label-md block text-on-surface">Found {duplicate.name}</span>
+                    <span className="font-body-md text-sm text-on-surface-variant">This phone number is already registered.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => navigate(`/owner/members/${duplicate.id}`)} className="px-4 py-2 bg-error text-white rounded-lg font-label-md text-sm hover:opacity-90">View Profile</button>
+                    <button onClick={() => setDuplicate(null)} className="px-4 py-2 glass-input text-on-surface rounded-lg font-label-md text-sm hover:bg-white/50">Use Anyway</button>
+                  </div>
                 </div>
               )}
+            </div>
 
-              <div className="input-group">
-                <label className="input-label">Goal</label>
-                <div className="pill-group">
-                  {GOALS.map((g) => (
-                    <button
-                      key={g}
-                      className={`pill-option ${form.goal === g ? 'selected' : ''}`}
-                      onClick={() => update('goal', g)}
-                      type="button"
-                    >
-                      {g}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Experience level</label>
-                <div className="pill-group">
-                  {EXPERIENCE_LEVELS.map((e) => (
-                    <button
-                      key={e}
-                      className={`pill-option ${form.experience === e ? 'selected' : ''}`}
-                      onClick={() => update('experience', e)}
-                      type="button"
-                    >
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Lifestyle</label>
-                <div className="pill-group">
-                  {LIFESTYLES.map((l) => (
-                    <button
-                      key={l}
-                      className={`pill-option ${form.lifestyle === l ? 'selected' : ''}`}
-                      onClick={() => update('lifestyle', l)}
-                      type="button"
-                    >
-                      {l}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Diet & Medical */}
-              <div className="section-header">
-                <span className="section-header-text">Diet & Medical</span>
-                <div className="section-header-line" />
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Diet preference</label>
-                <div className="pill-group">
-                  {DIET_OPTIONS.map((d) => (
-                    <button
-                      key={d}
-                      className={`pill-option ${form.diet === d ? 'selected' : ''}`}
-                      onClick={() => update('diet', d)}
-                      type="button"
-                    >
-                      {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="input-group">
-                <label className="input-label">Medical notes</label>
-                <textarea
-                  className="input-field"
-                  placeholder="Any injuries, conditions, or medications..."
-                  value={form.medicalNotes}
-                  onChange={(e) => update('medicalNotes', e.target.value.slice(0, 300))}
-                  rows={3}
-                  style={{ resize: 'none' }}
-                />
-                <div style={{ textAlign: 'right', fontSize: 11, color: 'var(--text-muted)', marginTop: 4 }}>
-                  {form.medicalNotes.length}/300
-                </div>
-              </div>
-
-              {/* Trainer Assignment */}
-              <div className="section-header">
-                <span className="section-header-text">Assign trainer (optional)</span>
-                <div className="section-header-line" />
-              </div>
-
-              {trainers.length > 0 ? (
-                <div className="input-group">
-                  <select
-                    className="input-field"
-                    value={form.trainerId}
-                    onChange={(e) => update('trainerId', e.target.value)}
+            {/* Membership Plan */}
+            <div className="glass-panel rounded-xl p-6 md:p-8">
+              <h3 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary">fitness_center</span>
+                Membership Plan
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-2 md:col-span-2">
+                  <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Select Plan <span className="text-error">*</span></label>
+                  <select 
+                    className={`w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md appearance-none bg-transparent ${errors.planId ? 'border-error' : ''}`}
+                    value={form.planId}
+                    onChange={(e) => update('planId', e.target.value)}
                   >
-                    <option value="">Select a trainer</option>
-                    {trainers.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
+                    <option value="">Choose a plan...</option>
+                    {plans.map((plan) => (
+                      <option key={plan.id} value={plan.id}>
+                        {plan.name} — ₹{plan.price} — {plan.duration_days} days
+                      </option>
                     ))}
                   </select>
+                  {errors.planId && <span className="text-error text-xs">{errors.planId}</span>}
                 </div>
-              ) : (
-                <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>
-                  No trainers added yet. Add trainers from Staff section.
-                </p>
+              </div>
+
+              {selectedPlan && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div className="space-y-2">
+                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Discount (₹)</label>
+                      <input 
+                        type="number"
+                        className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md"
+                        placeholder="0"
+                        value={discount}
+                        onChange={(e) => setDiscount(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Payment Status</label>
+                      <div className="flex gap-2">
+                        <button 
+                          className={`flex-1 py-3 rounded-lg font-label-md border border-black/15 transition-all ${form.paymentStatus === 'paid' ? 'bg-tertiary-container/20 border-tertiary text-tertiary shadow-sm' : 'glass-input text-on-surface-variant'}`}
+                          onClick={() => update('paymentStatus', 'paid')}
+                          type="button"
+                        >
+                          ✓ Fully Paid
+                        </button>
+                        <button 
+                          className={`flex-1 py-3 rounded-lg font-label-md border border-black/15 transition-all ${form.paymentStatus === 'pending' ? 'bg-error-container/40 border-[#d97706] text-[#d97706] shadow-sm' : 'glass-input text-on-surface-variant'}`}
+                          onClick={() => update('paymentStatus', 'pending')}
+                          type="button"
+                        >
+                          ⏱ Pending
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {form.paymentStatus === 'pending' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 p-4 rounded-xl bg-error-container/20 border border-error-container">
+                      <div className="space-y-2">
+                        <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Amount Collected Now</label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-3 text-on-surface-variant">₹</span>
+                          <input 
+                            type="number"
+                            className="w-full rounded-lg pl-8 pr-4 py-3 glass-input text-on-surface font-body-md bg-white/50"
+                            placeholder="0"
+                            value={paidNow}
+                            onChange={(e) => setPaidNow(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Due Date</label>
+                        <input 
+                          type="date"
+                          className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md bg-white/50"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {(form.paymentStatus === 'paid' || paidNowVal > 0) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                      <div className="space-y-2">
+                        <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Payment Method</label>
+                        <div className="flex gap-2">
+                          <button className={`flex-1 py-3 rounded-lg font-label-md border border-black/15 transition-colors ${paymentMethod === 'cash' ? 'bg-primary text-white shadow-md border-primary' : 'glass-input text-on-surface'}`} onClick={() => setPaymentMethod('cash')} type="button">Cash</button>
+                          <button className={`flex-1 py-3 rounded-lg font-label-md border border-black/15 transition-colors ${paymentMethod === 'upi' ? 'bg-primary text-white shadow-md border-primary' : 'glass-input text-on-surface'}`} onClick={() => setPaymentMethod('upi')} type="button">UPI</button>
+                        </div>
+                      </div>
+                      {paymentMethod === 'upi' && (
+                        <div className="space-y-2">
+                          <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">UPI Reference</label>
+                          <input 
+                            type="text"
+                            className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md"
+                            placeholder="Optional"
+                            value={upiRef}
+                            onChange={(e) => setUpiRef(e.target.value)}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="space-y-2">
+                    <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Payment Notes</label>
+                    <input 
+                      type="text"
+                      className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md"
+                      placeholder="Optional notes..."
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value)}
+                    />
+                  </div>
+                </>
               )}
-            </>
-          )}
+            </div>
+
+            {/* Full Profile Fields */}
+            {mode === 'full' && !quickAddOnly && (
+              <>
+                <div className="glass-panel rounded-xl p-6 md:p-8 space-y-6">
+                  <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+                    <span className="material-symbols-outlined text-tertiary">health_and_safety</span>
+                    Health & Profile
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Gender</label>
+                      <select className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md appearance-none bg-transparent" value={form.gender} onChange={(e) => update('gender', e.target.value)}>
+                        <option value="">Select...</option>
+                        {GENDERS.map(g => <option key={g} value={g.toLowerCase()}>{g}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Date of Birth</label>
+                      <input type="date" className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md bg-transparent" value={form.dob} onChange={(e) => update('dob', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Height (cm)</label>
+                      <input type="number" className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md" placeholder="175" value={form.height} onChange={(e) => update('height', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Weight (kg)</label>
+                      <input type="number" className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md" placeholder="70" value={form.weight} onChange={(e) => update('weight', e.target.value)} />
+                    </div>
+                  </div>
+                  
+                  {bmi && (
+                    <div className="p-3 rounded-lg border flex items-center gap-2" style={{ backgroundColor: `${bmi.color}15`, borderColor: bmi.color, color: bmi.color }}>
+                      <span className="material-symbols-outlined">monitor_weight</span>
+                      <span className="font-label-md">BMI: {bmi.value} — {bmi.category}</span>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Goal</label>
+                    <div className="flex flex-wrap gap-2">
+                      {GOALS.map(g => (
+                        <button key={g} type="button" onClick={() => update('goal', g)} className={`px-4 py-2 rounded-full font-label-md transition-colors border ${form.goal === g ? 'bg-primary text-white border-primary shadow-md' : 'glass-input text-on-surface-variant hover:text-on-surface'}`}>{g}</button>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Medical Notes</label>
+                    <textarea className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md" placeholder="Any injuries, conditions..." value={form.medicalNotes} onChange={(e) => update('medicalNotes', e.target.value)} rows={3}></textarea>
+                  </div>
+                </div>
+              </>
+            )}
+
+          </div>
+
+          {/* Summary & Actions Column */}
+          <div className="space-y-6">
+            
+            {/* Summary Card */}
+            <div className="glass-panel rounded-xl p-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -mr-16 -mt-16 transition-all group-hover:bg-primary/20"></div>
+              <h3 className="font-label-sm text-label-sm text-on-surface-variant uppercase mb-4 tracking-widest">Membership Summary</h3>
+              
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-4 border-b border-outline-variant/20">
+                  <span className="font-body-md text-body-md text-on-surface">{selectedPlan ? selectedPlan.name : 'No Plan Selected'}</span>
+                  <span className="font-headline-md text-headline-md text-primary">₹{finalAmount.toLocaleString('en-IN')}</span>
+                </div>
+                
+                {calculatedExpiry ? (
+                  <div className="flex items-center gap-3 text-on-surface-variant pt-2">
+                    <span className="material-symbols-outlined text-secondary text-sm">event_available</span>
+                    <span className="font-label-md text-label-md">Expires: {formatDate(calculatedExpiry)}</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 text-outline/60 pt-2">
+                    <span className="material-symbols-outlined text-sm">hourglass_empty</span>
+                    <span className="font-label-md text-label-md">Select a plan to see expiry</span>
+                  </div>
+                )}
+                
+                {form.paymentStatus === 'pending' && pendingAmount > 0 && (
+                  <div className="flex items-center gap-3 text-[#EF9F27] pt-2 font-semibold">
+                    <span className="material-symbols-outlined text-sm">warning</span>
+                    <span className="font-label-md text-label-md">Pending: ₹{pendingAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Smart Features Card */}
+            <div className="glass-panel rounded-xl p-6">
+              <h3 className="font-label-sm text-label-sm text-on-surface-variant uppercase mb-4 tracking-widest">Smart Actions</h3>
+              <div className="space-y-4">
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`relative flex items-center justify-center w-5 h-5 border border-black/30 rounded transition-colors ${sendWhatsApp ? 'bg-primary' : 'glass-input group-hover:border-black/50'}`}>
+                    <span className={`material-symbols-outlined text-[16px] text-white transition-opacity ${sendWhatsApp ? 'opacity-100' : 'opacity-0'}`}>check</span>
+                  </div>
+                  <input type="checkbox" className="hidden" checked={sendWhatsApp} onChange={(e) => setSendWhatsApp(e.target.checked)} />
+                  <span className="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Send Welcome WhatsApp</span>
+                </label>
+                
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`relative flex items-center justify-center w-5 h-5 border border-black/30 rounded transition-colors ${generateQR ? 'bg-primary' : 'glass-input group-hover:border-black/50'}`}>
+                    <span className={`material-symbols-outlined text-[16px] text-white transition-opacity ${generateQR ? 'opacity-100' : 'opacity-0'}`}>check</span>
+                  </div>
+                  <input type="checkbox" className="hidden" checked={generateQR} onChange={(e) => setGenerateQR(e.target.checked)} />
+                  <span className="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Enable QR Attendance</span>
+                </label>
+                
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className={`relative flex items-center justify-center w-5 h-5 border border-black/30 rounded transition-colors ${requireAgreement ? 'bg-primary' : 'glass-input group-hover:border-black/50'}`}>
+                    <span className={`material-symbols-outlined text-[16px] text-white transition-opacity ${requireAgreement ? 'opacity-100' : 'opacity-0'}`}>check</span>
+                  </div>
+                  <input type="checkbox" className="hidden" checked={requireAgreement} onChange={(e) => setRequireAgreement(e.target.checked)} />
+                  <span className="font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">Require Membership Agreement</span>
+                </label>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <button 
+              onClick={handleSubmit} 
+              disabled={loading}
+              className="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md text-label-md tracking-wide hover:shadow-[0_0_20px_rgba(109,54,212,0.4)] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="spinner spinner-primary !border-white !border-t-transparent" />
+              ) : (
+                <>
+                  <span className="material-symbols-outlined">person_add</span>
+                  Create Member
+                </>
+              )}
+            </button>
+            
+          </div>
         </div>
 
-        {/* Submit */}
-        <button
-          className="btn-primary"
-          onClick={handleSubmit}
-          disabled={loading}
-          style={{ marginTop: 20 }}
-          id="submit-member-btn"
-        >
-          {loading ? <div className="spinner" /> : 'Add member'}
-        </button>
-      </div>
+        <div style={{ height: 100 }} />
+      </main>
+
+      <BottomNav activeTab="home" role="owner" />
     </div>
   );
 };

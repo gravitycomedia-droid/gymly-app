@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -22,6 +22,29 @@ const MemberList = ({ role = 'owner' }) => {
   const [tab, setTab] = useState('all');
   const [activeFilter, setActiveFilter] = useState(searchParams.get('filter') || '');
   const [renewMember, setRenewMember] = useState(null);
+  const [showFab, setShowFab] = useState(true);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const addCardRef = useRef(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      setShowFab(!entry.isIntersecting);
+    }, { threshold: 0.1 });
+    
+    if (addCardRef.current) {
+      observer.observe(addCardRef.current);
+    }
+    
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     if (!userDoc?.gym_id) return;
@@ -131,135 +154,117 @@ const MemberList = ({ role = 'owner' }) => {
   }
 
   return (
-    <div className="screen member-list-screen">
-      <div className="screen-content">
-        {/* Top bar */}
-        <div className="top-bar">
-          <h1 className="top-bar-title">Members</h1>
-          <button
-            className="top-bar-action"
-            onClick={() => navigate(`${basePath}/members/add`)}
-            id="add-member-top-btn"
-          >
-            + Add
-          </button>
+    <div className="pb-24 md:pb-0 pt-[80px]">
+      {/* Gymly Global Header */}
+      <header className={`fixed top-0 left-0 w-full z-50 bg-transparent px-4 sm:px-6 lg:px-8 h-16 flex items-center transition-transform duration-300 ${isScrolled ? '-translate-y-full' : 'translate-y-0'}`}>
+        <div className="flex items-center gap-2">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-primary">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+          <h1 className="font-headline-lg text-xl font-bold text-primary">Gymly</h1>
         </div>
+      </header>
 
-        {/* Search */}
-        <div className="search-bar">
-          <div className="search-icon">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2" fill="none" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            </svg>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+        {/* Page Title & Search/Filters Stacked */}
+        <div className="flex flex-col gap-6 mb-8 w-full">
+          {/* Member Directory Heading (Top) */}
+          <div className="text-left">
+            <h2 className="font-headline-lg text-2xl font-bold text-on-surface mb-1.5">Member Directory</h2>
+            <p className="font-body-md text-sm text-outline">Manage and view all your club members.</p>
           </div>
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Search by name or phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            id="member-search"
-          />
+
+          {/* Search and Filters (Left-aligned) */}
+          <div className="flex flex-col items-start gap-5 w-full">
+            {/* Filter Pills Left */}
+            <div className="flex justify-start w-full">
+              <div className="flex bg-white/40 backdrop-blur-md rounded-lg p-1.5 border border-white/50 w-full max-w-md overflow-x-auto hide-scrollbar flex-nowrap shrink-0 shadow-sm">
+                {['all', 'active', 'expired'].map((t) => (
+                  <button
+                    key={t}
+                    className={`flex-1 px-4 py-2 rounded-md font-label-md text-sm font-semibold transition-all whitespace-nowrap ${tab === t ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-primary'}`}
+                    onClick={() => { setTab(t); setActiveFilter(''); }}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search Bar */}
+            <div className="relative w-full max-w-md shrink-0">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-outline flex items-center">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="M21 21l-4.35-4.35"/>
+                </svg>
+              </span>
+              <input 
+                className="w-full pl-11 pr-4 py-3 bg-white/40 backdrop-blur-md rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-body-md text-sm border border-white/50 shadow-sm placeholder-outline-variant" 
+                placeholder="Search members..." 
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Tabs */}
-        <div className="tab-row">
-          {['all', 'active', 'expired'].map((t) => (
-            <button
-              key={t}
-              className={`tab-pill ${tab === t ? 'active' : ''}`}
-              onClick={() => { setTab(t); setActiveFilter(''); }}
-            >
-              {t.charAt(0).toUpperCase() + t.slice(1)}
-              <span className="tab-count">({counts[t]})</span>
-            </button>
-          ))}
-        </div>
+        {/* Bento Grid Member List */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMembers.length > 0 ? (
+            filteredMembers.map((member) => (
+              <MemberCard
+                key={member.id}
+                member={member}
+                gym={gym}
+                onView={handleView}
+                onRenew={handleRenew}
+              />
+            ))
+          ) : search.trim() ? (
+            <div className="col-span-full py-12 text-center">
+              <h3 className="text-xl text-on-surface mb-2">No members found for &apos;{search}&apos;</h3>
+              <button className="text-primary underline" onClick={() => setSearch('')}>Clear search</button>
+            </div>
+          ) : tab === 'expired' ? (
+            <div className="col-span-full py-12 text-center">
+              <h3 className="text-xl text-tertiary mb-2">All members are active!</h3>
+            </div>
+          ) : members.length > 0 ? (
+            <div className="col-span-full py-12 text-center">
+              <h3 className="text-xl text-on-surface mb-2">No matches</h3>
+              <button className="text-primary underline" onClick={() => { setActiveFilter(''); setTab('all'); }}>
+                Clear filters
+              </button>
+            </div>
+          ) : null}
 
-        {/* Filter pills */}
-        <div className="filter-row">
-          {plans.map((plan) => (
-            <button
-              key={plan.id}
-              className={`filter-pill ${activeFilter === plan.id ? 'active' : ''}`}
-              onClick={() => setActiveFilter(activeFilter === plan.id ? '' : plan.id)}
-            >
-              {plan.name}
-            </button>
-          ))}
-          <button
-            className={`filter-pill ${activeFilter === 'paid' ? 'active' : ''}`}
-            onClick={() => setActiveFilter(activeFilter === 'paid' ? '' : 'paid')}
+          {/* Add New Member Action Card */}
+          <div 
+            ref={addCardRef}
+            className="glass-card rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-3 cursor-pointer border-dashed border-2 border-primary/30 hover:border-primary/60 bg-transparent hover:bg-white/20 min-h-[180px] sm:min-h-[220px]"
+            onClick={() => navigate(`${basePath}/members/add`)}
           >
-            Paid
-          </button>
-          <button
-            className={`filter-pill ${activeFilter === 'pending' ? 'active' : ''}`}
-            onClick={() => setActiveFilter(activeFilter === 'pending' ? '' : 'pending')}
-          >
-            Pending
-          </button>
-          <button
-            className={`filter-pill ${activeFilter === 'expiring' ? 'active' : ''}`}
-            onClick={() => setActiveFilter(activeFilter === 'expiring' ? '' : 'expiring')}
-          >
-            Expiring soon
-          </button>
-          <button
-            className={`filter-pill ${activeFilter === 'this-month' ? 'active' : ''}`}
-            onClick={() => setActiveFilter(activeFilter === 'this-month' ? '' : 'this-month')}
-          >
-            This month
-          </button>
-        </div>
-
-        {/* Member cards */}
-        {filteredMembers.length > 0 ? (
-          filteredMembers.map((member) => (
-            <MemberCard
-              key={member.id}
-              member={member}
-              gym={gym}
-              onView={handleView}
-              onRenew={handleRenew}
-            />
-          ))
-        ) : members.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon-wrapper">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#534AB7" strokeWidth="2" opacity="0.4" />
-                <circle cx="8.5" cy="7" r="4" stroke="#534AB7" strokeWidth="2" fill="none" opacity="0.4" />
+            <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 5v14M5 12h14"/>
               </svg>
             </div>
-            <h3 className="empty-title">No members yet</h3>
-            <p className="empty-subtitle">Add your first member to get started</p>
-            <button
-              className="btn-primary btn-add-member"
-              onClick={() => navigate(`${basePath}/members/add`)}
-            >
-              + Add member
-            </button>
+            <h3 className="font-headline-md text-headline-md !text-lg text-primary">Add New Member</h3>
+            <p className="font-body-md text-body-md !text-sm text-outline text-center">Register a new client to the club.</p>
           </div>
-        ) : search.trim() ? (
-          <div className="empty-state">
-            <h3 className="empty-title">No members found for &apos;{search}&apos;</h3>
-            <button className="text-link" onClick={() => setSearch('')}>Clear search</button>
-          </div>
-        ) : tab === 'expired' ? (
-          <div className="empty-state">
-            <div style={{ fontSize: 32, marginBottom: 12 }}>✓</div>
-            <h3 className="empty-title" style={{ color: '#1D9E75' }}>All members are active!</h3>
-          </div>
-        ) : (
-          <div className="empty-state">
-            <h3 className="empty-title">No matches</h3>
-            <button className="text-link" onClick={() => { setActiveFilter(''); setTab('all'); }}>
-              Clear filters
-            </button>
-          </div>
-        )}
+        </div>
+      </main>
+
+      {/* Floating Action Button */}
+      <div className={`fixed bottom-24 right-6 z-40 transition-all duration-300 ${showFab ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-10 scale-0 pointer-events-none'}`}>
+        <button 
+          onClick={() => navigate(`${basePath}/members/add`)}
+          className="w-14 h-14 bg-primary text-white rounded-full shadow-[0_4px_16px_rgba(0,86,210,0.4)] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 28 }}>add</span>
+        </button>
       </div>
 
       {/* Renew Modal */}

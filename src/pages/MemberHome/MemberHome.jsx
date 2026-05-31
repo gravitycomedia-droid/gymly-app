@@ -2,29 +2,31 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { db } from '../../firebase/config';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { 
   getGym, 
   getWorkoutPlan, 
-  getWorkoutDay, 
+  getWorkoutDay,
   getMemberWorkoutLogs,
   getRecentMuscleSoreness,
   saveSorenessLog
 } from '../../firebase/firestore';
-import { getMemberPaymentsRealtime, updatePayment } from '../../firebase/firestore-payments';
+import { getMemberPaymentsRealtime, updatePayment, formatDateKey } from '../../firebase/firestore-payments';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../../firebase/config';
 import { 
-  getExpiryStatus, 
-  formatDate, 
-  calculateBMI, 
   getInitials, 
   getAvatarColor, 
+  getExpiryStatus, 
   getDaysRemaining, 
-  getPlanName 
+  formatDate,
+  getPlanName,
+  calculateBMI,
+  playHapticSound
 } from '../../utils/helpers';
 import { getTodaysDayNumber } from '../../data/exerciseLibrary';
 import { GYMLY_EXERCISE_DB } from '../../data/gymlyExerciseDb';
-import { logout } from '../../firebase/auth';
 import BottomNav from '../../components/BottomNav';
 import './MemberHome.css';
 
@@ -46,7 +48,10 @@ const MemberHome = () => {
   const [loading, setLoading] = useState(true);
   const [pendingPayments, setPendingPayments] = useState([]);
   const [uploadingPaymentId, setUploadingPaymentId] = useState(null);
+  const [showAgreementBanner, setShowAgreementBanner] = useState(false);
   const screenshotInputRef = useRef(null);
+
+  const prevAttendanceCount = useRef(null);
 
   // Soreness logic
   const [showSorenessCheck, setShowSorenessCheck] = useState(false);
@@ -62,6 +67,11 @@ const MemberHome = () => {
   useEffect(() => {
     const fetchAll = async () => {
       if (!userDoc) { setLoading(false); return; }
+
+      // Agreement banner — show popup instead of redirect
+      if (userDoc.agreement_status !== 'agreed') {
+        setShowAgreementBanner(true);
+      }
       try {
         const promises = [];
         if (userDoc.gym_id) promises.push(getGym(userDoc.gym_id));
@@ -85,7 +95,6 @@ const MemberHome = () => {
         const logsToday = logs.filter(l => {
           const d = l.log_date?.toDate ? l.log_date.toDate() : null;
           const cd = l.client_date ? new Date(l.client_date) : null;
-          // Use client_date as a fallback for the home page status
           const dateToUse = d || cd;
           return dateToUse && dateToUse.getTime() >= todayAtZero.getTime();
         });
@@ -124,7 +133,7 @@ const MemberHome = () => {
             setYesterdayMuscles(Array.from(muscles));
             setShowSorenessCheck(true);
             const initialSoreness = {};
-            muscles.forEach(m => { initialSoreness[m] = 1; }); // Default to 'A little'
+            muscles.forEach(m => { initialSoreness[m] = 1; });
             setSorenessLevels(initialSoreness);
           }
         }
@@ -143,6 +152,30 @@ const MemberHome = () => {
     fetchAll();
   }, [userDoc, user?.uid]);
 
+  // Realtime Attendance Auto-Close Listener
+  useEffect(() => {
+    if (!user?.uid) return;
+    if (localStorage.getItem('mockRole')) return;
+    const qLabel = query(
+      collection(db, 'attendance_logs'),
+      where('member_id', '==', user.uid),
+      where('date', '==', formatDateKey(new Date()))
+    );
+    const unsub = onSnapshot(qLabel, (snap) => {
+      const count = snap.docs.length;
+      if (prevAttendanceCount.current !== null && count > prevAttendanceCount.current) {
+        setShowQRCode(false);
+        try {
+          playHapticSound('success');
+        } catch (e) {
+          console.log('Audio/Haptic not supported or blocked');
+        }
+      }
+      prevAttendanceCount.current = count;
+    });
+    return () => unsub();
+  }, [user?.uid]);
+
   const handleSorenessSubmit = async () => {
     try {
       const payload = {
@@ -160,10 +193,12 @@ const MemberHome = () => {
     }
   };
 
-  // Real-time pending payments for this member
+  const [allPayments, setAllPayments] = useState([]);
+
   useEffect(() => {
     if (!userDoc?.gym_id || !user?.uid) return;
     const unsub = getMemberPaymentsRealtime(userDoc.gym_id, user.uid, (payments) => {
+      setAllPayments(payments);
       setPendingPayments(payments.filter(p => p.status === 'pending' || p.status === 'partial'));
     });
     return () => unsub();
@@ -215,7 +250,6 @@ const MemberHome = () => {
   return (
     <div className="screen member-home-screen">
       <div className="screen-content">
-        {/* Greeting */}
         <div className="member-greeting">
           <div>
             <h1 className="member-greeting-text">{greeting}, {firstName}</h1>
@@ -230,7 +264,6 @@ const MemberHome = () => {
           </div>
         </div>
 
-        {/* Soreness Check Card */}
         {showSorenessCheck && (
           <div className="soreness-check-card glass-card">
             <div className="soreness-header">📋 Quick Recovery Check</div>
@@ -257,25 +290,47 @@ const MemberHome = () => {
           </div>
         )}
 
-        {/* Membership card */}
         <div className={`membership-card glass-card status-${statusType}`}>
           <div className="membership-card-top">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="membership-gym-name">{gym?.name || 'My Gym'}</span>
-              <button className="qr-mini-btn" onClick={() => setShowQRCode(true)}>
-                <span>QR</span>
-              </button>
+            <span className="membership-gym-name">{gym?.name || 'My Gym'}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+              <span className={`status-badge-mini ${statusType}`}>{statusLabel}</span>
+              {/* QR thumbnail — show EXPIRED overlay if membership has lapsed */}
+              <div
+                style={{ position: 'relative', width: 44, height: 44, cursor: daysRemaining > 0 ? 'pointer' : 'default' }}
+                onClick={() => daysRemaining > 0 && setShowQRCode(true)}
+              >
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
+                  alt="QR"
+                  style={{
+                    width: 44, height: 44, background: '#fff', padding: 4, borderRadius: 6,
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    opacity: daysRemaining <= 0 ? 0.35 : 1,
+                    filter: daysRemaining <= 0 ? 'grayscale(1)' : 'none',
+                  }}
+                />
+                {daysRemaining <= 0 && (
+                  <div style={{
+                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(226,75,74,0.75)', borderRadius: 6,
+                    fontSize: 7, fontWeight: 800, color: '#fff', letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.1,
+                  }}>
+                    EXP<br/>IRED
+                  </div>
+                )}
+              </div>
             </div>
-            <span className={`status-badge-mini ${statusType}`}>{statusLabel}</span>
           </div>
-          <div className="membership-plan-name">{getPlanName(gym, userDoc?.plan_id) || 'No plan'}</div>
+          {getPlanName(gym, userDoc?.plan_id) && (
+            <div className="membership-plan-name">{getPlanName(gym, userDoc?.plan_id)}</div>
+          )}
           <div className="membership-days-pill">
             {daysRemaining > 0 ? `${daysRemaining} days left` : `Expired ${Math.abs(daysRemaining)} days ago`}
           </div>
           <div className="membership-expiry">Valid till {formatDate(userDoc?.subscription_expiry)}</div>
         </div>
 
-        {/* Pending Payment Banner */}
         {pendingPayments.map(p => (
           <div key={p.id} style={{
             background: 'linear-gradient(135deg, rgba(239,159,39,0.12), rgba(226,75,74,0.08))',
@@ -293,7 +348,6 @@ const MemberHome = () => {
                 </div>
               </div>
             </div>
-            {/* UPI Screenshot upload — only for UPI method */}
             {p.method === 'upi' && (
               <div>
                 {p.screenshot_url ? (
@@ -320,9 +374,9 @@ const MemberHome = () => {
                     <label htmlFor={`screenshot-${p.id}`} style={{
                       display: 'inline-flex', alignItems: 'center', gap: 6,
                       padding: '8px 16px', borderRadius: 10, cursor: 'pointer',
-                      background: uploadingPaymentId === p.id ? 'rgba(83,74,183,0.05)' : 'rgba(83,74,183,0.1)',
+                      background: uploadingPaymentId === p.id ? 'var(--primary-light)' : 'var(--primary-light)',
                       color: 'var(--primary)', fontWeight: 600, fontSize: 13,
-                      border: '1.5px solid rgba(83,74,183,0.2)',
+                      border: '1.5px solid var(--primary-border)',
                     }}>
                       {uploadingPaymentId === p.id ? (
                         <span>Uploading...</span>
@@ -348,7 +402,7 @@ const MemberHome = () => {
           </div>
         ))}
 
-        {/* Today's workout */}
+
         <div className="today-workout glass-card" onClick={() => navigate('/member/workout')}>
           <div className="today-workout-header">
             <span style={{ fontSize: 16, fontWeight: 600 }}>Today&apos;s workout</span>
@@ -366,7 +420,6 @@ const MemberHome = () => {
           {!todayDay && <div className="today-workout-focus">Pick your session for today →</div>}
         </div>
 
-        {/* Calorie Tracking Widget */}
         <div className="calorie-summary-calm glass-card">
           <div className="csc-header">
              <div className="csc-icon">🔥</div>
@@ -388,7 +441,6 @@ const MemberHome = () => {
           </div>
         </div>
 
-        {/* Quick stats */}
         <div className="quick-stats-row">
           <div className="quick-stat glass-card">
             <span className="quick-stat-icon">🔥</span>
@@ -407,7 +459,6 @@ const MemberHome = () => {
           </div>
         </div>
 
-        {/* BMI */}
         {bmi && (
           <div className="bmi-section glass-card">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
@@ -423,28 +474,92 @@ const MemberHome = () => {
         )}
       </div>
 
-      {/* QR Code Modal */}
       {showQRCode && (
-        <div className="modal-overlay" onClick={() => setShowQRCode(false)}>
+        <div className="modal-overlay" style={{ alignItems: 'center' }} onClick={() => setShowQRCode(false)}>
           <div className="qr-modal glass-card" onClick={e => e.stopPropagation()}>
             <div className="qr-modal-header">
               <h3>Gym Check-in</h3>
               <button className="qr-close" onClick={() => setShowQRCode(false)}>×</button>
             </div>
-            <div className="qr-container">
-              <div className="qr-placeholder" style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=gymly://checkin/${user?.uid}/${userDoc?.gym_id}`} 
-                  alt="Check-in QR" 
-                />
+
+            {daysRemaining <= 0 ? (
+              <div style={{ padding: '20px 16px', textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>🚫</div>
+                <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--error)', marginBottom: 6 }}>Membership Expired</div>
+                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                  Your membership expired {Math.abs(daysRemaining)} days ago. Please renew to use the gym check-in QR.
+                </p>
               </div>
-              <p className="qr-help">Show this code at the reception to log your attendance</p>
-            </div>
+            ) : (
+              <>
+                <div className="qr-placeholder" style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
+                    alt="Gym Check-in QR"
+                    style={{ display: 'block', width: 180, height: 180 }}
+                  />
+                </div>
+                <p className="qr-help">
+                  Show this code at the reception to log your daily attendance automatically.
+                </p>
+              </>
+            )}
           </div>
         </div>
       )}
 
       <BottomNav activeTab="home" role="member" />
+
+      {/* ─── Agreement popup banner ─── */}
+      {showAgreementBanner && userDoc?.agreement_status !== 'agreed' && (
+        <div style={{
+          position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 200,
+          padding: '0 16px',
+          animation: 'slideUp 0.3s ease',
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #534AB7 0%, #378ADD 100%)',
+            borderRadius: 18, padding: '16px 18px',
+            boxShadow: '0 -4px 32px var(--primary)',
+            display: 'flex', alignItems: 'center', gap: 14,
+          }}>
+            <div style={{ fontSize: 28, flexShrink: 0 }}>📝</div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#fff', marginBottom: 2 }}>
+                Agreement pending
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
+                Sign your membership agreement to unlock full access.
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+              <button
+                onClick={() => navigate('/member/agreement')}
+                style={{
+                  background: '#fff', color: 'var(--primary)', border: 'none',
+                  padding: '8px 14px', borderRadius: 10,
+                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Sign Now →
+              </button>
+              <button
+                onClick={() => setShowAgreementBanner(false)}
+                style={{
+                  background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none',
+                  padding: '5px 14px', borderRadius: 10,
+                  fontSize: 11, cursor: 'pointer',
+                }}
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 };

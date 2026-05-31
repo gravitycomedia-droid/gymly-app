@@ -55,7 +55,7 @@
 
 .role-card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(83, 74, 183, 0.1);
+  box-shadow: 0 6px 24px var(--primary-light);
 }
 
 .role-card:active {

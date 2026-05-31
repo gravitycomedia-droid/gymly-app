@@ -75,7 +75,7 @@
   border-radius: 6px;
   font-size: 10px;
   font-weight: 600;
-  background: rgba(83, 74, 183, 0.08);
+  background: var(--primary-light);
   color: var(--primary);
   margin-top: 3px;
   margin-right: 6px;

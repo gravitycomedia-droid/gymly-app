@@ -22,7 +22,7 @@
   min-width: 80px;
   padding: 12px 10px;
   background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(83, 74, 183, 0.1);
+  border: 1px solid var(--primary-light);
   border-radius: 12px;
   text-align: center;
   color: var(--text-primary);
@@ -35,7 +35,7 @@
   color: white;
   border-color: var(--primary);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(83, 74, 183, 0.2);
+  box-shadow: 0 4px 12px var(--primary-border);
 }
 
 .exercises-list {
@@ -86,7 +86,7 @@
 .exercise-card-log {
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px dashed rgba(83, 74, 183, 0.1);
+  border-top: 1px dashed var(--primary-light);
   animation: fadeInDown 200ms ease-out;
 }
 
@@ -143,7 +143,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 8px 32px rgba(83, 74, 183, 0.15);
+  box-shadow: 0 8px 32px var(--primary-light);
   border: 1px solid rgba(255, 255, 255, 0.3);
   z-index: 100;
   animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -158,7 +158,7 @@
 .sticky-stat-val {
   font-size: 16px;
   font-weight: 800;
-  color: #534AB7;
+  color: var(--primary);
 }
 
 .sticky-stat-lbl {
@@ -192,7 +192,7 @@
 .summary-cal-large {
   font-size: 48px;
   font-weight: 800;
-  color: #534AB7;
+  color: var(--primary);
   margin-top: 20px;
 }
 

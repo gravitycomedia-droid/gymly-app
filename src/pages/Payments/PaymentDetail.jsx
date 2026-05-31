@@ -6,6 +6,7 @@ import { getPaymentById, deletePayment, updatePayment } from '../../firebase/fir
 import { getGym } from '../../firebase/firestore';
 import { sendWhatsApp, buildReceiptParams } from '../../utils/whatsapp';
 import { formatDate } from '../../utils/helpers';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import './Payments.css';
 
 const PaymentDetail = () => {
@@ -38,29 +39,56 @@ const PaymentDetail = () => {
     fetchData();
   }, [id, userDoc?.gym_id]);
 
-  const handleDownload = () => {
-    if (payment?.invoice_url) {
-      window.open(payment.invoice_url, '_blank');
-    } else {
-      showToast('Invoice PDF not available', 'error');
+  const handleDownload = async () => {
+    if (payment?.invoice_pdf_url) {
+      window.open(payment.invoice_pdf_url, '_blank');
+      return;
+    } 
+    
+    // Legacy Payment Fallback: Generate Zoho Invoice on-demand via Cloud Function
+    const toastId = showToast('Generating invoice... please wait', 'success');
+    try {
+      const functions = getFunctions();
+      const generateInvoice = httpsCallable(functions, 'generateInvoice');
+      const result = await generateInvoice({ paymentId: id });
+      
+      if (result.data?.pdf_url) {
+        window.open(result.data.pdf_url, '_blank');
+        setPayment(prev => ({ ...prev, invoice_pdf_url: result.data.pdf_url }));
+      }
+    } catch (err) {
+      console.error('Invoice generation failed:', err);
+      showToast('PDF not available for this legacy payment.', 'error');
     }
   };
 
   const handleSendWhatsApp = async () => {
-    if (!payment || !gym) return;
+    if (!payment) return;
+    
     try {
-      await sendWhatsApp({
-        phone: payment.member_phone,
-        templateName: 'payment_receipt',
-        params: buildReceiptParams(gym, { name: payment.member_name, phone: payment.member_phone }, payment),
-        gymId: payment.gym_id,
-        memberId: payment.member_id,
-      });
-      await updatePayment(id, { whatsapp_sent: true });
-      setPayment(prev => ({ ...prev, whatsapp_sent: true }));
+      if (payment.invoice_pdf_url) {
+        // Trigger automated Cleomitra backend invoice sender
+        const functions = getFunctions();
+        const resendInvoice = httpsCallable(functions, 'resendInvoice');
+        await resendInvoice({ paymentId: id });
+        await updatePayment(id, { invoice_status: 'sent_via_wa' });
+        setPayment(prev => ({ ...prev, invoice_status: 'sent_via_wa' }));
+      } else {
+        // Fallback to legacy SMS/WA API if no automated invoice is present
+        await sendWhatsApp({
+          phone: payment.member_phone,
+          templateName: 'payment_receipt',
+          params: buildReceiptParams(gym, { name: payment.member_name, phone: payment.member_phone }, payment),
+          gymId: payment.gym_id,
+          memberId: payment.member_id,
+        });
+        await updatePayment(id, { whatsapp_sent: true });
+        setPayment(prev => ({ ...prev, whatsapp_sent: true }));
+      }
       showToast('WhatsApp receipt sent!', 'success');
     } catch (err) {
-      showToast('Failed to send WhatsApp', 'error');
+      console.error(err);
+      showToast('Failed to send WhatsApp via cloud function', 'error');
     }
   };
 
@@ -202,8 +230,17 @@ const PaymentDetail = () => {
             </span>
           </div>
           <div className="payment-info-row">
-            <span className="payment-info-label">WhatsApp sent</span>
-            <span className="payment-info-value">{payment.whatsapp_sent ? '✓ Yes' : '✗ No'}</span>
+            <span className="payment-info-label">WhatsApp receipt</span>
+            <span className="payment-info-value">
+              {payment.invoice_status === 'sent_via_wa' 
+                ? <span style={{ color: '#1D9E75', fontWeight: 600 }}>✓ Auto-Delivered</span> 
+                : payment.invoice_status === 'wa_failed' 
+                ? <span style={{ color: 'var(--error)', fontWeight: 600 }}>✕ Delivery Failed</span>
+                : payment.whatsapp_sent 
+                ? '✓ Yes (Legacy)' 
+                : '✗ Not sent'
+              }
+            </span>
           </div>
           {payment.notes && (
             <div className="payment-info-row">

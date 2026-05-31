@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { can } from '../utils/permissions';
 import AccessRestricted from './AccessRestricted';
 
-const ProtectedRoute = ({ children, requiredRole, requiredPermission }) => {
+const ProtectedRoute = ({ children, requiredRole, allowedRoles, requiredPermission }) => {
   const { user, userDoc, loading } = useAuth();
 
   if (loading) {
@@ -18,9 +18,14 @@ const ProtectedRoute = ({ children, requiredRole, requiredPermission }) => {
 
   if (!user) return <Navigate to="/select-role" replace />;
 
-  // Role check
+  // Single role check
   if (requiredRole && userDoc?.role !== requiredRole) {
     return <AccessRestricted message={`This page is for ${requiredRole}s only.`} />;
+  }
+
+  // Multi-role check (allowedRoles array)
+  if (allowedRoles && !allowedRoles.includes(userDoc?.role)) {
+    return <AccessRestricted message={`Access restricted to: ${allowedRoles.join(', ')}.`} />;
   }
 
   // Permission check

@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../firebase/auth';
-import { getMemberPaymentsRealtime } from '../../firebase/firestore-payments';
-import { getInitials, getAvatarColor, formatDate } from '../../utils/helpers';
+import { getInitials, getAvatarColor } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
 import './MemberProfile.css';
 
@@ -12,15 +11,6 @@ const MemberProfile = () => {
   const { user, userDoc } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
-  const [payments, setPayments] = useState([]);
-
-  useEffect(() => {
-    if (!user?.uid || !userDoc?.gym_id) return;
-    const unsub = getMemberPaymentsRealtime(userDoc.gym_id, user.uid, (data) => {
-      setPayments(data);
-    });
-    return () => unsub();
-  }, [user?.uid, userDoc?.gym_id]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -29,6 +19,8 @@ const MemberProfile = () => {
   };
 
   const avatarColor = getAvatarColor(userDoc?.name);
+
+
 
   return (
     <div className="screen member-profile-screen">
@@ -46,7 +38,7 @@ const MemberProfile = () => {
 
         <div className="profile-menu">
           <button className="profile-menu-item glass-card" onClick={() => setShowQRModal(true)}>
-            <div className="menu-item-icon" style={{ background: 'rgba(83,74,183,0.1)', color: 'var(--primary)' }}>📱</div>
+            <div className="menu-item-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>📱</div>
             <div className="menu-item-text">
               <div className="menu-item-title">My Membership QR</div>
               <div className="menu-item-subtitle">Show to owner for quick access</div>
@@ -55,7 +47,7 @@ const MemberProfile = () => {
           </button>
 
           <button className="profile-menu-item glass-card" onClick={() => navigate('/member/card')}>
-            <div className="menu-item-icon" style={{ background: 'rgba(83,74,183,0.1)', color: 'var(--primary)' }}>💳</div>
+            <div className="menu-item-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>💳</div>
             <div className="menu-item-text">
               <div className="menu-item-title">Digital Membership Card</div>
               <div className="menu-item-subtitle">View and share your ID</div>
@@ -63,7 +55,7 @@ const MemberProfile = () => {
             <div className="menu-item-arrow">→</div>
           </button>
 
-          <button className="profile-menu-item glass-card" onClick={() => {}}>
+          <button className="profile-menu-item glass-card" onClick={() => navigate('/member/edit-profile')}>
             <div className="menu-item-icon" style={{ background: 'rgba(29, 158, 117,0.1)', color: 'var(--success)' }}>⚙️</div>
             <div className="menu-item-text">
               <div className="menu-item-title">Account Settings</div>
@@ -72,11 +64,51 @@ const MemberProfile = () => {
             <div className="menu-item-arrow">→</div>
           </button>
 
-          <button className="profile-menu-item glass-card" onClick={() => {}}>
+          <button className="profile-menu-item glass-card" onClick={() => navigate('/member/notifications')}>
             <div className="menu-item-icon" style={{ background: 'rgba(239, 159, 39,0.1)', color: 'var(--amber)' }}>🔔</div>
             <div className="menu-item-text">
               <div className="menu-item-title">Notifications</div>
               <div className="menu-item-subtitle">Reminders and alerts</div>
+            </div>
+            <div className="menu-item-arrow">→</div>
+          </button>
+
+          {/* Agreement menu item */}
+          {userDoc?.agreement_status === 'agreed' && userDoc?.agreement_url ? (
+            <a
+              href={userDoc.agreement_url}
+              target="_blank"
+              rel="noreferrer"
+              className="profile-menu-item glass-card"
+              style={{ textDecoration: 'none' }}
+            >
+              <div className="menu-item-icon" style={{ background: 'rgba(29,158,117,0.1)', color: '#1D9E75' }}>📄</div>
+              <div className="menu-item-text">
+                <div className="menu-item-title">Membership Agreement</div>
+                <div className="menu-item-subtitle" style={{ color: '#1D9E75', fontWeight: 600 }}>✅ Signed — tap to download</div>
+              </div>
+              <div className="menu-item-arrow">↓</div>
+            </a>
+          ) : (
+            <button
+              className="profile-menu-item glass-card"
+              onClick={() => navigate('/member/agreement')}
+              style={{ borderColor: 'rgba(239,159,39,0.3)' }}
+            >
+              <div className="menu-item-icon" style={{ background: 'rgba(239,159,39,0.1)', color: '#EF9F27' }}>📝</div>
+              <div className="menu-item-text">
+                <div className="menu-item-title">Membership Agreement</div>
+                <div className="menu-item-subtitle" style={{ color: '#EF9F27', fontWeight: 600 }}>⏳ Pending — tap to sign</div>
+              </div>
+              <div className="menu-item-arrow">→</div>
+            </button>
+          )}
+
+          <button className="profile-menu-item glass-card" onClick={() => navigate('/member/payments')}>
+            <div className="menu-item-icon" style={{ background: 'rgba(55,138,221,0.1)', color: '#378ADD' }}>💳</div>
+            <div className="menu-item-text">
+               <div className="menu-item-title">Billing & Payments</div>
+               <div className="menu-item-subtitle" style={{ color: 'var(--text-muted)' }}>View history & download receipts</div>
             </div>
             <div className="menu-item-arrow">→</div>
           </button>
@@ -101,44 +133,6 @@ const MemberProfile = () => {
             <span className="detail-label">Blood Group</span>
             <span className="detail-value">{userDoc?.blood_group || 'Not set'}</span>
           </div>
-        </div>
-
-        {/* Payment History */}
-        <div className="profile-details glass-card" style={{ padding: '20px', marginBottom: 20 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Payment History</h3>
-          
-          {payments.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>No payments recorded yet.</p>
-          ) : (
-            payments.map(p => {
-              const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
-              return (
-                <div key={p.id} style={{
-                  padding: '12px 0',
-                  borderBottom: '1px solid rgba(0,0,0,0.05)',
-                  display: 'flex', alignItems: 'center', gap: 10,
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>{p.plan_name}</div>
-                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
-                      {formatDate(d)} · {p.method === 'cash' ? 'Cash' : p.method === 'upi' ? 'UPI' : 'Online'}
-                      · #{p.invoice_number}
-                    </div>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: 14, fontWeight: 700 }}>₹{(p.final_amount || 0).toLocaleString('en-IN')}</div>
-                    <span style={{
-                      fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 8,
-                      background: p.status === 'paid' ? 'rgba(29,158,117,0.1)' : p.status === 'partial' ? 'rgba(239,159,39,0.1)' : 'rgba(226,75,74,0.1)',
-                      color: p.status === 'paid' ? '#1D9E75' : p.status === 'partial' ? '#EF9F27' : '#E24B4A',
-                    }}>
-                      {p.status === 'paid' ? 'Paid' : p.status === 'partial' ? 'Partial' : 'Pending'}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
-          )}
         </div>
 
         <button 

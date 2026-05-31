@@ -9,6 +9,7 @@ import { PREDEFINED_PLANS } from './predefinedPlans';
 let hasSeeded = false;
 
 export async function seedPredefinedPlans() {
+  if (typeof window !== 'undefined' && localStorage.getItem('mockRole')) return;
   if (!db || hasSeeded) return;
   hasSeeded = true;
 

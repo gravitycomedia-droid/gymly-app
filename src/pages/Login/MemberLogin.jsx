@@ -141,7 +141,12 @@ const MemberLogin = () => {
       }
 
       if (userDoc && userDoc.role === 'member') {
-        navigate('/member/home', { replace: true });
+        // Redirect to agreement if not yet signed
+        if (userDoc.agreement_status !== 'agreed') {
+          navigate('/member/agreement', { replace: true });
+        } else {
+          navigate('/member/home', { replace: true });
+        }
       } else if (!userDoc) {
         if (linkStatus === 'not_found') {
           showToast(`Phone ${fullPhone} not found in Gymly DB`, 'error');

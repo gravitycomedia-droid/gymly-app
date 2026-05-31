@@ -93,7 +93,7 @@
   position: absolute;
   width: 30px;
   height: 30px;
-  border-color: #534AB7;
+  border-color: var(--primary);
   border-style: solid;
   border-width: 0;
 }
@@ -108,7 +108,7 @@
   left: 10px;
   right: 10px;
   height: 2px;
-  background: linear-gradient(90deg, transparent, #534AB7, transparent);
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
   animation: scanBeam 2s ease-in-out infinite;
 }
 
@@ -259,7 +259,7 @@
   width: 40px;
   height: 40px;
   border-width: 0;
-  border-color: #534AB7;
+  border-color: var(--primary);
 }
 
 .tablet-scan-frame .scan-corner.tl { border-top-width: 4px; border-left-width: 4px; }
@@ -288,7 +288,7 @@
 }
 
 .tablet-result-fullscreen.already {
-  background: linear-gradient(160deg, #3C3489, #534AB7, #3C3489);
+  background: linear-gradient(160deg, var(--primary-dark), var(--primary), var(--primary-dark));
 }
 
 .tablet-result-icon {
@@ -370,7 +370,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: rgba(83, 74, 183, 0.2);
+  background: var(--primary-border);
   display: flex;
   align-items: center;
   justify-content: center;

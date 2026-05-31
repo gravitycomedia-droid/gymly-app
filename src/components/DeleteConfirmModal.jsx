@@ -23,7 +23,7 @@ const DeleteConfirmModal = ({ memberName, onConfirm, onClose }) => {
               width: 48,
               height: 48,
               borderRadius: '50%',
-              background: 'rgba(226, 75, 74, 0.1)',
+              background: 'rgba(186, 26, 26, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -31,9 +31,9 @@ const DeleteConfirmModal = ({ memberName, onConfirm, onClose }) => {
             }}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="#E24B4A" strokeWidth="2" fill="none" />
-              <line x1="12" y1="8" x2="12" y2="12" stroke="#E24B4A" strokeWidth="2" strokeLinecap="round" />
-              <line x1="12" y1="16" x2="12.01" y2="16" stroke="#E24B4A" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="12" cy="12" r="10" stroke='var(--error)' strokeWidth="2" fill="none" />
+              <line x1="12" y1="8" x2="12" y2="12" stroke='var(--error)' strokeWidth="2" strokeLinecap="round" />
+              <line x1="12" y1="16" x2="12.01" y2="16" stroke='var(--error)' strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
 
@@ -52,7 +52,7 @@ const DeleteConfirmModal = ({ memberName, onConfirm, onClose }) => {
             className="btn-primary"
             onClick={handleDelete}
             disabled={loading}
-            style={{ flex: 1, background: '#E24B4A' }}
+            style={{ flex: 1, background: 'var(--error)' }}
             id="confirm-delete-btn"
           >
             {loading ? <div className="spinner" /> : 'Delete'}

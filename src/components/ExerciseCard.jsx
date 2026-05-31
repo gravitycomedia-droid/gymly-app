@@ -4,8 +4,8 @@ import { calculateExerciseCalories, parseWeight } from '../utils/calorieEngine';
 import './ExerciseCard.css';
 
 const MUSCLE_COLORS = {
-  Chest: '#E24B4A', Back: '#378ADD', Legs: '#1D9E75',
-  Shoulders: '#EF9F27', Arms: '#534AB7', Core: '#D85A30', Cardio: '#D4537E'
+  Chest: 'var(--error)', Back: '#378ADD', Legs: '#1D9E75',
+  Shoulders: '#EF9F27', Arms: 'var(--primary)', Core: '#D85A30', Cardio: '#D4537E'
 };
 
 const RPE_LABELS = {
@@ -236,7 +236,7 @@ const ExerciseCard = ({
             ))}
             {dbData.common_mistakes && (
                <div style={{ marginTop: 8 }}>
-                 <div style={{ fontSize: 11, fontWeight: 700, color: '#E24B4A', textTransform: 'uppercase', marginBottom: 4 }}>Common Mistakes</div>
+                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--error)', textTransform: 'uppercase', marginBottom: 4 }}>Common Mistakes</div>
                  {dbData.common_mistakes.map((m, i) => (
                    <div key={i} style={{ fontSize: 12, color: '#ffaaaa', marginBottom: 2 }}>• {m}</div>
                  ))}

@@ -134,8 +134,8 @@ const MemberProgress = () => {
     datasets: [{
       label: 'Weight (kg)',
       data: chartLogs.map(log => log.weight),
-      borderColor: '#534AB7',
-      backgroundColor: 'rgba(83,74,183,0.1)',
+      borderColor: 'var(--primary)',
+      backgroundColor: 'var(--primary-light)',
       borderWidth: 3,
       fill: true,
       tension: 0.4
@@ -219,7 +219,7 @@ const MemberProgress = () => {
           <div className="chart-header">
             <div>
               <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Latest Weight</div>
-              <div style={{ fontSize: 24, fontWeight: 700, color: '#534AB7' }}>
+              <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--primary)' }}>
                 {userDoc?.weight ? `${userDoc.weight} kg` : '—'}
               </div>
             </div>

@@ -15,7 +15,7 @@
   width: 72px;
   height: 72px;
   border-radius: 20px;
-  background: linear-gradient(135deg, #534AB7, #7c6ef0);
+  background: linear-gradient(135deg, var(--primary), #7c6ef0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -74,7 +74,7 @@
 }
 
 .settings-row:active {
-  background: rgba(83, 74, 183, 0.04);
+  background: var(--primary-light);
 }
 
 .settings-row-icon {
@@ -129,6 +129,8 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   z-index: 1000;
   display: flex;
   align-items: flex-end;
@@ -194,7 +196,7 @@
 }
 
 .plan-edit-btn.edit {
-  background: rgba(83, 74, 183, 0.08);
+  background: var(--primary-light);
   color: var(--primary);
 }
 
@@ -264,4 +266,25 @@
 .color-swatch.selected {
   border-color: var(--text-primary);
   transform: scale(1.15);
+}
+
+.copy-chip {
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border);
+  color: var(--primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 200ms;
+}
+
+.copy-chip:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.copy-chip:active {
+  transform: scale(0.95);
 }

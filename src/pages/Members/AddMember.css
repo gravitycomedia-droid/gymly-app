@@ -1,5 +1,5 @@
 .add-member-screen {
-  background: var(--grad-members);
+  background: var(--grad-floor);
   padding-bottom: 40px;
 }
 
@@ -55,4 +55,25 @@
 
 .success-icon {
   margin-bottom: 16px;
+}
+
+/* Input with currency prefix */
+.input-prefix {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-prefix span {
+  position: absolute;
+  left: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-muted);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.input-prefix .input-field {
+  padding-left: 28px;
 }

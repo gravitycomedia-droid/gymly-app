@@ -89,7 +89,7 @@ const Analytics = () => {
       data: {
         labels,
         datasets: [
-          { label: 'Collected', data: labels.map(l => dateMap[l].paid), backgroundColor: 'rgba(83, 74, 183, 0.7)', borderRadius: 6, borderSkipped: false },
+          { label: 'Collected', data: labels.map(l => dateMap[l].paid), backgroundColor: 'var(--primary)', borderRadius: 6, borderSkipped: false },
           { label: 'Pending', data: labels.map(l => dateMap[l].pending), backgroundColor: 'rgba(239, 159, 39, 0.6)', borderRadius: 6, borderSkipped: false },
         ],
       },
@@ -170,7 +170,7 @@ const Analytics = () => {
       }
     });
 
-    const colors = ['#534AB7', '#1D9E75', '#EF9F27', '#E24B4A', '#378ADD', '#9333ea', '#f97316'];
+    const colors = ['var(--primary)', '#1D9E75', '#EF9F27', 'var(--error)', '#378ADD', '#9333ea', '#f97316'];
     const labels = Object.keys(planCounts);
     const data = Object.values(planCounts);
     const total = data.reduce((s, v) => s + v, 0);
@@ -240,7 +240,7 @@ const Analytics = () => {
         labels: ['Renewed', 'Churned'],
         datasets: [{
           data: [renewedMembers, Math.max(0, totalMembers - renewedMembers)],
-          backgroundColor: ['#1D9E75', '#E24B4A'],
+          backgroundColor: ['#1D9E75', 'var(--error)'],
           borderWidth: 0,
         }],
       },
@@ -274,10 +274,10 @@ const Analytics = () => {
   });
 
   const getHeatColor = (count) => {
-    if (count === 0) return 'rgba(83, 74, 183, 0.05)';
-    if (count <= 3) return 'rgba(83, 74, 183, 0.2)';
-    if (count <= 7) return 'rgba(83, 74, 183, 0.5)';
-    return 'rgba(83, 74, 183, 0.9)';
+    if (count === 0) return 'var(--primary-light)';
+    if (count <= 3) return 'var(--primary-border)';
+    if (count <= 7) return 'var(--primary)';
+    return 'var(--primary)';
   };
 
   // Busiest/quietest
@@ -391,10 +391,10 @@ const Analytics = () => {
               ))}
             </div>
             <div className="heatmap-legend">
-              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'rgba(83,74,183,0.05)' }} />0</div>
-              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'rgba(83,74,183,0.2)' }} />1-3</div>
-              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'rgba(83,74,183,0.5)' }} />4-7</div>
-              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'rgba(83,74,183,0.9)' }} />8+</div>
+              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'var(--primary-light)' }} />0</div>
+              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'var(--primary-border)' }} />1-3</div>
+              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'var(--primary)' }} />4-7</div>
+              <div className="heatmap-legend-item"><div className="heatmap-legend-box" style={{ background: 'var(--primary)' }} />8+</div>
             </div>
           </div>
           <div className="analytics-stats-below">

@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from '../firebase/config';
-import { getUser } from '../firebase/firestore';
+import { db, auth } from '../firebase/config';
+import { doc, onSnapshot } from 'firebase/firestore';
+import { ROLE_PERMISSIONS } from '../utils/permissions';
 
 const AuthContext = createContext();
 
@@ -29,24 +30,76 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    // If Firebase auth is not initialized, skip the listener
-    if (!auth) {
-      console.warn('Firebase Auth not initialized. Running without authentication.');
+    const mockRole = localStorage.getItem('mockRole');
+    if (mockRole) {
+      const nameMap = {
+        owner: 'John Gymly (Owner)',
+        manager: 'Rahul Manager',
+        trainer: 'Coach Vicky',
+        receptionist: 'Sarah Receptionist',
+        member: 'Alex Mercer (Member)',
+        admin: 'Super Admin'
+      };
+      setUser({ uid: `mock_${mockRole}`, email: `${mockRole}@gymly.com` });
+      setUserDoc({
+        id: `mock_${mockRole}`,
+        uid: `mock_${mockRole}`,
+        name: nameMap[mockRole] || 'Mock User',
+        role: mockRole,
+        gym_id: 'mock_gym_123',
+        phone: '9876543210',
+        plan_id: 'plan4',
+        plan_name: 'Platinum Plan',
+        subscription_expiry: {
+          toDate: () => new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+        },
+        profile_photo: '',
+        permissions: ROLE_PERMISSIONS[mockRole] || []
+      });
       setLoading(false);
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    if (!auth) {
+      console.warn('Firebase Auth not initialized.');
+      setLoading(false);
+      return;
+    }
+
+    let userDocUnsubscribe = null;
+
+    const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
+      
+      // Clean up previous user doc listener if any
+      if (userDocUnsubscribe) {
+        userDocUnsubscribe();
+        userDocUnsubscribe = null;
+      }
+
       if (firebaseUser) {
-        await refreshUserDoc(firebaseUser.uid);
+        // Set up real-time listener for the user document
+        userDocUnsubscribe = onSnapshot(doc(db, 'users', firebaseUser.uid), (snapshot) => {
+          if (snapshot.exists()) {
+            setUserDoc({ id: snapshot.id, ...snapshot.data() });
+          } else {
+            setUserDoc(null);
+          }
+          setLoading(false);
+        }, (err) => {
+          console.error('Error listening to user doc:', err);
+          setLoading(false);
+        });
       } else {
         setUserDoc(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      authUnsubscribe();
+      if (userDocUnsubscribe) userDocUnsubscribe();
+    };
   }, []);
 
   const value = {

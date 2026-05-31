@@ -31,7 +31,7 @@
 
 .wizard-dot.upcoming {
   width: 14px;
-  background: rgba(83, 74, 183, 0.2);
+  background: var(--primary-border);
 }
 
 /* Step header */
@@ -75,7 +75,7 @@
 }
 
 .pill.selected {
-  background: rgba(83, 74, 183, 0.12);
+  background: var(--primary-light);
   border-color: var(--primary);
   color: var(--primary);
   font-weight: 600;
@@ -97,7 +97,7 @@
 
 /* Upload zones */
 .upload-zone {
-  border: 2px dashed rgba(83, 74, 183, 0.25);
+  border: 2px dashed var(--primary-border);
   border-radius: var(--radius-lg);
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -170,7 +170,7 @@
 
 .photo-slot {
   aspect-ratio: 1;
-  border: 2px dashed rgba(83, 74, 183, 0.2);
+  border: 2px dashed var(--primary-border);
   border-radius: var(--radius-sm);
   background: var(--glass-bg);
   display: flex;

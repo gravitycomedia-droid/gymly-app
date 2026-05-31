@@ -1,0 +1,462 @@
+/* src/pages/Subscription/OwnerSubscriptionPage.css */
+
+.sub-screen {
+  min-height: 100vh;
+  background: var(--bg);
+  padding-bottom: 100px;
+}
+
+.sub-content {
+  padding: 0 16px 24px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ── Header ── */
+.sub-header {
+  padding: 56px 16px 20px;
+  text-align: center;
+}
+
+.sub-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.sub-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── Current Plan Banner ── */
+.current-plan-banner {
+  border-radius: 18px;
+  padding: 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, #764ba2 100%);
+  color: white;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.current-plan-banner::before {
+  content: '';
+  position: absolute;
+  top: -30px; right: -30px;
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+.cpb-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.cpb-plan-name {
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.cpb-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.15);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.cpb-status.active { background: rgba(29,222,100,0.25); }
+.cpb-status.past_due { background: rgba(239,159,39,0.3); }
+.cpb-status.halted { background: rgba(226,75,74,0.3); }
+
+.cpb-meta {
+  font-size: 12px;
+  opacity: 0.85;
+  margin-top: 4px;
+}
+
+/* Trial progress bar */
+.trial-bar-wrap {
+  margin-top: 12px;
+}
+
+.trial-bar-label {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.trial-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255,255,255,0.25);
+  overflow: hidden;
+}
+
+.trial-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #fff;
+  transition: width 0.4s ease;
+}
+
+/* ── Tabs ── */
+.sub-tabs {
+  display: flex;
+  gap: 4px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.sub-tab {
+  flex: 1;
+  padding: 8px 4px;
+  border-radius: 9px;
+  border: none;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sub-tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+/* ── Plan Cards ── */
+.plans-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.plan-card {
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card.current {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.plan-card.featured::before {
+  content: 'MOST POPULAR';
+  position: absolute;
+  top: 10px; right: -22px;
+  background: #9C27B0;
+  color: white;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 3px 28px;
+  transform: rotate(30deg);
+}
+
+.plan-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.plan-card-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.plan-card-price {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.plan-card-price span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.plan-card-pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: var(--primary);
+  color: white;
+  margin-bottom: 10px;
+}
+
+.plan-card-features {
+  list-style: none;
+  padding: 0; margin: 0 0 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plan-card-features li {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plan-card-features li::before {
+  content: '✓';
+  color: #1D9E75;
+  font-weight: 700;
+  font-size: 10px;
+}
+
+.plan-card-features li.no::before { content: '✕'; color: #bbb; }
+
+.plan-card-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.plan-card-btn.upgrade {
+  background: var(--primary);
+  color: white;
+}
+
+.plan-card-btn.upgrade:hover { opacity: 0.88; }
+
+.plan-card-btn.downgrade {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1.5px solid rgba(0,0,0,0.12);
+}
+
+.plan-card-btn.current-btn {
+  background: var(--primary-light);
+  color: var(--primary);
+  cursor: default;
+}
+
+/* ── Billing History ── */
+.billing-table-wrap {
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.billing-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.billing-table th {
+  background: rgba(0,0,0,0.04);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.billing-table td {
+  padding: 12px 14px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  color: var(--text-primary);
+}
+
+.billing-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.billing-badge.success { background: rgba(29,158,117,0.12); color: #1D9E75; }
+.billing-badge.failed  { background: rgba(226,75,74,0.12); color: #E24B4A; }
+.billing-badge.pending { background: rgba(239,159,39,0.12); color: #EF9F27; }
+
+.billing-empty {
+  text-align: center;
+  padding: 32px 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* ── Payment Method Tab ── */
+.payment-method-card {
+  border-radius: 16px;
+  padding: 20px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0,0,0,0.08);
+}
+
+.card-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-icon {
+  width: 44px; height: 30px;
+  background: linear-gradient(135deg, var(--primary), #764ba2);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+}
+
+.card-details {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.card-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Cancel Zone ── */
+.cancel-zone {
+  margin-top: 24px;
+  border-radius: 16px;
+  padding: 16px;
+  background: rgba(226,75,74,0.05);
+  border: 1.5px solid rgba(226,75,74,0.2);
+}
+
+.cancel-zone h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #E24B4A;
+  margin: 0 0 6px;
+}
+
+.cancel-zone p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0 0 12px;
+}
+
+.cancel-btn {
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #E24B4A;
+  background: transparent;
+  color: #E24B4A;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover { background: rgba(226,75,74,0.08); }
+
+/* ── Modals ── */
+.sub-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 0 env(safe-area-inset-bottom);
+}
+
+.sub-modal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface, #fff);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px 32px;
+}
+
+.sub-modal h3 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 16px;
+  color: var(--text-primary);
+}
+
+.sub-modal-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.sub-modal-row strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.sub-modal-info {
+  background: var(--primary-light);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--primary);
+  margin: 12px 0;
+}
+
+.sub-modal-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.sub-modal-btns .btn-ghost {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+}
+
+.sub-modal-btns .btn-primary {
+  flex: 2;
+}

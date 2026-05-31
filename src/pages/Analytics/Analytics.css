@@ -225,7 +225,7 @@
 }
 
 .expiring-action-btn.renew {
-  background: rgba(83, 74, 183, 0.08);
+  background: var(--primary-light);
   color: var(--primary);
 }
 
@@ -253,6 +253,6 @@
 }
 
 .expiring-days-badge.normal {
-  background: rgba(83, 74, 183, 0.08);
+  background: var(--primary-light);
   color: var(--primary);
 }

@@ -86,7 +86,7 @@
 
 .membership-days-pill {
   display: inline-block;
-  background: rgba(83, 74, 183, 0.1);
+  background: var(--primary-light);
   color: var(--primary);
   font-size: 12px;
   font-weight: 600;
@@ -115,9 +115,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(83, 74, 183, 0.1);
+  background: var(--primary-light);
   color: var(--primary);
-  border: 1px solid rgba(83, 74, 183, 0.2);
+  border: 1px solid var(--primary-border);
   border-radius: 6px;
   padding: 4px 8px;
   font-size: 10px;
@@ -127,7 +127,7 @@
 }
 
 .qr-mini-btn:hover {
-  background: rgba(83, 74, 183, 0.2);
+  background: var(--primary-border);
 }
 
 .today-workout {
@@ -172,7 +172,7 @@
   font-size: 12px;
   font-weight: 600;
   color: var(--primary);
-  background: rgba(83, 74, 183, 0.06);
+  background: var(--primary-light);
   padding: 6px 12px;
   border-radius: 8px;
   display: inline-block;
@@ -501,7 +501,7 @@
 .soreness-submit {
   width: 100%;
   margin-top: 16px;
-  background: #534AB7;
+  background: var(--primary);
   color: white;
   border: none;
   padding: 10px;

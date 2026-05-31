@@ -5,7 +5,7 @@ import jsQR from 'jsqr';
 import { db } from '../../firebase/config';
 import { getDoc, doc, updateDoc, addDoc, collection, query, where, getDocs, serverTimestamp, increment } from 'firebase/firestore';
 import { formatDateKey, createAttendanceLog } from '../../firebase/firestore-payments';
-import { getInitials, getAvatarColor } from '../../utils/helpers';
+import { getInitials, getAvatarColor, playHapticSound } from '../../utils/helpers';
 import './Scanner.css';
 
 const QRScanner = () => {
@@ -52,6 +52,7 @@ const QRScanner = () => {
       // 1. Fetch member
       const memberSnap = await getDoc(doc(db, 'users', memberId));
       if (!memberSnap.exists()) {
+        playHapticSound('error');
         setResult({ type: 'error', message: 'Member not found' });
         setTimeout(resetScan, 3000);
         return;
@@ -61,6 +62,7 @@ const QRScanner = () => {
       // 2. Verify gym
       const expectedGym = userDoc?.gym_id || gymId;
       if (member.gym_id !== expectedGym) {
+        playHapticSound('error');
         setResult({ type: 'error', message: 'Wrong gym QR code' });
         setTimeout(resetScan, 3000);
         return;
@@ -85,6 +87,7 @@ const QRScanner = () => {
           scan_mode: 'phone',
           is_expired: true,
         });
+        playHapticSound('error');
         setResult({ type: 'expired', member, daysAgo: expiry ? Math.ceil((now - expiry) / (1000*60*60*24)) : 0 });
         setTimeout(resetScan, 3000);
         return;
@@ -101,6 +104,7 @@ const QRScanner = () => {
       const todaySnap = await getDocs(todayQ);
 
       if (!todaySnap.empty) {
+        playHapticSound('error');
         setResult({ type: 'already', member });
         setTimeout(resetScan, 3000);
         return;
@@ -127,10 +131,12 @@ const QRScanner = () => {
         attendance_count: increment(1),
       });
 
+      playHapticSound('success');
       setResult({ type: 'success', member });
       setTimeout(resetScan, 3000);
     } catch (err) {
       console.error('Check-in error:', err);
+      playHapticSound('error');
       setResult({ type: 'error', message: 'Check-in failed' });
       setTimeout(resetScan, 3000);
     }

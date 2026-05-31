@@ -1,0 +1,38 @@
+/* ── Glassmorphic Modernism Styles for Leads Dashboard ── */
+.mesh-gradient {
+    background-color: #fcf8fb;
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(212, 100%, 93%, 1) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(263, 100%, 93%, 1) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(177, 100%, 89%, 1) 0, transparent 50%);
+    background-attachment: fixed;
+}
+
+.dark .mesh-gradient {
+    background-color: #1b1b1d;
+    background-image: 
+        radial-gradient(at 0% 0%, hsla(212, 100%, 20%, 1) 0, transparent 50%), 
+        radial-gradient(at 50% 0%, hsla(263, 100%, 20%, 1) 0, transparent 50%), 
+        radial-gradient(at 100% 0%, hsla(177, 100%, 20%, 1) 0, transparent 50%);
+}
+
+.glass-card {
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.dark .glass-card {
+    background: rgba(30, 30, 32, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Hide scrollbar for the tabs */
+.hide-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+.hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}

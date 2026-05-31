@@ -62,7 +62,7 @@ const TrainerDashboard = () => {
                   <div className="member-card-plan">{getPlanName(gym, member.plan_id)}</div>
                   <div className={`member-card-expiry ${type}`}>{daysText}</div>
                   <div style={{ marginTop: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 600, color: member.workout_plan_id ? 'var(--primary)' : 'var(--amber)', background: member.workout_plan_id ? 'rgba(83,74,183,0.1)' : 'rgba(239, 159, 39, 0.1)', padding: '2px 8px', borderRadius: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: member.workout_plan_id ? 'var(--primary)' : 'var(--amber)', background: member.workout_plan_id ? 'var(--primary-light)' : 'rgba(239, 159, 39, 0.1)', padding: '2px 8px', borderRadius: 4 }}>
                       {member.workout_plan_id ? 'Plan Assigned' : 'No Plan Assigned'}
                     </span>
                   </div>
@@ -84,8 +84,8 @@ const TrainerDashboard = () => {
           <div className="empty-state">
             <div className="empty-icon-wrapper">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#534AB7" strokeWidth="2" opacity="0.4" />
-                <circle cx="8.5" cy="7" r="4" stroke="#534AB7" strokeWidth="2" fill="none" opacity="0.4" />
+                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke='var(--primary)' strokeWidth="2" opacity="0.4" />
+                <circle cx="8.5" cy="7" r="4" stroke='var(--primary)' strokeWidth="2" fill="none" opacity="0.4" />
               </svg>
             </div>
             <h3 className="empty-title">No members assigned to you yet</h3>

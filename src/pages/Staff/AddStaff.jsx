@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { createStaffMember, getMemberByPhone } from '../../firebase/firestore';
+import { storage } from '../../firebase/config';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { ROLE_PERMISSIONS } from '../../utils/permissions';
 import './Staff.css';
 
@@ -13,10 +15,7 @@ const ROLES = [
 ];
 
 const PERMISSION_DESCRIPTIONS = {
-  manager: [
-    'Add members', 'Edit members', 'Delete members',
-    'View analytics', 'View payments', 'Mark attendance',
-  ],
+  manager: ['Add members', 'Edit members', 'Delete members', 'View analytics', 'View payments', 'Mark attendance'],
   trainer: ['View assigned members', 'Assign workouts'],
   receptionist: ['Add members', 'View member list', 'Mark attendance'],
 };
@@ -31,10 +30,17 @@ const AddStaff = () => {
     countryCode: '+91',
     phone: '',
     role: '',
+    // Trainer-specific fields
+    age: '',
+    qualification: '',
+    specialization: '',
+    experience_years: '',
+    certificate_photo: '',
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [duplicate, setDuplicate] = useState(null);
+  const [uploadingCert, setUploadingCert] = useState(false);
 
   const update = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -52,11 +58,34 @@ const AddStaff = () => {
     }
   };
 
+  const handleCertUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingCert(true);
+    try {
+      const ts = Date.now();
+      const storageRef = ref(storage, `gyms/${userDoc.gym_id}/certificates/${ts}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      update('certificate_photo', url);
+      showToast('Certificate uploaded', 'success');
+    } catch (err) {
+      showToast('Upload failed', 'error');
+    } finally {
+      setUploadingCert(false);
+      e.target.value = '';
+    }
+  };
+
   const validate = () => {
     const newErrors = {};
     if (!form.name.trim() || form.name.trim().length < 2) newErrors.name = 'Name required';
     if (!form.phone.trim() || form.phone.replace(/\s/g, '').length !== 10) newErrors.phone = 'Enter valid phone';
     if (!form.role) newErrors.role = 'Select a role';
+    if (form.role === 'trainer') {
+      if (!form.age || isNaN(form.age)) newErrors.age = 'Enter valid age';
+      if (!form.qualification.trim()) newErrors.qualification = 'Qualification required';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -67,7 +96,7 @@ const AddStaff = () => {
 
     try {
       const fullPhone = `${form.countryCode}${form.phone.replace(/\s/g, '')}`;
-      await createStaffMember({
+      const staffData = {
         name: form.name.trim(),
         phone: fullPhone,
         role: form.role,
@@ -88,7 +117,18 @@ const AddStaff = () => {
         attendance_count: 0,
         last_seen: null,
         renewal_history: [],
-      });
+      };
+
+      // Add trainer-specific fields
+      if (form.role === 'trainer') {
+        staffData.age = Number(form.age);
+        staffData.qualification = form.qualification.trim();
+        staffData.specialization = form.specialization.trim();
+        staffData.experience_years = form.experience_years ? Number(form.experience_years) : null;
+        staffData.certificate_photo = form.certificate_photo || null;
+      }
+
+      await createStaffMember(staffData);
 
       showToast(`${form.name} added as ${form.role}`, 'success');
       navigate('/owner/staff');
@@ -111,7 +151,7 @@ const AddStaff = () => {
 
         <div className="glass-card" style={{ padding: '20px 18px' }}>
           <div className="input-group">
-            <label className="input-label">Staff name</label>
+            <label className="input-label">Staff name *</label>
             <input
               type="text"
               className={`input-field ${errors.name ? 'error' : ''}`}
@@ -124,7 +164,7 @@ const AddStaff = () => {
           </div>
 
           <div className="input-group">
-            <label className="input-label">Phone number</label>
+            <label className="input-label">Phone number *</label>
             <div className="phone-input-wrapper">
               <select
                 className="country-select"
@@ -158,7 +198,7 @@ const AddStaff = () => {
           )}
 
           <div className="input-group">
-            <label className="input-label">Role</label>
+            <label className="input-label">Role *</label>
             <div className="pill-group">
               {ROLES.map((r) => (
                 <button
@@ -173,6 +213,80 @@ const AddStaff = () => {
             </div>
             {errors.role && <p className="input-error">{errors.role}</p>}
           </div>
+
+          {/* Trainer-specific fields */}
+          {form.role === 'trainer' && (
+            <div style={{ marginTop: 8, borderTop: '1px solid rgba(0,0,0,0.05)', paddingTop: 16 }}>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--primary)', marginBottom: 14 }}>
+                🏋️ Trainer Details
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div className="input-group">
+                  <label className="input-label">Age *</label>
+                  <input
+                    type="number"
+                    className={`input-field ${errors.age ? 'error' : ''}`}
+                    placeholder="25"
+                    value={form.age}
+                    onChange={(e) => update('age', e.target.value)}
+                  />
+                  {errors.age && <p className="input-error">{errors.age}</p>}
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Experience (yrs)</label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    placeholder="3"
+                    value={form.experience_years}
+                    onChange={(e) => update('experience_years', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Qualification *</label>
+                <input
+                  type="text"
+                  className={`input-field ${errors.qualification ? 'error' : ''}`}
+                  placeholder="E.g. Certified Personal Trainer"
+                  value={form.qualification}
+                  onChange={(e) => update('qualification', e.target.value)}
+                />
+                {errors.qualification && <p className="input-error">{errors.qualification}</p>}
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Specialization</label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="E.g. Strength & Conditioning"
+                  value={form.specialization}
+                  onChange={(e) => update('specialization', e.target.value)}
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Certificate Photo</label>
+                {form.certificate_photo ? (
+                  <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 140 }}>
+                    <img src={form.certificate_photo} alt="Certificate" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button
+                      onClick={() => update('certificate_photo', '')}
+                      style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', borderRadius: '50%', width: 26, height: 26, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}
+                    >✕</button>
+                  </div>
+                ) : (
+                  <label className="btn-ghost" style={{ display: 'block', textAlign: 'center', cursor: 'pointer', padding: '16px 0' }}>
+                    {uploadingCert ? 'Uploading...' : '📄 Upload Certificate'}
+                    <input type="file" hidden accept="image/*" onChange={handleCertUpload} disabled={uploadingCert} />
+                  </label>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Permissions preview */}
           {form.role && (

@@ -79,7 +79,7 @@ const AttendanceLogs = () => {
         datasets: [{
           label: 'Entries',
           data,
-          backgroundColor: 'rgba(83, 74, 183, 0.6)',
+          backgroundColor: 'var(--primary)',
           borderRadius: 6,
           borderSkipped: false,
         }],

@@ -24,3 +24,16 @@ dist-ssr
 *.sln
 *.sw?
 .vercel
+
+# Local data & temporary exports
+Cleomitra/
+Follow Leads/
+Zoho Cle/
+cleomitra_sync.csv
+exportToCleomitra.js
+files (1)/
+scratch/
+screenshots/
+stitch_gymly_owner_dashboard_system/
+gymly_features.md
+

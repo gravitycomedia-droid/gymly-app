@@ -72,7 +72,7 @@
 
 .member-plan {
   display: inline-block;
-  background: rgba(83, 74, 183, 0.1);
+  background: var(--primary-light);
   color: var(--primary);
   padding: 6px 14px;
   border-radius: 12px;

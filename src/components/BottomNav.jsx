@@ -20,7 +20,7 @@ const NAV_CONFIGS = {
     { id: 'settings', label: 'Settings', path: '/trainer/settings', icon: 'settings' },
   ],
   receptionist: [
-    { id: 'home', label: 'Home', path: '/receptionist/members', icon: 'home' },
+    { id: 'home', label: 'Home', path: '/receptionist', icon: 'home' },
     { id: 'members', label: 'Members', path: '/receptionist/members', icon: 'members' },
     { id: 'settings', label: 'Settings', path: '/receptionist/settings', icon: 'settings' },
   ],

@@ -21,7 +21,7 @@ const AccessRestricted = ({ message }) => {
               width: 56,
               height: 56,
               borderRadius: '50%',
-              background: 'rgba(226, 75, 74, 0.1)',
+              background: 'rgba(186, 26, 26, 0.15)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -29,8 +29,8 @@ const AccessRestricted = ({ message }) => {
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="#E24B4A" strokeWidth="2" fill="none" />
-              <path d="M7 11V7a5 5 0 0110 0v4" stroke="#E24B4A" strokeWidth="2" strokeLinecap="round" />
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke='var(--error)' strokeWidth="2" fill="none" />
+              <path d="M7 11V7a5 5 0 0110 0v4" stroke='var(--error)' strokeWidth="2" strokeLinecap="round" />
             </svg>
           </div>
           <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Access restricted</h2>

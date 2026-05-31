@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym, updateGym } from '../../firebase/firestore';
+import { storage } from '../../firebase/config';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { logout } from '../../firebase/auth';
 import { getInitials } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
 import './Settings.css';
 
-const PLAN_COLORS = ['#534AB7', '#1D9E75', '#EF9F27', '#E24B4A', '#378ADD', '#9333ea', '#f97316'];
+const PLAN_COLORS = ['var(--primary)', '#1D9E75', '#EF9F27', 'var(--error)', '#378ADD', '#9333ea', '#f97316'];
 
 const emptyPlan = () => ({
   id: `plan_${Date.now()}`,
@@ -16,7 +18,7 @@ const emptyPlan = () => ({
   price: '',
   duration_days: 30,
   description: '',
-  color: '#534AB7',
+  color: 'var(--primary)',
   is_active: true,
 });
 
@@ -55,12 +57,34 @@ const OwnerSettings = () => {
   // Working hours form
   const [hours, setHours] = useState({ open: '06:00', close: '22:00' });
 
-  // Plans
+  // Plans & Tax
   const [plans, setPlans] = useState([]);
   const [editingPlan, setEditingPlan] = useState(null);
+  const [taxConfig, setTaxConfig] = useState({ enabled: false, rate: 0 });
 
   // Social links
   const [social, setSocial] = useState({ instagram: '', facebook: '', google_maps: '' });
+
+  // Landing Page
+  const [landingConfig, setLandingConfig] = useState({ isPublished: false, facilities: [] });
+
+  // Messaging Config
+  const [messagingConfig, setMessagingConfig] = useState({
+    welcome_messages: true,
+    expiry_alerts: true,
+    payment_confirmations: true,
+    equipment_alerts: true,
+    inactivity_alerts: false,
+  });
+
+  // Equipment
+  const [equipment, setEquipment] = useState([]);
+  const [editingEquipment, setEditingEquipment] = useState(null);
+  const [uploadingEquipImg, setUploadingEquipImg] = useState(false);
+
+  // Gallery
+  const [photos, setPhotos] = useState([]);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (!userDoc?.gym_id) return;
@@ -81,7 +105,24 @@ const OwnerSettings = () => {
         close: g.working_hours?.close || '22:00',
       });
       setPlans(g.settings?.plans || []);
+      setTaxConfig({
+        enabled: g.settings?.taxEnabled || false,
+        rate: g.settings?.taxRate || 0
+      });
       setSocial(g.social || { instagram: '', facebook: '', google_maps: '' });
+      setLandingConfig({
+        isPublished: g.landingConfig?.isPublished || false,
+        facilities: g.landingConfig?.facilities || []
+      });
+      setMessagingConfig(g.messaging_config || {
+        welcome_messages: true,
+        expiry_alerts: true,
+        payment_confirmations: true,
+        equipment_alerts: true,
+        inactivity_alerts: false,
+      });
+      setEquipment(g.equipment || []);
+      setPhotos(g.photos || []);
       setLoading(false);
     });
   }, [userDoc?.gym_id]);
@@ -153,6 +194,27 @@ const OwnerSettings = () => {
     savePlans(updated);
   };
 
+  // ── Save Tax ──
+  const saveTaxConfig = async () => {
+    setSaving(true);
+    try {
+      await updateGym(userDoc.gym_id, { 
+        'settings.taxEnabled': taxConfig.enabled,
+        'settings.taxRate': Number(taxConfig.rate)
+      });
+      setGym(prev => ({ 
+        ...prev, 
+        settings: { ...prev.settings, taxEnabled: taxConfig.enabled, taxRate: Number(taxConfig.rate) } 
+      }));
+      showToast('Tax settings updated!', 'success');
+      setActiveSheet(null);
+    } catch (e) {
+      showToast('Failed to save tax: ' + e.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   // ── Save social ──
   const saveSocial = async () => {
     setSaving(true);
@@ -168,10 +230,152 @@ const OwnerSettings = () => {
     }
   };
 
+  // ── Save landing config ──
+  const saveLandingConfig = async () => {
+    setSaving(true);
+    try {
+      await updateGym(userDoc.gym_id, { landingConfig });
+      setGym(prev => ({ ...prev, landingConfig }));
+      showToast('Landing page settings updated!', 'success');
+      setActiveSheet(null);
+    } catch (e) {
+      showToast('Failed to save: ' + e.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Save messaging config ──
+  const saveMessagingConfig = async () => {
+    setSaving(true);
+    try {
+      await updateGym(userDoc.gym_id, { messaging_config: messagingConfig });
+      setGym(prev => ({ ...prev, messaging_config: messagingConfig }));
+      showToast('Messaging settings updated!', 'success');
+      setActiveSheet(null);
+    } catch (e) {
+      showToast('Failed to save: ' + e.message, 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // ── Photos / Gallery ──
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingImage(true);
+    try {
+      const ts = Date.now();
+      const storageRef = ref(storage, `gyms/${userDoc.gym_id}/photos/${ts}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      
+      const newPhotos = [...photos, { id: ts.toString(), url }];
+      await updateGym(userDoc.gym_id, { photos: newPhotos });
+      setPhotos(newPhotos);
+      showToast('Photo uploaded successfully', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to upload photo', 'error');
+    } finally {
+      setUploadingImage(false);
+      e.target.value = '';
+    }
+  };
+
+  const handlePhotoDelete = async (photoId, url) => {
+    if (!window.confirm('Delete this photo?')) return;
+    try {
+      if (url.includes('firebase')) {
+        const fileRef = ref(storage, url);
+        try { await deleteObject(fileRef); } catch (e) { console.log('File missing', e); }
+      }
+      const newPhotos = photos.filter(p => p.id !== photoId);
+      await updateGym(userDoc.gym_id, { photos: newPhotos });
+      setPhotos(newPhotos);
+      showToast('Photo deleted', 'success');
+    } catch (err) {
+      showToast('Failed to delete', 'error');
+    }
+  };
+
   // ── Logout ──
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  const handleCopyLink = () => {
+    const link = `${window.location.origin}/gym/${userDoc.gym_id}/plans`;
+    navigator.clipboard.writeText(link)
+      .then(() => showToast('Plans link copied!', 'success'))
+      .catch(() => showToast('Failed to copy link', 'error'));
+  };
+
+  const handleCopyGymLink = () => {
+    const link = `${window.location.origin}/gym/${userDoc.gym_id}`;
+    navigator.clipboard.writeText(link)
+      .then(() => showToast('Gym page link copied!', 'success'))
+      .catch(() => showToast('Failed to copy link', 'error'));
+  };
+
+  // ── Equipment ──
+  const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Legs', 'Core', 'Cardio', 'Full Body', 'Glutes'];
+
+  const emptyEquipment = () => ({
+    id: `eq_${Date.now()}`,
+    name: '',
+    photo: '',
+    muscles: [],
+  });
+
+  const handleSaveEquipment = async () => {
+    if (!editingEquipment?.name) { showToast('Equipment name required', 'error'); return; }
+    const exists = equipment.find(e => e.id === editingEquipment.id);
+    const updated = exists
+      ? equipment.map(e => e.id === editingEquipment.id ? editingEquipment : e)
+      : [...equipment, editingEquipment];
+    setSaving(true);
+    try {
+      await updateGym(userDoc.gym_id, { equipment: updated });
+      setEquipment(updated);
+      showToast('Equipment saved!', 'success');
+      setEditingEquipment(null);
+      setActiveSheet(null);
+    } catch (e) {
+      showToast('Failed to save: ' + e.message, 'error');
+    } finally { setSaving(false); }
+  };
+
+  const handleDeleteEquipment = async (eqId) => {
+    const updated = equipment.filter(e => e.id !== eqId);
+    try {
+      await updateGym(userDoc.gym_id, { equipment: updated });
+      setEquipment(updated);
+      showToast('Equipment removed', 'success');
+    } catch (e) {
+      showToast('Failed to delete', 'error');
+    }
+  };
+
+  const handleEquipPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setUploadingEquipImg(true);
+    try {
+      const ts = Date.now();
+      const storageRef = ref(storage, `gyms/${userDoc.gym_id}/equipment/${ts}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      setEditingEquipment(prev => ({ ...prev, photo: url }));
+      showToast('Photo uploaded', 'success');
+    } catch (err) {
+      showToast('Upload failed', 'error');
+    } finally {
+      setUploadingEquipImg(false);
+      e.target.value = '';
+    }
   };
 
   if (loading) {
@@ -202,7 +406,7 @@ const OwnerSettings = () => {
           <div className="settings-section-title">Gym Info</div>
           <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
             <div className="settings-row" onClick={() => setActiveSheet('info')}>
-              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>🏋️</div>
+              <div className="settings-row-icon" style={{ background: 'var(--primary-light)' }}>🏋️</div>
               <div className="settings-row-content">
                 <div className="settings-row-label">Gym details</div>
                 <div className="settings-row-desc">Name, phone, address, email</div>
@@ -228,46 +432,127 @@ const OwnerSettings = () => {
           </div>
         </div>
 
-        {/* Membership Plans */}
+        {/* Gallery / Photos */}
         <div className="settings-section">
-          <div className="settings-section-title">Membership Plans</div>
-          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-            {plans.length === 0 ? (
-              <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 13 }}>
-                No plans configured yet
+          <div className="settings-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>Gym Gallery</span>
+            <label className="btn-ghost" style={{ fontSize: 12, padding: '4px 10px', height: 'auto', marginBottom: 0, cursor: 'pointer' }}>
+              {uploadingImage ? 'Uploading...' : '+ Add Photo'}
+              <input type="file" hidden accept="image/*" onChange={handlePhotoUpload} disabled={uploadingImage} />
+            </label>
+          </div>
+          <div className="glass-card" style={{ padding: 12 }}>
+            {photos.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '16px 0', fontSize: 13, color: 'var(--text-muted)' }}>
+                No photos added yet
               </div>
             ) : (
-              plans.map(plan => (
-                <div key={plan.id} className="plan-card-settings">
-                  <div style={{
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: plan.color || '#534AB7', flexShrink: 0
-                  }} />
-                  <div className="plan-card-settings-info">
-                    <div className="plan-card-settings-name">{plan.name}</div>
-                    <div className="plan-card-settings-meta">
-                      ₹{plan.price} · {plan.duration_days} days
-                    </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                {photos.map(p => (
+                  <div key={p.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden' }}>
+                    <img src={p.url} alt="Gym" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <button 
+                      onClick={() => handlePhotoDelete(p.id, p.url)}
+                      style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12 }}
+                    >✕</button>
                   </div>
-                  <button
-                    className={`plan-toggle ${plan.is_active ? 'on' : 'off'}`}
-                    onClick={() => handleTogglePlan(plan.id)}
-                    title={plan.is_active ? 'Active' : 'Inactive'}
-                  />
-                  <div className="plan-card-settings-actions">
-                    <button className="plan-edit-btn edit" onClick={() => { setEditingPlan({ ...plan }); setActiveSheet('plan'); }}>✏️</button>
-                    <button className="plan-edit-btn delete" onClick={() => handleDeletePlan(plan.id)}>🗑️</button>
-                  </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
-            <div
-              className="settings-row"
-              style={{ borderTop: plans.length > 0 ? '1px solid rgba(0,0,0,0.05)' : undefined }}
-              onClick={() => { setEditingPlan(emptyPlan()); setActiveSheet('plan'); }}
-            >
-              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)', fontSize: 20 }}>＋</div>
-              <div className="settings-row-label" style={{ color: 'var(--primary)', fontWeight: 600 }}>Add new plan</div>
+          </div>
+        </div>
+
+        {/* Membership & Taxes */}
+        <div className="settings-section">
+          <div className="settings-section-title">Membership & Taxes</div>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="settings-row" onClick={() => navigate('/owner/plans')}>
+              <div className="settings-row-icon" style={{ background: 'var(--primary-light)' }}>🎟️</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Membership Plans</div>
+                <div className="settings-row-desc">Manage plans, pricing & limits</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
+            <div className="settings-row" onClick={() => setActiveSheet('tax')}>
+              <div className="settings-row-icon" style={{ background: 'rgba(29,158,117,0.08)' }}>🧾</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Tax settings</div>
+                <div className="settings-row-desc">{taxConfig.enabled ? `Enabled (${taxConfig.rate}%)` : 'Disabled'}</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Landing Page */}
+        <div className="settings-section">
+          <div className="settings-section-title">Landing Page</div>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="settings-row" onClick={() => setActiveSheet('landing')}>
+              <div className="settings-row-icon" style={{ background: 'rgba(239,159,39,0.08)' }}>🌐</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Landing page settings</div>
+                <div className="settings-row-desc">Facilities, publish status</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Gym Equipment */}
+        <div className="settings-section">
+          <div className="settings-section-title">Gym Equipment</div>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="settings-row" onClick={() => navigate('/owner/settings/equipment')}>
+              <div className="settings-row-icon" style={{ background: 'var(--primary-light)' }}>🏋️</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Gym Equipment</div>
+                <div className="settings-row-desc">Manage your machines and gear</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Marketing & Sharing */}
+        <div className="settings-section">
+          <div className="settings-section-title">Marketing & Sharing</div>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="settings-row" onClick={handleCopyGymLink}>
+              <div className="settings-row-icon" style={{ background: 'rgba(29,158,117,0.08)' }}>🌐</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Gym Details Share Link</div>
+                <div className="settings-row-desc">Share your gym landing page</div>
+              </div>
+              <button className="copy-chip" onClick={(e) => { e.stopPropagation(); handleCopyGymLink(); }}>
+                Copy
+              </button>
+            </div>
+            <div className="settings-row" onClick={handleCopyLink}>
+              <div className="settings-row-icon" style={{ background: 'var(--primary-light)' }}>📢</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Share Subscription Plans</div>
+                <div className="settings-row-desc">Copy plans link for social media</div>
+              </div>
+              <button className="copy-chip" onClick={(e) => { e.stopPropagation(); handleCopyLink(); }}>
+                Copy
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* WhatsApp Messaging */}
+        <div className="settings-section">
+          <div className="settings-section-title">Communications</div>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="settings-row" onClick={() => setActiveSheet('messaging')}>
+              <div className="settings-row-icon" style={{ background: 'rgba(37,211,102,0.08)' }}>💬</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">WhatsApp messaging</div>
+                <div className="settings-row-desc">Manage automated alerts & notifications</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
             </div>
           </div>
         </div>
@@ -291,34 +576,12 @@ const OwnerSettings = () => {
         <div className="settings-section">
           <div className="settings-section-title">Quick Links</div>
           <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div className="settings-row" onClick={() => navigate('/owner/payments')}>
-              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>💳</div>
-              <div className="settings-row-label">Payment history</div>
-              <span className="settings-row-arrow">›</span>
-            </div>
-            <div className="settings-row" onClick={() => navigate('/owner/analytics')}>
-              <div className="settings-row-icon" style={{ background: 'rgba(29,158,117,0.08)' }}>📊</div>
-              <div className="settings-row-label">Analytics</div>
-              <span className="settings-row-arrow">›</span>
-            </div>
-            <div className="settings-row" onClick={() => navigate('/owner/attendance')}>
-              <div className="settings-row-icon" style={{ background: 'rgba(239,159,39,0.08)' }}>📋</div>
-              <div className="settings-row-label">Attendance logs</div>
-              <span className="settings-row-arrow">›</span>
-            </div>
-            <div className="settings-row" onClick={() => navigate('/owner/whatsapp')}>
-              <div className="settings-row-icon" style={{ background: 'rgba(37,211,102,0.08)' }}>💬</div>
-              <div className="settings-row-label">WhatsApp logs</div>
-              <span className="settings-row-arrow">›</span>
-            </div>
-            <div className="settings-row" onClick={() => navigate('/scan')}>
-              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>📷</div>
-              <div className="settings-row-label">QR Scanner</div>
-              <span className="settings-row-arrow">›</span>
-            </div>
-            <div className="settings-row" onClick={() => navigate('/tablet')}>
-              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>🖥️</div>
-              <div className="settings-row-label">Tablet kiosk mode</div>
+            <div className="settings-row" onClick={() => navigate('/owner/settings/quick-links')}>
+              <div className="settings-row-icon" style={{ background: 'var(--primary-light)' }}>🔗</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Quick Links</div>
+                <div className="settings-row-desc">Billing, analytics, logs & scanner</div>
+              </div>
               <span className="settings-row-arrow">›</span>
             </div>
           </div>
@@ -352,7 +615,7 @@ const OwnerSettings = () => {
             <div className="settings-row" onClick={handleLogout}>
               <div className="settings-row-icon" style={{ background: 'rgba(226,75,74,0.08)' }}>🚪</div>
               <div className="settings-row-label">Log out</div>
-              <span className="settings-row-arrow" style={{ color: '#E24B4A' }}>›</span>
+              <span className="settings-row-arrow" style={{ color: 'var(--error)' }}>›</span>
             </div>
           </div>
         </div>
@@ -432,78 +695,7 @@ const OwnerSettings = () => {
         </EditSheet>
       )}
 
-      {/* Plan Edit Sheet */}
-      {activeSheet === 'plan' && editingPlan && (
-        <EditSheet
-          title={plans.find(p => p.id === editingPlan.id) ? 'Edit Plan' : 'Add Plan'}
-          onClose={() => { setActiveSheet(null); setEditingPlan(null); }}
-        >
-          <div className="input-group">
-            <label className="input-label">Plan name *</label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="E.g. Monthly Premium"
-              value={editingPlan.name}
-              onChange={e => setEditingPlan(p => ({ ...p, name: e.target.value }))}
-            />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div className="input-group">
-              <label className="input-label">Price (₹) *</label>
-              <input
-                type="number"
-                className="input-field"
-                placeholder="999"
-                value={editingPlan.price}
-                onChange={e => setEditingPlan(p => ({ ...p, price: Number(e.target.value) }))}
-              />
-            </div>
-            <div className="input-group">
-              <label className="input-label">Duration (days)</label>
-              <input
-                type="number"
-                className="input-field"
-                placeholder="30"
-                value={editingPlan.duration_days}
-                onChange={e => setEditingPlan(p => ({ ...p, duration_days: Number(e.target.value) }))}
-              />
-            </div>
-          </div>
-          <div className="input-group">
-            <label className="input-label">Description</label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="What's included..."
-              value={editingPlan.description || ''}
-              onChange={e => setEditingPlan(p => ({ ...p, description: e.target.value }))}
-            />
-          </div>
-          <div className="input-group">
-            <label className="input-label">Plan colour</label>
-            <div className="color-picker-row">
-              {PLAN_COLORS.map(c => (
-                <button
-                  key={c}
-                  className={`color-swatch ${editingPlan.color === c ? 'selected' : ''}`}
-                  style={{ background: c }}
-                  onClick={() => setEditingPlan(p => ({ ...p, color: c }))}
-                  type="button"
-                />
-              ))}
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 8 }}>
-            <button className="btn-ghost" style={{ flex: 1 }} onClick={() => { setActiveSheet(null); setEditingPlan(null); }}>
-              Cancel
-            </button>
-            <button className="btn-primary" style={{ flex: 2 }} onClick={handleSavePlan} disabled={saving}>
-              {saving ? <div className="spinner" /> : 'Save Plan'}
-            </button>
-          </div>
-        </EditSheet>
-      )}
+
 
       {/* Social Sheet */}
       {activeSheet === 'social' && (
@@ -529,6 +721,174 @@ const OwnerSettings = () => {
           </button>
         </EditSheet>
       )}
+
+      {/* Tax Edit Sheet */}
+      {activeSheet === 'tax' && (
+        <EditSheet title="Tax Settings" onClose={() => setActiveSheet(null)}>
+          <div className="input-group" style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div>
+              <div className="input-label" style={{ marginBottom: 4 }}>Enable Tax on Payments</div>
+              <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Apply tax to all membership plans</div>
+            </div>
+            <button
+              className={`plan-toggle ${taxConfig.enabled ? 'on' : 'off'}`}
+              onClick={() => setTaxConfig(prev => ({ ...prev, enabled: !prev.enabled }))}
+              title={taxConfig.enabled ? 'Enabled' : 'Disabled'}
+            />
+          </div>
+          
+          {taxConfig.enabled && (
+            <div className="input-group">
+              <label className="input-label">Tax Percentage (%) *</label>
+              <input
+                type="number"
+                className="input-field"
+                placeholder="e.g. 18"
+                value={taxConfig.rate}
+                onChange={e => setTaxConfig(p => ({ ...p, rate: e.target.value }))}
+                min="0"
+                max="100"
+                step="0.1"
+              />
+            </div>
+          )}
+          
+          <button className="btn-primary" onClick={saveTaxConfig} disabled={saving} style={{ marginTop: 8 }}>
+            {saving ? <div className="spinner" /> : 'Save Tax Settings'}
+          </button>
+        </EditSheet>
+      )}
+
+      {/* Landing Page Sheet */}
+      {activeSheet === 'landing' && (
+        <EditSheet title="Landing Page" onClose={() => setActiveSheet(null)}>
+          <div className="input-group">
+            <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <span>Publish Public Landing Page</span>
+              <button
+                className={`plan-toggle ${landingConfig.isPublished ? 'on' : 'off'}`}
+                onClick={() => setLandingConfig(prev => ({ ...prev, isPublished: !prev.isPublished }))}
+                style={{ margin: 0 }}
+                type="button"
+              />
+            </label>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '-8px', marginBottom: '24px' }}>
+              Allows potential members to view your gym online and send inquiries.
+            </div>
+          </div>
+
+          <div className="input-group">
+            <label className="input-label">Available Facilities</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {['Cardio', 'Strength', 'CrossFit', 'Yoga Studio', 'Showers', 'Lockers', 'WiFi', 'Parking', 'Personal Training', 'Cafe'].map(facility => (
+                <label key={facility} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px' }}>
+                  <input
+                    type="checkbox"
+                    checked={landingConfig.facilities.includes(facility)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setLandingConfig(prev => ({ ...prev, facilities: [...prev.facilities, facility] }));
+                      } else {
+                        setLandingConfig(prev => ({ ...prev, facilities: prev.facilities.filter(f => f !== facility) }));
+                      }
+                    }}
+                    style={{ accentColor: 'var(--primary)', width: '18px', height: '18px', margin: 0 }}
+                  />
+                  {facility}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <button className="btn-primary" onClick={saveLandingConfig} disabled={saving} style={{ marginTop: 24 }}>
+            {saving ? <div className="spinner" /> : 'Save Settings'}
+          </button>
+        </EditSheet>
+      )}
+
+      {/* Messaging Config Sheet */}
+      {activeSheet === 'messaging' && (
+        <EditSheet title="WhatsApp Settings" onClose={() => setActiveSheet(null)}>
+          
+          <div style={{ paddingBottom: 16 }}>
+            <h3 style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>Core Notifications</h3>
+            
+            <div className="input-group">
+              <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span>Welcome Messages</span>
+                <button
+                  className={`plan-toggle ${messagingConfig.welcome_messages ? 'on' : 'off'}`}
+                  onClick={() => setMessagingConfig(prev => ({ ...prev, welcome_messages: !prev.welcome_messages }))}
+                  style={{ margin: 0 }}
+                  type="button"
+                />
+              </label>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>Sent automatically when a new member is added.</div>
+            </div>
+
+            <div className="input-group">
+              <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span>Expiry Alerts</span>
+                <button
+                  className={`plan-toggle ${messagingConfig.expiry_alerts ? 'on' : 'off'}`}
+                  onClick={() => setMessagingConfig(prev => ({ ...prev, expiry_alerts: !prev.expiry_alerts }))}
+                  style={{ margin: 0 }}
+                  type="button"
+                />
+              </label>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>Reminders sent 7d, 3d, and 1d before subscription expiry.</div>
+            </div>
+
+            <div className="input-group">
+              <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span>Payment Confirmations</span>
+                <button
+                  className={`plan-toggle ${messagingConfig.payment_confirmations ? 'on' : 'off'}`}
+                  onClick={() => setMessagingConfig(prev => ({ ...prev, payment_confirmations: !prev.payment_confirmations }))}
+                  style={{ margin: 0 }}
+                  type="button"
+                />
+              </label>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>Payment confirmation receipts and due reminders.</div>
+            </div>
+            
+            <div className="input-group">
+              <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span>Equipment Alerts</span>
+                <button
+                  className={`plan-toggle ${messagingConfig.equipment_alerts ? 'on' : 'off'}`}
+                  onClick={() => setMessagingConfig(prev => ({ ...prev, equipment_alerts: !prev.equipment_alerts }))}
+                  style={{ margin: 0 }}
+                  type="button"
+                />
+              </label>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '16px' }}>Notify relevant members when equipment goes under maintenance.</div>
+            </div>
+          </div>
+
+          <div style={{ paddingBottom: 8 }}>
+            <h3 style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 }}>Engagement</h3>
+            
+            <div className="input-group">
+              <label className="input-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                <span>Inactivity Alerts</span>
+                <button
+                  className={`plan-toggle ${messagingConfig.inactivity_alerts ? 'on' : 'off'}`}
+                  onClick={() => setMessagingConfig(prev => ({ ...prev, inactivity_alerts: !prev.inactivity_alerts }))}
+                  style={{ margin: 0 }}
+                  type="button"
+                />
+              </label>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Send a "we miss you" text if a member hasn't visited in 3+ days.</div>
+            </div>
+          </div>
+
+          <button className="btn-primary" onClick={saveMessagingConfig} disabled={saving} style={{ marginTop: 24 }}>
+            {saving ? <div className="spinner" /> : 'Save Settings'}
+          </button>
+        </EditSheet>
+      )}
+
     </div>
   );
 };

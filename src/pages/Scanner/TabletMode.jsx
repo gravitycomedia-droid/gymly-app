@@ -6,7 +6,7 @@ import jsQR from 'jsqr';
 import { db } from '../../firebase/config';
 import { getDoc, doc, updateDoc, addDoc, collection, query, where, getDocs, serverTimestamp, increment, onSnapshot } from 'firebase/firestore';
 import { formatDateKey, createAttendanceLog, getTodayActiveMembers } from '../../firebase/firestore-payments';
-import { getInitials, getAvatarColor } from '../../utils/helpers';
+import { getInitials, getAvatarColor, playHapticSound } from '../../utils/helpers';
 import './Scanner.css';
 
 const TabletMode = () => {
@@ -82,6 +82,7 @@ const TabletMode = () => {
     try {
       const memberSnap = await getDoc(doc(db, 'users', memberId));
       if (!memberSnap.exists()) {
+        playHapticSound('error');
         setResult({ type: 'error', message: 'Member not found' });
         setTimeout(resetScan, 5000);
         return;
@@ -90,6 +91,7 @@ const TabletMode = () => {
       const expectedGym = userDoc?.gym_id || gymId;
 
       if (member.gym_id !== expectedGym) {
+        playHapticSound('error');
         setResult({ type: 'error', message: 'Wrong gym QR code' });
         setTimeout(resetScan, 5000);
         return;
@@ -106,6 +108,7 @@ const TabletMode = () => {
           subscription_expiry: member.subscription_expiry, exit_time: null,
           date: formatDateKey(now), scanned_by: 'qr_self', scan_mode: 'tablet', is_expired: true,
         });
+        playHapticSound('error');
         setResult({ type: 'expired', member });
         setTimeout(resetScan, 5000);
         return;
@@ -117,6 +120,7 @@ const TabletMode = () => {
         where('is_expired', '==', false));
       const todaySnap = await getDocs(todayQ);
       if (!todaySnap.empty) {
+        playHapticSound('error');
         setResult({ type: 'already', member });
         setTimeout(resetScan, 3000);
         return;
@@ -133,10 +137,12 @@ const TabletMode = () => {
         last_seen: serverTimestamp(), attendance_count: increment(1),
       });
 
+      playHapticSound('success');
       setResult({ type: 'success', member });
       setTimeout(resetScan, 3000);
     } catch (err) {
       console.error('Check-in error:', err);
+      playHapticSound('error');
       setResult({ type: 'error', message: 'Check-in failed' });
       setTimeout(resetScan, 5000);
     }
@@ -259,7 +265,7 @@ const TabletMode = () => {
         </div>
 
         {result?.type === 'error' && (
-          <div style={{ textAlign: 'center', color: '#E24B4A', padding: 20, fontSize: 14, fontWeight: 600 }}>
+          <div style={{ textAlign: 'center', color: 'var(--error)', padding: 20, fontSize: 14, fontWeight: 600 }}>
             {result.message}
           </div>
         )}

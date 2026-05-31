@@ -19,7 +19,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, #534AB7, #1D9E75);
+  background: linear-gradient(90deg, var(--primary), #1D9E75);
 }
 
 .attendance-live-label {

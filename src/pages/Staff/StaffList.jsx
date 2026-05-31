@@ -9,7 +9,7 @@ import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import './Staff.css';
 
 const ROLE_COLORS = {
-  manager: { bg: '#EEEDFE', text: '#534AB7' },
+  manager: { bg: '#EEEDFE', text: 'var(--primary)' },
   trainer: { bg: '#E1F5EE', text: '#0F6E56' },
   receptionist: { bg: '#FAEEDA', text: '#633806' },
 };
@@ -125,7 +125,7 @@ const StaffList = () => {
           <div className="empty-state">
             <div className="empty-icon-wrapper">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" stroke="#534AB7" strokeWidth="2" opacity="0.4" />
+                <path d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" stroke='var(--primary)' strokeWidth="2" opacity="0.4" />
               </svg>
             </div>
             <h3 className="empty-title">No staff added yet</h3>

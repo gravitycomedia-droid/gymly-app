@@ -393,8 +393,8 @@ const MemberWorkout = () => {
             </div>
 
             <div style={{ background: '#f0efff', padding: '16px', borderRadius: 16, textAlign: 'left', marginBottom: 24 }}>
-              <h4 style={{ color: '#534AB7', fontSize: 14, marginBottom: 4 }}>💡 Did you know?</h4>
-              <p style={{ fontSize: 12, color: '#534AB7', opacity: 0.8 }}>
+              <h4 style={{ color: 'var(--primary)', fontSize: 14, marginBottom: 4 }}>💡 Did you know?</h4>
+              <p style={{ fontSize: 12, color: 'var(--primary)', opacity: 0.8 }}>
                 Your body will continue burning calories for up to 24 hours after this high-intensity session (EPOC effect). Keep up the great work!
               </p>
             </div>

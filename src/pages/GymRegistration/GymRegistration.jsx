@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { createGym, createUser } from '../../firebase/firestore';
 import { uploadLogo, uploadPhoto } from '../../firebase/storage';
+import { createFreeSubscription } from '../../utils/subscriptionService';
 import Step1BasicInfo from './steps/Step1BasicInfo';
 import Step2Location from './steps/Step2Location';
 import Step3Photos from './steps/Step3Photos';
@@ -179,7 +180,10 @@ const GymRegistration = () => {
         medical_notes: null,
       });
 
-      // 6. Refresh auth context and navigate
+      // 6. Auto-create FREE subscription for the new gym
+      await createFreeSubscription(gymId);
+
+      // 7. Refresh auth context and navigate
       await refreshUserDoc(user.uid);
       navigate('/owner/setup', { replace: true });
     } catch (err) {
