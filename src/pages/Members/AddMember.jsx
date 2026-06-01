@@ -11,6 +11,10 @@ import { createPayment, getNextInvoiceNumber } from '../../firebase/firestore-pa
 import { addDays, formatDate, calculateBMI } from '../../utils/helpers';
 import { getRecommendedPlanName } from '../../data/exerciseLibrary';
 import { generateInvoicePDF, uploadInvoice } from '../../utils/invoiceGenerator';
+import {
+  generateMemberNumber, generateEnrollmentNumber,
+  generateMemberId, initializeNumberingSettings
+} from '../../utils/numberingService';
 import BottomNav from '../../components/BottomNav';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -34,6 +38,8 @@ const AddMember = ({ quickAddOnly = false }) => {
   const [loading, setLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [newMemberId, setNewMemberId] = useState(null);
+  const [newMemberNumber, setNewMemberNumber] = useState(null);
+  const [newEnrollmentNumber, setNewEnrollmentNumber] = useState(null);
   const [duplicate, setDuplicate] = useState(null);
   const [checkingPhone, setCheckingPhone] = useState(false);
 
@@ -146,6 +152,16 @@ const AddMember = ({ quickAddOnly = false }) => {
       const cleaned = form.phone.replace(/\s/g, '').replace(/^0+/, '');
       const fullPhone = `${form.countryCode}${cleaned}`;
 
+      // Generate numbering
+      let memberNumber = null;
+      let memberId = generateMemberId();
+      try {
+        await initializeNumberingSettings(userDoc.gym_id, gym?.name || 'Gym');
+        memberNumber = await generateMemberNumber(userDoc.gym_id, new Date());
+      } catch (numErr) {
+        console.error('Numbering error (non-critical):', numErr);
+      }
+
       const memberData = {
         name: form.name.trim(),
         phone: fullPhone,
@@ -158,6 +174,10 @@ const AddMember = ({ quickAddOnly = false }) => {
         subscription_expiry: Timestamp.fromDate(calculatedExpiry),
         payment_status: paymentStatusToSave,
         created_by: user.uid,
+        
+        // Numbering System
+        memberId,
+        memberNumber,
         
         // Smart Actions
         send_welcome_whatsapp: sendWhatsApp,
@@ -185,7 +205,7 @@ const AddMember = ({ quickAddOnly = false }) => {
         source_lead_id: leadData?.leadId || null,
       };
 
-      const memberId = await createMember(memberData);
+      const docMemberId = await createMember(memberData);
 
       // Auto-assign workout plan
       try {
@@ -194,19 +214,31 @@ const AddMember = ({ quickAddOnly = false }) => {
         const planName = getRecommendedPlanName(expKey, goalKey);
         const planToAssign = await getPlanByName(planName);
         if (planToAssign) {
-          await assignWorkoutPlanToMember(memberId, planToAssign.id);
+          await assignWorkoutPlanToMember(docMemberId, planToAssign.id);
         }
       } catch (assignErr) {
         console.error('Failed to auto-assign workout plan:', assignErr);
       }
 
       // Create payment record if plan selected
+      let enrollmentNumber = null;
       if (selectedPlan && finalAmount > 0) {
         try {
+          // Generate enrollment number
+          try {
+            const planDuration = selectedPlan.duration_days ? Math.round(selectedPlan.duration_days / 30) : 1;
+            enrollmentNumber = await generateEnrollmentNumber(userDoc.gym_id, {
+              joinDate: new Date(),
+              planDurationMonths: planDuration,
+            });
+          } catch (enErr) {
+            console.error('Enrollment number error (non-critical):', enErr);
+          }
+
           const invoiceNumber = await getNextInvoiceNumber(userDoc.gym_id);
           const paymentData = {
             gym_id: userDoc.gym_id,
-            member_id: memberId,
+            member_id: docMemberId,
             member_name: form.name.trim(),
             member_phone: fullPhone,
             plan_id: form.planId,
@@ -229,11 +261,18 @@ const AddMember = ({ quickAddOnly = false }) => {
             whatsapp_sent: false,
             recorded_by: user.uid,
             notes: paymentNotes || null,
+            enrollmentNumber: enrollmentNumber,
           };
           const paymentId = await createPayment(paymentData);
 
           try {
-            const blob = await generateInvoicePDF({ ...paymentData, id: paymentId }, gym, { id: memberId, name: form.name.trim(), phone: fullPhone });
+            await updateDoc(doc(db, 'users', docMemberId), { latestEnrollmentNumber: enrollmentNumber });
+          } catch (enUpdateErr) {
+            console.error('Member enrollment update error:', enUpdateErr);
+          }
+
+          try {
+            const blob = await generateInvoicePDF({ ...paymentData, id: paymentId }, gym, { id: docMemberId, name: form.name.trim(), phone: fullPhone });
             const invoiceUrl = await uploadInvoice(userDoc.gym_id, invoiceNumber, blob);
             await updateDoc(doc(db, 'payments', paymentId), { invoice_url: invoiceUrl });
           } catch (pdfErr) {
@@ -248,7 +287,7 @@ const AddMember = ({ quickAddOnly = false }) => {
         try {
           await updateDoc(doc(db, 'leads', leadData.leadId), {
             status: 'converted',
-            member_id: memberId,
+            member_id: docMemberId,
             converted_at: new Date(),
           });
         } catch (leadErr) {
@@ -256,7 +295,9 @@ const AddMember = ({ quickAddOnly = false }) => {
         }
       }
 
-      setNewMemberId(memberId);
+      setNewMemberId(docMemberId);
+      setNewMemberNumber(memberNumber);
+      setNewEnrollmentNumber(enrollmentNumber);
       setShowSuccess(true);
       showToast('Member added successfully', 'success');
     } catch (err) {
@@ -278,6 +319,8 @@ const AddMember = ({ quickAddOnly = false }) => {
     setDuplicate(null);
     setShowSuccess(false);
     setNewMemberId(null);
+    setNewMemberNumber(null);
+    setNewEnrollmentNumber(null);
     setPaymentMethod('cash');
     setPaidNow('');
     setDiscount('');
@@ -293,9 +336,22 @@ const AddMember = ({ quickAddOnly = false }) => {
             <span className="material-symbols-outlined text-4xl">check_circle</span>
           </div>
           <h2 className="font-headline-md text-headline-md text-on-surface mb-2">Member Added! 🎉</h2>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-4">
+          <p className="font-body-md text-body-md text-on-surface-variant mb-1">
             {form.name} has been successfully added to your gym.
           </p>
+          
+          {newMemberNumber && (
+            <div className="mt-3 mb-1 px-4 py-2.5 rounded-xl bg-primary/8 border border-primary/15">
+              <div className="text-[11px] text-on-surface-variant font-medium uppercase tracking-wider mb-1">Member Number</div>
+              <div className="text-lg font-bold text-primary font-mono tracking-wide">#{newMemberNumber}</div>
+            </div>
+          )}
+          {newEnrollmentNumber && (
+            <div className="mt-2 px-4 py-2 rounded-xl bg-[#1D9E75]/10 border border-[#1D9E75]/20">
+              <div className="text-[11px] text-on-surface-variant font-medium uppercase tracking-wider mb-1">Enrollment</div>
+              <div className="text-sm font-semibold text-[#1D9E75] font-mono tracking-wide">{newEnrollmentNumber}</div>
+            </div>
+          )}
           
           <div className="flex flex-col gap-3 mt-8">
             <button onClick={resetForm} className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md hover:opacity-90 transition-opacity">

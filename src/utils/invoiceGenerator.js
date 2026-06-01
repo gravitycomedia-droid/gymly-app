@@ -48,7 +48,13 @@ export async function generateInvoicePDF(payment, gym, member) {
   doc.setFont('helvetica', 'normal');
   doc.text(member?.name || 'Member', 10, 50);
   doc.text(member?.phone || '', 10, 55);
-  doc.text(`Member ID: ${(member?.id || '').slice(0, 8).toUpperCase()}`, 10, 60);
+  const memberIdText = member?.memberNumber ? `#${member.memberNumber}` : `ID: ${(member?.id || '').slice(0, 8).toUpperCase()}`;
+  doc.text(memberIdText, 10, 60);
+  if (payment.enrollmentNumber) {
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Enrollment: ${payment.enrollmentNumber}`, 10, 65);
+    doc.setFont('helvetica', 'normal');
+  }
 
   // Gym info (right side)
   doc.setFont('helvetica', 'bold');

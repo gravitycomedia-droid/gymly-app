@@ -482,6 +482,14 @@ const OwnerSettings = () => {
               </div>
               <span className="settings-row-arrow">›</span>
             </div>
+            <div className="settings-row" onClick={() => navigate('/owner/settings/numbering')}>
+              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>🔢</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Numbering System</div>
+                <div className="settings-row-desc">Member numbers & enrollment codes</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
           </div>
         </div>
 

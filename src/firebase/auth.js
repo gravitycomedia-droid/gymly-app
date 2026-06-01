@@ -4,18 +4,26 @@ import { auth } from './config';
 export const setupRecaptcha = (containerId = 'recaptcha-container') => {
   if (!auth) throw new Error('Firebase Auth not initialized');
 
-  if (!window.recaptchaVerifier) {
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
-      size: 'invisible',
-      callback: () => {},
-      'expired-callback': () => {
-        if (window.recaptchaVerifier) {
-          window.recaptchaVerifier.clear();
-          window.recaptchaVerifier = null;
-        }
-      },
-    });
+  // ALWAYS clear and recreate — stale verifiers cause silent OTP failures
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+    } catch (e) {
+      console.warn('RecaptchaVerifier clear failed:', e);
+    }
+    window.recaptchaVerifier = null;
   }
+
+  window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+    size: 'invisible',
+    callback: () => {},
+    'expired-callback': () => {
+      if (window.recaptchaVerifier) {
+        try { window.recaptchaVerifier.clear(); } catch (e) { /* ignore */ }
+        window.recaptchaVerifier = null;
+      }
+    },
+  });
 
   return window.recaptchaVerifier;
 };

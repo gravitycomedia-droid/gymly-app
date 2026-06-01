@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
 import { getExpiryStatus } from '../../utils/helpers';
+import { backfillMemberNumbers } from '../../utils/numberingService';
 import MemberCard from '../../components/MemberCard';
 import RenewModal from '../../components/RenewModal';
 import BottomNav from '../../components/BottomNav';
@@ -72,6 +73,25 @@ const MemberList = ({ role = 'owner' }) => {
     return () => unsubscribe();
   }, [userDoc?.gym_id]);
 
+  // One-time backfill: assign memberNumbers to existing members who don't have one
+  const backfillRan = useRef(false);
+  useEffect(() => {
+    if (backfillRan.current || loading || !members.length || !gym) return;
+    const unnumbered = members
+      .filter(m => !m.memberNumber)
+      .sort((a, b) => {
+        const aTime = a.created_at?.toDate ? a.created_at.toDate().getTime() : 0;
+        const bTime = b.created_at?.toDate ? b.created_at.toDate().getTime() : 0;
+        return aTime - bTime;
+      });
+    if (unnumbered.length > 0) {
+      backfillRan.current = true;
+      backfillMemberNumbers(userDoc.gym_id, gym.name, unnumbered).catch(err => {
+        console.error('Backfill error (non-critical):', err);
+      });
+    }
+  }, [loading, members.length, gym]);
+
   const now = new Date();
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -123,13 +143,17 @@ const MemberList = ({ role = 'owner' }) => {
       result = result.filter((m) => m.plan_id === activeFilter);
     }
 
-    // Search (client-side)
+    // Search (client-side) — also searches by memberNumber and enrollmentNumber
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter(
         (m) =>
           m.name?.toLowerCase().includes(q) ||
-          m.phone?.includes(q)
+          m.phone?.includes(q) ||
+          m.memberNumber?.toLowerCase().includes(q) ||
+          m.latestEnrollmentNumber?.toLowerCase().includes(q) ||
+          m.enrollmentNumber?.toLowerCase().includes(q) ||
+          m.payment_history?.some(p => p.enrollment_number?.toLowerCase().includes(q))
       );
     }
 

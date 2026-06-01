@@ -447,6 +447,24 @@ const Analytics = () => {
           </div>
         </div>
 
+        {/* Unique Members Count */}
+        <div className="analytics-card glass-card">
+          <div className="analytics-card-header">
+            <span className="analytics-card-title">📊 Total Unique Members</span>
+            <span className="analytics-card-total">{totalMembers}</span>
+          </div>
+          <div className="analytics-stats-below">
+            <div className="analytics-stat-item">
+              <div className="analytics-stat-item-value">{members.filter(m => m.memberNumber).length}</div>
+              <div className="analytics-stat-item-label">With member #</div>
+            </div>
+            <div className="analytics-stat-item">
+              <div className="analytics-stat-item-value">{members.filter(m => !m.memberNumber).length}</div>
+              <div className="analytics-stat-item-label">Pending number</div>
+            </div>
+          </div>
+        </div>
+
         {/* CHART 6: Expiring Soon */}
         <div className="analytics-card glass-card">
           <div className="analytics-card-header">

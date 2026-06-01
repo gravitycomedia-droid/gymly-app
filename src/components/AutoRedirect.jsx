@@ -18,6 +18,10 @@ const AutoRedirect = () => {
   if (!user) return <Navigate to="/select-role" replace />;
 
   if (userDoc?.role) {
+    // Members need agreement check before accessing home
+    if (userDoc.role === 'member' && userDoc.agreement_status !== 'agreed') {
+      return <Navigate to="/member/agreement" replace />;
+    }
     return <Navigate to={getHomeRoute(userDoc.role)} replace />;
   }
 

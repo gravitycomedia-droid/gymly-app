@@ -47,6 +47,9 @@ const MemberCard = ({ member, gym, onView, onRenew, showActions = true, showAtte
           {/* Info */}
           <div>
             <h3 className="font-headline-md text-lg text-[#1b1b1d] font-semibold">{member.name}</h3>
+            {member.memberNumber && (
+              <p className="font-body-md text-[12px] text-[#9BA3B5] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
+            )}
             <p className="font-body-md text-[15px] text-[#717786] mt-0.5">{planName}</p>
           </div>
         </div>

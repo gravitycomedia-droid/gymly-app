@@ -56,6 +56,7 @@ const LeadsDashboard       = lazy(() => import('./pages/OwnerDashboard/LeadsDash
 const MemberAgreement      = lazy(() => import('./pages/Agreement/MemberAgreement'));
 const AdminDashboard       = lazy(() => import('./pages/Admin/AdminDashboard'));
 const SubscriptionGate     = lazy(() => import('./components/SubscriptionGate'));
+const NumberingSettings    = lazy(() => import('./pages/Settings/NumberingSettings'));
 
 // ── Loading Spinner (shown while lazy chunks load) ──
 const PageSpinner = () => (
@@ -303,6 +304,10 @@ function AnimatedRoutes() {
           <Route
             path="/owner/settings/equipment"
             element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="settings"><PageTransition><Equipment /></PageTransition></OwnerLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/owner/settings/numbering"
+            element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="settings"><PageTransition><NumberingSettings /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
 
           {/* Membership Plans */}

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { db, auth } from '../firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { getUser } from '../firebase/firestore';
 import { ROLE_PERMISSIONS } from '../utils/permissions';
 
 const AuthContext = createContext();

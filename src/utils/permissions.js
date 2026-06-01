@@ -4,10 +4,12 @@ export const ROLE_PERMISSIONS = {
     'add_member', 'edit_member', 'delete_member', 'view_members',
     'renew_membership', 'add_staff', 'view_staff', 'edit_staff',
     'delete_staff', 'view_analytics', 'view_payments', 'mark_attendance',
+    'edit_numbering', 'view_numbering',
   ],
   manager: [
     'add_member', 'edit_member', 'delete_member', 'view_members',
     'renew_membership', 'view_analytics', 'view_payments', 'mark_attendance',
+    'view_numbering',
   ],
   trainer: [
     'view_assigned_members', 'assign_workout',

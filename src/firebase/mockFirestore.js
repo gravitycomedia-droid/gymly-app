@@ -53,7 +53,9 @@ export const mockMembers = [
     agreement_status: 'agreed',
     agreement_url: 'http://example.com/agreement.pdf',
     attendance_count: 24,
-    last_seen: mockTimestamp(d(-1))
+    last_seen: mockTimestamp(d(-1)),
+    memberNumber: 'ITF-JN26-01',
+    memberId: 'MEM_abc123',
   },
   {
     id: 'm2',
@@ -67,7 +69,9 @@ export const mockMembers = [
     created_at: mockTimestamp(d(-100)),
     agreement_status: 'agreed',
     attendance_count: 78,
-    last_seen: mockTimestamp(d(0))
+    last_seen: mockTimestamp(d(0)),
+    memberNumber: 'ITF-FE26-02',
+    memberId: 'MEM_def456',
   },
   {
     id: 'm3',
@@ -81,7 +85,9 @@ export const mockMembers = [
     created_at: mockTimestamp(d(-33)),
     agreement_status: 'agreed',
     attendance_count: 15,
-    last_seen: mockTimestamp(d(-4))
+    last_seen: mockTimestamp(d(-4)),
+    memberNumber: 'ITF-AP26-03',
+    memberId: 'MEM_ghi789',
   },
   {
     id: 'm4',
@@ -95,7 +101,9 @@ export const mockMembers = [
     created_at: mockTimestamp(d(-25)),
     agreement_status: 'pending',
     attendance_count: 12,
-    last_seen: mockTimestamp(d(-2))
+    last_seen: mockTimestamp(d(-2)),
+    memberNumber: 'ITF-MY26-04',
+    memberId: 'MEM_jkl012',
   },
   {
     id: 'm5',
@@ -109,7 +117,9 @@ export const mockMembers = [
     created_at: mockTimestamp(d(-18)),
     agreement_status: 'agreed',
     attendance_count: 8,
-    last_seen: mockTimestamp(d(0))
+    last_seen: mockTimestamp(d(0)),
+    memberNumber: 'ITF-MY26-05',
+    memberId: 'MEM_mno345',
   }
 ];
 
@@ -307,3 +317,16 @@ const dateKeyToday = () => {
   const dObj = new Date();
   return `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`;
 };
+
+// Mock numbering functions
+export const getNumberingSettings = async () => ({
+  id: 'mock_gym_123',
+  gymPrefix: 'ITF',
+  memberNumberTemplate: '{GYM_PREFIX}-{MONTH}{YY}-{SERIAL}',
+  serialDigits: 2,
+  enrollmentTemplate: '{JOIN_DATE}-{PLAN_DURATION}-{SERIAL}',
+  enrollmentSerialReset: 'monthly',
+});
+export const saveNumberingSettings = async () => {};
+export const generateMemberNumber = async () => 'ITF-JN26-06';
+export const generateEnrollmentNumber = async () => 'JN01-06-01';

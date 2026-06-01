@@ -11,8 +11,9 @@ import {
 import RenewModal from '../../components/RenewModal';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import BottomNav from '../../components/BottomNav';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import html2canvas from 'html2canvas';
+import '../MemberCard/MemberCard.css';
 
 const MemberProfile = ({ readOnly = false }) => {
   const { id } = useParams();
@@ -126,10 +127,10 @@ const MemberProfile = ({ readOnly = false }) => {
   const isExpired = daysRemaining < 0;
 
   return (
-    <div className="mesh-bg min-h-screen pb-24 md:pb-0 font-body-md antialiased text-on-surface pt-16 md:pt-24">
+    <div className="mesh-bg min-h-screen pb-24 md:pb-8 font-body-md antialiased text-on-surface pt-16 md:pt-0">
       
       {/* Mobile Top Header */}
-      <header className="fixed top-0 left-0 w-full z-40 bg-surface/30 backdrop-blur-3xl px-4 h-16 flex justify-between items-center border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
+      <header className="fixed md:sticky top-0 left-0 w-full z-40 bg-surface/30 backdrop-blur-3xl px-4 h-16 flex justify-between items-center border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.05)]">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-on-surface-variant hover:text-primary transition-colors">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
@@ -138,7 +139,7 @@ const MemberProfile = ({ readOnly = false }) => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 md:px-gutter flex flex-col gap-6">
+      <main className="max-w-7xl mx-auto px-4 md:px-gutter flex flex-col gap-6 md:mt-8">
         
         {/* Hero Section */}
         <section className="glass-panel rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-8 relative overflow-hidden">
@@ -166,7 +167,20 @@ const MemberProfile = ({ readOnly = false }) => {
                 <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-1">{member.name}</h2>
                 <p className="font-body-md text-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-1">
                   <span className="material-symbols-outlined text-sm">fingerprint</span>
-                  ID: MEM-{member.id.substring(0, 6).toUpperCase()}
+                  {member.memberNumber ? (
+                    <span className="font-mono tracking-wide">
+                      #{member.memberNumber}
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(member.memberNumber); showToast('Member number copied!', 'success'); }}
+                        className="ml-1.5 text-primary/50 hover:text-primary inline-flex"
+                        title="Copy member number"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>content_copy</span>
+                      </button>
+                    </span>
+                  ) : (
+                    <span>ID: MEM-{member.id.substring(0, 6).toUpperCase()}</span>
+                  )}
                 </p>
               </div>
               <div className="text-center md:text-right">
@@ -335,6 +349,11 @@ const MemberProfile = ({ readOnly = false }) => {
                       <div className="font-body-md text-sm text-on-surface-variant mt-1">
                         {formatDate(d)} • {p.method === 'cash' ? 'Cash' : p.method === 'upi' ? 'UPI' : 'Online'} • #{p.invoice_number}
                       </div>
+                      {p.enrollmentNumber && (
+                        <div className="mt-2 text-sm font-semibold text-primary">
+                          Enrollment Number : <span className="font-mono bg-primary/10 px-2 py-0.5 rounded-md">{p.enrollmentNumber}</span>
+                        </div>
+                      )}
                       {isPendingOrPartial && (
                         <div className="text-[#EF9F27] text-xs font-bold mt-1">₹{(p.pending_amount || 0).toLocaleString('en-IN')} pending</div>
                       )}
@@ -369,7 +388,7 @@ const MemberProfile = ({ readOnly = false }) => {
 
       {/* Modals */}
       {showRenew && (
-        <RenewModal member={member} plans={plans} onClose={() => setShowRenew(false)} onSuccess={() => { setShowRenew(false); fetchData(); }} />
+        <RenewModal member={member} plans={plans} onClose={() => setShowRenew(false)} onSuccess={() => { fetchData(); }} />
       )}
 
       {showDelete && (
@@ -382,22 +401,51 @@ const MemberProfile = ({ readOnly = false }) => {
           <div className="glass-panel p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-white/20" onClick={e => e.stopPropagation()}>
             
             {/* The actual card that gets downloaded */}
-            <div id="membership-card-to-download" className="relative rounded-2xl overflow-hidden p-6 bg-gradient-to-br from-[#001a41] to-[#0058bc] text-white shadow-xl isolate">
-              <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white_0%,transparent_50%)] mix-blend-overlay"></div>
-              
-              <div className="flex justify-between items-start mb-6 relative z-10">
-                <h2 className="font-display-lg text-2xl font-bold tracking-tight">Gymly</h2>
-                <span className="font-label-sm px-2 py-1 bg-white/20 rounded-md backdrop-blur-md border border-white/10 uppercase tracking-widest text-[10px]">MEMBER</span>
-              </div>
-              
-              <div className="flex justify-center mb-6 bg-white p-4 rounded-2xl w-fit mx-auto relative z-10 shadow-inner">
-                <QRCodeCanvas value={`gymly://member/${member.id}/${gym?.id}`} size={160} level="M" />
-              </div>
-              
-              <div className="text-center space-y-1 relative z-10">
-                <div className="font-headline-lg text-2xl tracking-tight leading-none">{member.name}</div>
-                <div className="font-body-md text-white/80 mt-1">{planName}</div>
-                <div className="font-label-sm text-white/50 tracking-widest mt-2 uppercase">ID: MEM-{member.id.substring(0, 6)}</div>
+            <div id="membership-card-to-download" className="id-card-wrapper" style={{ margin: '0 auto', background: 'transparent' }}>
+              <div className={`id-card type-${type}`} style={{ transform: 'scale(1)', margin: 0 }}>
+                {/* Background design */}
+                <div className="id-card-blob blob-1"></div>
+                <div className="id-card-blob blob-2"></div>
+                
+                <div className="id-card-content">
+                  <div className="id-card-top">
+                    <div className="id-gym-name">{gym?.name || 'My Gym'}</div>
+                    <div className="id-logo-text">GYMLY</div>
+                  </div>
+
+                  <div className="id-card-middle">
+                    <div>
+                      <div className="id-member-name">{member.name}</div>
+                      <div className="id-plan-name">{planName}</div>
+                      <div className="mt-2 text-[10px] text-on-surface-variant font-mono">
+                        #{member.memberNumber || `MEM-${member.id.substring(0, 6)}`}
+                      </div>
+                      {member.latestEnrollmentNumber && (
+                        <div className="mt-1 text-[11px] font-bold text-[#1D9E75] bg-[#1D9E75]/10 px-2 py-0.5 rounded inline-block font-mono">
+                          {member.latestEnrollmentNumber}
+                        </div>
+                      )}
+                    </div>
+                    <div className="id-qr-box">
+                      <QRCodeSVG value={`${window.location.origin}/public/member/${member.id}`} size={64} bgColor="transparent" fgColor="#1A1A1A" level="M" />
+                    </div>
+                  </div>
+
+                  <div className="id-card-bottom">
+                    <div>
+                      <div className="id-label">Valid Till</div>
+                      <div className="id-value">{member.subscription_expiry ? formatDate(member.subscription_expiry) : 'N/A'}</div>
+                    </div>
+                    <div>
+                      <div className="id-label">Phone</div>
+                      <div className="id-value">{member.phone}</div>
+                    </div>
+                    <div className="id-status-badge">
+                      <span className={`status-dot ${type}`}></span>
+                      {label}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 

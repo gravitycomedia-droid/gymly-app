@@ -95,6 +95,14 @@ const MemberCard = () => {
                 <div>
                   <div className="id-member-name">{userDoc?.name}</div>
                   <div className="id-plan-name">{planName}</div>
+                  <div className="mt-2 text-[10px] text-on-surface-variant font-mono">
+                    #{userDoc?.memberNumber || `MEM-${userDoc?.id?.substring(0, 6)}`}
+                  </div>
+                  {userDoc?.latestEnrollmentNumber && (
+                    <div className="mt-1 text-[11px] font-bold text-[#1D9E75] bg-[#1D9E75]/10 px-2 py-0.5 rounded inline-block font-mono">
+                      {userDoc?.latestEnrollmentNumber}
+                    </div>
+                  )}
                 </div>
                 <div className="id-qr-box">
                   <QRCodeSVG value={publicUrl} size={64} bgColor="transparent" fgColor="#1A1A1A" level="M" />

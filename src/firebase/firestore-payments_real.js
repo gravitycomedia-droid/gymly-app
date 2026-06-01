@@ -10,15 +10,29 @@ import { db } from './config';
 
 export const getNextInvoiceNumber = async (gymId) => {
   const counterRef = doc(db, 'invoice_counter', gymId);
+
+  // Try to fetch the gym prefix from numbering_settings
+  let gymPrefix = null;
+  try {
+    const settingsRef = doc(db, 'numbering_settings', gymId);
+    const settingsSnap = await getDoc(settingsRef);
+    if (settingsSnap.exists() && settingsSnap.data().gymPrefix) {
+      gymPrefix = settingsSnap.data().gymPrefix;
+    }
+  } catch (e) {
+    // non-critical — fall back to stored prefix or 'GYM'
+  }
+
   const result = await runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef);
     const next = snap.exists() ? snap.data().last_number + 1 : 1;
+    const prefix = gymPrefix || (snap.exists() ? snap.data().prefix : 'GYM');
     tx.set(counterRef, {
       last_number: next,
       gym_id: gymId,
-      prefix: snap.exists() ? snap.data().prefix : 'GYM'
+      prefix,
     }, { merge: true });
-    return { number: next, prefix: snap.exists() ? snap.data().prefix : 'GYM' };
+    return { number: next, prefix };
   });
   return `${result.prefix}-${new Date().getFullYear()}-${String(result.number).padStart(4, '0')}`;
 };
@@ -44,6 +58,7 @@ export const createPayment = async (data) => {
           status: data.status || 'pending',
           method: data.method || 'cash',
           invoice_number: data.invoice_number || null,
+          enrollment_number: data.enrollmentNumber || null,
           payment_date: data.payment_date || Timestamp.now(),
           plan_name: data.plan_name || 'Membership'
         })

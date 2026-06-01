@@ -124,14 +124,16 @@ const OwnerLogin = () => {
       let userDoc = null;
       try {
         userDoc = await getUser(user.uid);
-        await refreshUserDoc(user.uid);
       } catch (firestoreErr) {
         console.warn('Firestore read failed (likely rules not set):', firestoreErr.code);
         // If Firestore denies read, user is new — proceed to registration
       }
 
+      // Navigate to root — AutoRedirect will route to the correct page
+      // once AuthContext's onSnapshot has synced the userDoc.
+      // This prevents the stale-data-on-first-load bug.
       if (userDoc) {
-        navigate('/owner/dashboard', { replace: true });
+        navigate('/', { replace: true });
       } else {
         navigate('/owner/register', { replace: true });
       }
@@ -159,8 +161,19 @@ const OwnerLogin = () => {
     if (resendTimer > 0) return;
     setOtp(['', '', '', '', '', '']);
     setError('');
-    setStep('phone');
-    await handleSendOTP();
+    // Stay on OTP step — don't reset to phone step (causes React batching issues)
+    setLoading(true);
+    try {
+      const fullPhone = `${countryCode}${phone.replace(/\s/g, '')}`;
+      const result = await sendOTP(fullPhone);
+      setConfirmationResult(result);
+      setResendTimer(30);
+    } catch (err) {
+      console.error('Resend error:', err);
+      setError('Failed to resend OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

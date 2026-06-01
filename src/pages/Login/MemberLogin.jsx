@@ -141,12 +141,8 @@ const MemberLogin = () => {
       }
 
       if (userDoc && userDoc.role === 'member') {
-        // Redirect to agreement if not yet signed
-        if (userDoc.agreement_status !== 'agreed') {
-          navigate('/member/agreement', { replace: true });
-        } else {
-          navigate('/member/home', { replace: true });
-        }
+        // Let AutoRedirect handle routing after AuthContext syncs
+        navigate('/', { replace: true });
       } else if (!userDoc) {
         if (linkStatus === 'not_found') {
           showToast(`Phone ${fullPhone} not found in Gymly DB`, 'error');
@@ -180,8 +176,20 @@ const MemberLogin = () => {
     if (resendTimer > 0) return;
     setOtp(['', '', '', '', '', '']);
     setError('');
-    setStep('phone');
-    await handleSendOTP();
+    // Stay on OTP step — don't reset to phone step (causes React batching issues)
+    setLoading(true);
+    try {
+      const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
+      const fullPhone = `${countryCode}${cleaned}`;
+      const result = await sendOTP(fullPhone);
+      setConfirmationResult(result);
+      setResendTimer(30);
+    } catch (err) {
+      console.error('Resend error:', err);
+      setError('Failed to resend OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

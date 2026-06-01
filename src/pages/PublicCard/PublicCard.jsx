@@ -96,9 +96,15 @@ const PublicCard = () => {
             <span className="detail-value">{daysText}</span>
           </div>
           <div className="detail-item">
-            <span className="detail-label">Member ID</span>
-            <span className="detail-value" style={{ fontFamily: 'monospace' }}>{id.substring(0, 8).toUpperCase()}</span>
+            <span className="detail-label">Member Number</span>
+            <span className="detail-value" style={{ fontFamily: 'monospace' }}>{member.memberNumber ? `#${member.memberNumber}` : `MEM-${id.substring(0, 6).toUpperCase()}`}</span>
           </div>
+          {member.latestEnrollmentNumber && (
+            <div className="detail-item" style={{ gridColumn: '1 / -1', background: 'rgba(29, 158, 117, 0.1)', padding: '12px', borderRadius: '12px', marginTop: '4px', border: '1px solid rgba(29, 158, 117, 0.2)' }}>
+              <span className="detail-label" style={{ color: '#1D9E75', marginBottom: '4px' }}>Latest Enrollment</span>
+              <span className="detail-value" style={{ fontFamily: 'monospace', color: '#1D9E75', fontSize: '1.2em', fontWeight: 'bold' }}>{member.latestEnrollmentNumber}</span>
+            </div>
+          )}
         </div>
 
         <div className="qr-section">

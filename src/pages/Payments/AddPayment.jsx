@@ -8,6 +8,7 @@ import { updateDoc, doc } from '../../firebase/firestore-payments';
 import { db, storage } from '../../firebase/config';
 import { generateInvoicePDF, uploadInvoice } from '../../utils/invoiceGenerator';
 import { sendWhatsApp, buildReceiptParams } from '../../utils/whatsapp';
+import { generateEnrollmentNumber, initializeNumberingSettings } from '../../utils/numberingService';
 import { initiateRazorpayPayment } from '../../utils/razorpay';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getInitials, getAvatarColor, formatDate, addDays, getPlanName } from '../../utils/helpers';
@@ -103,6 +104,19 @@ const AddPayment = () => {
       const invoiceNumber = await getNextInvoiceNumber(userDoc.gym_id);
       const statusToSave = paymentStatus === 'paid' ? 'paid' : paidNowVal > 0 ? 'partial' : 'pending';
 
+      // Generate enrollment number for this payment
+      let enrollmentNumber = null;
+      try {
+        await initializeNumberingSettings(userDoc.gym_id, gym?.name || 'Gym');
+        const planDuration = selectedPlan.duration_days ? Math.round(selectedPlan.duration_days / 30) : 1;
+        enrollmentNumber = await generateEnrollmentNumber(userDoc.gym_id, {
+          joinDate: new Date(),
+          planDurationMonths: planDuration,
+        });
+      } catch (enErr) {
+        console.error('Enrollment number error (non-critical):', enErr);
+      }
+
       const paymentData = {
         gym_id: userDoc.gym_id,
         member_id: selectedMember.id,
@@ -129,6 +143,7 @@ const AddPayment = () => {
         invoice_url: null,
         whatsapp_sent: false,
         recorded_by: user.uid,
+        enrollmentNumber: enrollmentNumber,
       };
 
       const paymentId = await createPayment(paymentData);
@@ -143,6 +158,9 @@ const AddPayment = () => {
       const memberUpdate = { payment_status: statusToSave, plan_id: planId };
       if (statusToSave === 'paid' || statusToSave === 'partial') {
         memberUpdate.subscription_expiry = Timestamp.fromDate(endDate);
+      }
+      if (enrollmentNumber) {
+        memberUpdate.latestEnrollmentNumber = enrollmentNumber;
       }
       await updateDoc(doc(db, 'users', selectedMember.id), memberUpdate);
 
