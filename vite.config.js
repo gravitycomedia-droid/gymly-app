@@ -15,7 +15,7 @@ export default defineConfig({
         description: 'Premium Gym Management SaaS Platform',
         theme_color: '#534AB7',
         background_color: '#ffffff',
-        display: 'standalone',
+        display: 'fullscreen',
         icons: [
           {
             src: 'favicon.svg',

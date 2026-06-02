@@ -82,7 +82,69 @@ export const updatePayment = async (paymentId, data) => {
 };
 
 export const deletePayment = async (paymentId) => {
-  await deleteDoc(doc(db, 'payments', paymentId));
+  const paymentRef = doc(db, 'payments', paymentId);
+  const paymentSnap = await getDoc(paymentRef);
+  
+  if (!paymentSnap.exists()) return;
+  const paymentData = paymentSnap.data();
+  const memberId = paymentData.member_id;
+
+  // Delete the payment
+  await deleteDoc(paymentRef);
+
+  if (!memberId) return;
+
+  // Recalculate member's subscription status based on remaining payments
+  try {
+    const q = query(
+      collection(db, 'payments'),
+      where('member_id', '==', memberId)
+    );
+    const snapshot = await getDocs(q);
+    
+    const payments = [];
+    let maxExpiry = 0;
+    let hasPending = false;
+    let latestPlanId = null;
+    
+    snapshot.forEach((d) => {
+      const p = d.data();
+      payments.push(p);
+      
+      if (p.status === 'pending' || p.status === 'partial') {
+        hasPending = true;
+      }
+      
+      if (p.membership_end) {
+        const ms = p.membership_end.toDate ? p.membership_end.toDate().getTime() : new Date(p.membership_end).getTime();
+        if (ms > maxExpiry) {
+          maxExpiry = ms;
+          latestPlanId = p.plan_id;
+        }
+      }
+    });
+
+    const memberRef = doc(db, 'users', memberId);
+    const updates = {
+      payment_status: hasPending ? 'pending' : 'paid'
+    };
+
+    if (payments.length === 0) {
+      // No payments left. Set expiry to yesterday so it shows as Expired.
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      updates.subscription_expiry = Timestamp.fromDate(yesterday);
+    } else if (maxExpiry > 0) {
+      updates.subscription_expiry = Timestamp.fromMillis(maxExpiry);
+      if (latestPlanId) {
+        updates.plan_id = latestPlanId;
+      }
+    }
+
+    await updateDoc(memberRef, updates);
+  } catch (err) {
+    console.error('Failed to recalculate member subscription after payment delete:', err);
+  }
 };
 
 /**

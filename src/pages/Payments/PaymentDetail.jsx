@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getPaymentById, deletePayment, updatePayment } from '../../firebase/firestore-payments';
-import { getGym } from '../../firebase/firestore';
+import { getPaymentById, deletePayment, updatePayment, getMemberPayments } from '../../firebase/firestore-payments';
+import { getGym, updateMember } from '../../firebase/firestore';
 import { sendWhatsApp, buildReceiptParams } from '../../utils/whatsapp';
 import { formatDate } from '../../utils/helpers';
 import { getFunctions, httpsCallable } from 'firebase/functions';
@@ -96,6 +96,44 @@ const PaymentDetail = () => {
     setDeleting(true);
     try {
       await deletePayment(id);
+
+      // Sync member subscription after payment deletion
+      if (payment?.member_id && userDoc?.gym_id) {
+        try {
+          // Fetch remaining payments for this member (excluding the just-deleted one)
+          const remaining = await getMemberPayments(userDoc.gym_id, payment.member_id);
+          // Filter out the deleted payment just in case Firestore hasn't propagated yet
+          const others = remaining.filter(p => p.id !== id);
+
+          if (others.length === 0) {
+            // No payments left — mark subscription as not activated
+            await updateMember(payment.member_id, {
+              plan_id: null,
+              plan_name: 'Plan not Activated',
+              subscription_expiry: null,
+              payment_status: 'pending',
+            });
+          } else {
+            // Find payment with latest membership_end
+            const best = others.reduce((prev, cur) => {
+              const prevEnd = prev.membership_end?.toDate ? prev.membership_end.toDate() : new Date(prev.membership_end || 0);
+              const curEnd = cur.membership_end?.toDate ? cur.membership_end.toDate() : new Date(cur.membership_end || 0);
+              return curEnd > prevEnd ? cur : prev;
+            });
+            const endDate = best.membership_end?.toDate ? best.membership_end.toDate() : new Date(best.membership_end);
+            const isExpired = endDate < new Date();
+            await updateMember(payment.member_id, {
+              plan_id: best.plan_id || null,
+              plan_name: best.plan_name || null,
+              subscription_expiry: best.membership_end || null,
+              payment_status: isExpired ? 'pending' : (best.status || 'paid'),
+            });
+          }
+        } catch (syncErr) {
+          console.error('Subscription sync error (non-critical):', syncErr);
+        }
+      }
+
       showToast('Payment deleted', 'success');
       navigate('/owner/payments', { replace: true });
     } catch (err) {

@@ -1,38 +1,67 @@
 import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from 'firebase/auth';
 import { auth } from './config';
 
+/**
+ * Initialise an invisible reCAPTCHA verifier anchored to `containerId`.
+ * Call this once from a useEffect on mount so the widget is ready before the
+ * user taps "Send OTP". Calling it on button-click (after user interaction
+ * triggered state updates) frequently causes auth/captcha-check-failed because
+ * Firebase cannot resolve the challenge in the middle of a React re-render.
+ */
 export const setupRecaptcha = (containerId = 'recaptcha-container') => {
   if (!auth) throw new Error('Firebase Auth not initialized');
 
-  // ALWAYS clear and recreate — stale verifiers cause silent OTP failures
-  if (window.recaptchaVerifier) {
-    try {
-      window.recaptchaVerifier.clear();
-    } catch (e) {
-      console.warn('RecaptchaVerifier clear failed:', e);
-    }
-    window.recaptchaVerifier = null;
-  }
+  // Destroy any stale verifier first
+  destroyRecaptcha();
 
-  window.recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
+  const verifier = new RecaptchaVerifier(auth, containerId, {
     size: 'invisible',
     callback: () => {},
     'expired-callback': () => {
-      if (window.recaptchaVerifier) {
-        try { window.recaptchaVerifier.clear(); } catch (e) { /* ignore */ }
-        window.recaptchaVerifier = null;
-      }
+      // Widget expired — clear so the next sendOTP call re-initialises it
+      destroyRecaptcha();
     },
   });
 
-  return window.recaptchaVerifier;
+  window.recaptchaVerifier = verifier;
+  return verifier;
 };
 
-export const sendOTP = async (phoneNumber) => {
+/** Safely tear down the global verifier widget */
+export const destroyRecaptcha = () => {
+  if (window.recaptchaVerifier) {
+    try {
+      window.recaptchaVerifier.clear();
+    } catch (_) { /* ignore — widget may already be gone */ }
+    window.recaptchaVerifier = null;
+  }
+};
+
+/**
+ * Send an OTP to `phoneNumber`.
+ * Reuses the pre-initialised verifier when available; creates a fresh one if not.
+ * Pass `containerId` to specify which DOM element to anchor the widget to.
+ */
+export const sendOTP = async (phoneNumber, containerId = 'recaptcha-container') => {
   if (!auth) throw new Error('Firebase Auth not initialized');
-  const verifier = setupRecaptcha();
-  const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, verifier);
-  return confirmationResult;
+
+  // If the verifier was destroyed (e.g. expired), rebuild it
+  if (!window.recaptchaVerifier) {
+    setupRecaptcha(containerId);
+  }
+
+  try {
+    const confirmationResult = await signInWithPhoneNumber(
+      auth,
+      phoneNumber,
+      window.recaptchaVerifier
+    );
+    return confirmationResult;
+  } catch (err) {
+    // Always destroy after a failure so the next attempt gets a fresh widget
+    destroyRecaptcha();
+    throw err;
+  }
 };
 
 export const verifyOTP = async (confirmationResult, code) => {

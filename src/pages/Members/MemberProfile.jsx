@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getUser, getGym, deleteMember } from '../../firebase/firestore';
-import { getMemberPaymentsRealtime, clearPaymentDue, updatePayment } from '../../firebase/firestore-payments';
+import { getUser, getGym, deleteMember, updateMember } from '../../firebase/firestore';
+import { getMemberPaymentsRealtime, clearPaymentDue, updatePayment, getMemberPayments } from '../../firebase/firestore-payments';
 import {
   getInitials, getAvatarColor, getExpiryStatus,
   formatDate, getPlanName, calculateBMI, getDaysRemaining,
@@ -13,6 +13,7 @@ import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import BottomNav from '../../components/BottomNav';
 import { QRCodeSVG } from 'qrcode.react';
 import html2canvas from 'html2canvas';
+import { uploadMemberPhoto } from '../../firebase/storage';
 import '../MemberCard/MemberCard.css';
 
 const MemberProfile = ({ readOnly = false }) => {
@@ -30,6 +31,26 @@ const MemberProfile = ({ readOnly = false }) => {
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [memberPayments, setMemberPayments] = useState([]);
   const [clearingId, setClearingId] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef(null);
+
+  const handlePhotoChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !userDoc?.gym_id) return;
+    setUploadingPhoto(true);
+    try {
+      const photoUrl = await uploadMemberPhoto(userDoc.gym_id, id, file);
+      await updateMember(id, { profile_photo: photoUrl });
+      setMember(prev => ({ ...prev, profile_photo: photoUrl }));
+      showToast('Photo updated!', 'success');
+    } catch (err) {
+      showToast('Photo upload failed: ' + err.message, 'error');
+    } finally {
+      setUploadingPhoto(false);
+      // Reset file input so same file can be re-selected
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -119,12 +140,49 @@ const MemberProfile = ({ readOnly = false }) => {
   const currentPlan = plans.find((p) => p.id === member.plan_id);
   const bmi = calculateBMI(member.height, member.weight);
   
-  const daysRemaining = getDaysRemaining(member.subscription_expiry);
-  const totalDays = currentPlan?.duration_days || 30;
-  const daysUsed = Math.max(0, totalDays - daysRemaining);
-  const progressPercent = Math.min(100, Math.max(0, (daysUsed / totalDays) * 100));
+  // ── Usage bar: derive from latest payment's membership_start/end (more accurate)
+  // Sort payments by membership_end descending to find the actual latest subscription period
+  const activePayments = [...memberPayments].filter(p => p.membership_end).sort((a, b) => {
+    const tA = a.membership_end?.toDate ? a.membership_end.toDate().getTime() : new Date(a.membership_end).getTime();
+    const tB = b.membership_end?.toDate ? b.membership_end.toDate().getTime() : new Date(b.membership_end).getTime();
+    return tB - tA;
+  });
+  const latestPayment = activePayments[0] || null;
 
-  const isExpired = daysRemaining < 0;
+  let totalDays = currentPlan?.duration_days || 30;
+  let daysUsed = 0;
+  let daysRemaining;
+  let progressPercent;
+
+  if (latestPayment?.membership_start && latestPayment?.membership_end) {
+    const start = latestPayment.membership_start?.toDate ? latestPayment.membership_start.toDate() : new Date(latestPayment.membership_start);
+    const end = latestPayment.membership_end?.toDate ? latestPayment.membership_end.toDate() : new Date(latestPayment.membership_end);
+    const now = new Date();
+    
+    // Normalize to start of day for accurate day counts
+    const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    totalDays = Math.max(1, Math.round((endDay - startDay) / (1000 * 60 * 60 * 24)));
+    
+    if (today < startDay) {
+      daysUsed = 0; // Future subscription
+    } else if (today >= endDay) {
+      daysUsed = totalDays; // Past subscription
+    } else {
+      daysUsed = Math.floor((today - startDay) / (1000 * 60 * 60 * 24)) + 1;
+    }
+    
+    daysRemaining = Math.max(0, totalDays - daysUsed);
+    progressPercent = Math.min(100, (daysUsed / totalDays) * 100);
+  } else {
+    daysRemaining = Math.max(0, getDaysRemaining(member.subscription_expiry));
+    daysUsed = Math.max(0, totalDays - daysRemaining);
+    progressPercent = Math.min(100, Math.max(0, (daysUsed / totalDays) * 100));
+  }
+
+  const isExpired = daysRemaining <= 0;
 
   return (
     <div className="mesh-bg min-h-screen pb-24 md:pb-8 font-body-md antialiased text-on-surface pt-16 md:pt-0">
@@ -145,14 +203,40 @@ const MemberProfile = ({ readOnly = false }) => {
         <section className="glass-panel rounded-3xl p-6 md:p-8 flex flex-col md:flex-row gap-8 relative overflow-hidden">
           <div className="absolute -top-24 -right-24 w-64 h-64 bg-secondary/20 rounded-full blur-[60px] pointer-events-none"></div>
           
+          {/* Avatar with camera overlay */}
           <div className="flex-shrink-0 flex flex-col items-center md:items-start gap-4 z-10">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white/50 shadow-lg relative flex items-center justify-center font-display-lg text-4xl" style={{ background: avatarColor.bg, color: avatarColor.text }}>
-              {member.profile_photo ? (
-                <img src={member.profile_photo} alt={member.name} className="w-full h-full object-cover" />
-              ) : (
-                getInitials(member.name)
+            <div className="relative group">
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white/50 shadow-lg flex items-center justify-center font-display-lg text-4xl relative" style={{ background: avatarColor.bg, color: avatarColor.text }}>
+                {member.profile_photo ? (
+                  <img src={member.profile_photo} alt={member.name} className="w-full h-full object-cover" />
+                ) : (
+                  getInitials(member.name)
+                )}
+                <div className={`absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white ${isExpired ? 'bg-error shadow-[0_0_10px_rgba(186,26,26,0.5)]' : 'bg-tertiary shadow-[0_0_10px_rgba(0,103,98,0.5)]'}`}></div>
+              </div>
+              {!readOnly && (
+                <>
+                  <button
+                    onClick={() => photoInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                    title="Change photo"
+                  >
+                    {uploadingPhoto ? (
+                      <div className="w-6 h-6 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <span className="material-symbols-outlined text-white text-2xl">photo_camera</span>
+                    )}
+                  </button>
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                </>
               )}
-              <div className={`absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white ${isExpired ? 'bg-error shadow-[0_0_10px_rgba(186,26,26,0.5)]' : 'bg-tertiary shadow-[0_0_10px_rgba(0,103,98,0.5)]'}`}></div>
             </div>
             <div className="flex gap-2">
               <span className={`inline-flex items-center px-3 py-1 rounded-full font-label-sm text-label-sm border ${isExpired ? 'bg-error/10 text-error border-error/20' : 'bg-tertiary/10 text-tertiary border-tertiary/20'}`}>

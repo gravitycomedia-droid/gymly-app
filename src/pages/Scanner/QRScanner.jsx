@@ -19,11 +19,13 @@ const QRScanner = () => {
   const [cameraReady, setCameraReady] = useState(false);
   const [cameraError, setCameraError] = useState(null);
   const [result, setResult] = useState(null); // { type, member }
+  const [facingMode, setFacingMode] = useState('environment'); // 'environment' = back, 'user' = front
 
-  const startCamera = async () => {
+
+  const startCamera = async (facing = facingMode) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: { facingMode: facing }
       });
       streamRef.current = stream;
       if (videoRef.current) {
@@ -36,6 +38,15 @@ const QRScanner = () => {
       setCameraError(err.message);
     }
   };
+
+  const flipCamera = async () => {
+    stopCamera();
+    setCameraReady(false);
+    const newFacing = facingMode === 'environment' ? 'user' : 'environment';
+    setFacingMode(newFacing);
+    await startCamera(newFacing);
+  };
+
 
   const stopCamera = () => {
     if (streamRef.current) {
@@ -203,7 +214,18 @@ const QRScanner = () => {
         <div className="scanner-top-bar">
           <button className="scanner-back-btn" onClick={() => navigate(-1)}>← Back</button>
           <span className="scanner-title">Scan QR</span>
-          <button className="scanner-mode-link" onClick={() => navigate('/tablet')}>Tablet mode</button>
+          <div className="flex items-center gap-2">
+            <button
+              className="scanner-mode-link"
+              onClick={flipCamera}
+              title={facingMode === 'environment' ? 'Switch to front camera' : 'Switch to back camera'}
+              style={{ display: 'flex', alignItems: 'center', gap: 4 }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 18 }}>flip_camera_ios</span>
+              {facingMode === 'environment' ? 'Front' : 'Back'}
+            </button>
+            <button className="scanner-mode-link" onClick={() => navigate('/tablet')}>Tablet mode</button>
+          </div>
         </div>
 
         {/* Camera */}

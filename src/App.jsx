@@ -57,6 +57,9 @@ const MemberAgreement      = lazy(() => import('./pages/Agreement/MemberAgreemen
 const AdminDashboard       = lazy(() => import('./pages/Admin/AdminDashboard'));
 const SubscriptionGate     = lazy(() => import('./components/SubscriptionGate'));
 const NumberingSettings    = lazy(() => import('./pages/Settings/NumberingSettings'));
+const EntryKiosk           = lazy(() => import('./pages/Kiosk/EntryKiosk'));
+const ExitKiosk            = lazy(() => import('./pages/Kiosk/ExitKiosk'));
+const KioskDevices         = lazy(() => import('./pages/Attendance/KioskDevices'));
 
 // ── Loading Spinner (shown while lazy chunks load) ──
 const PageSpinner = () => (
@@ -279,6 +282,24 @@ function AnimatedRoutes() {
           {/* Phase 4 — QR Scanner */}
           <Route path="/scan" element={<ProtectedRoute><PageTransition><QRScanner /></PageTransition></ProtectedRoute>} />
           <Route path="/tablet" element={<ProtectedRoute><PageTransition><TabletMode /></PageTransition></ProtectedRoute>} />
+
+          {/* Phase 5 — Kiosk (public, no auth required) */}
+          <Route path="/kiosk/entry" element={<Suspense fallback={<PageSpinner />}><EntryKiosk /></Suspense>} />
+          <Route path="/kiosk/exit" element={<Suspense fallback={<PageSpinner />}><ExitKiosk /></Suspense>} />
+
+          {/* Phase 5 — Kiosk Device Management (protected) */}
+          <Route
+            path="/owner/kiosk-devices"
+            element={
+              <ProtectedRoute>
+                <OwnerLayout activeTab="settings">
+                  <Suspense fallback={<PageSpinner />}>
+                    <SubscriptionGate feature="kiosk_attendance"><PageTransition><KioskDevices /></PageTransition></SubscriptionGate>
+                  </Suspense>
+                </OwnerLayout>
+              </ProtectedRoute>
+            }
+          />
 
           {/* Owner Subscription */}
           <Route

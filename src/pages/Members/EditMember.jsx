@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getUser, getGym, updateMember, getTrainers } from '../../firebase/firestore';
 import { calculateBMI } from '../../utils/helpers';
+import { uploadMemberPhoto } from '../../firebase/storage';
 import './AddMember.css';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -23,6 +24,16 @@ const EditMember = () => {
   const [trainers, setTrainers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const photoInputRef = useRef(null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const [form, setForm] = useState({
     name: '', dob: '', gender: '', bloodGroup: '', address: '',
@@ -39,6 +50,7 @@ const EditMember = () => {
         ]);
         if (memberDoc) {
           setMember(memberDoc);
+          setPhotoPreview(memberDoc.profile_photo || null);
           setForm({
             name: memberDoc.name || '',
             dob: memberDoc.date_of_birth || '',
@@ -95,6 +107,17 @@ const EditMember = () => {
       if (form.medicalNotes !== (member.medical_notes || '')) changes.medical_notes = form.medicalNotes || null;
       if (form.trainerId !== (member.assigned_trainer_id || '')) changes.assigned_trainer_id = form.trainerId || null;
 
+      // Upload photo if changed
+      if (photoFile && userDoc?.gym_id) {
+        try {
+          const photoUrl = await uploadMemberPhoto(userDoc.gym_id, id, photoFile);
+          changes.profile_photo = photoUrl;
+        } catch (photoErr) {
+          console.error('Photo upload error:', photoErr);
+          showToast('Photo upload failed — other changes saved', 'error');
+        }
+      }
+
       if (Object.keys(changes).length === 0) {
         showToast('No changes to save', 'error');
         setSaving(false);
@@ -137,6 +160,44 @@ const EditMember = () => {
           >
             {saving ? '...' : 'Save'}
           </button>
+        </div>
+
+        {/* Photo picker */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button
+              type="button"
+              onClick={() => photoInputRef.current?.click()}
+              style={{
+                width: 88, height: 88, borderRadius: '50%', overflow: 'hidden',
+                border: '3px solid rgba(255,255,255,0.5)', boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                background: 'rgba(109,54,212,0.08)', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: 0,
+              }}
+            >
+              {photoPreview ? (
+                <img src={photoPreview} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <span className="material-symbols-outlined" style={{ fontSize: 32, color: 'var(--primary)', opacity: 0.6 }}>add_a_photo</span>
+              )}
+            </button>
+            <div style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: 26, height: 26, borderRadius: '50%',
+              background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#fff' }}>photo_camera</span>
+            </div>
+          </div>
+          <input
+            ref={photoInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handlePhotoChange}
+          />
         </div>
 
         <div className="glass-card" style={{ padding: '20px 18px' }}>

@@ -6,6 +6,7 @@ const NAV_CONFIGS = {
     { id: 'members', label: 'Members', path: '/owner/members', icon: 'members' },
     { id: 'payments', label: 'Payments', path: '/owner/payments', icon: 'payments' },
     { id: 'analytics', label: 'Analytics', path: '/owner/analytics', icon: 'analytics' },
+    { id: 'kiosk', label: 'Kiosk', path: '/owner/kiosk-devices', icon: 'devices' },
     { id: 'settings', label: 'Settings', path: '/owner/settings', icon: 'settings' },
   ],
   manager: [
@@ -82,6 +83,12 @@ const icons = {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
       <circle cx="12" cy="7" r="4" stroke="currentColor" strokeWidth="2"/>
+    </svg>
+  ),
+  devices: (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+      <rect x="4" y="4" width="16" height="16" rx="2" ry="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 16v.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 };

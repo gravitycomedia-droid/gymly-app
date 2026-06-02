@@ -1,0 +1,528 @@
+/* src/pages/Kiosk/Kiosk.css */
+/* Gymly Kiosk — Luminous Design System */
+
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+.kiosk-root {
+  font-family: 'Hanken Grotesk', system-ui, sans-serif;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: #fcf8fb;
+  color: #1b1b1d;
+}
+
+/* ── Ambient Background ───────────────────────────────────────────── */
+.kiosk-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+.kiosk-bg-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.5;
+}
+.kiosk-bg-blob-1 {
+  width: 500px; height: 500px;
+  top: -100px; left: -150px;
+  background: #e3dfff;
+}
+.kiosk-bg-blob-2 {
+  width: 400px; height: 400px;
+  bottom: 100px; right: -100px;
+  background: #d8e2ff;
+}
+.kiosk-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(252, 248, 251, 0.75);
+  backdrop-filter: blur(2px);
+}
+
+/* ── Glass Utilities ──────────────────────────────────────────────── */
+.kiosk-glass {
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 8px 32px rgba(59, 48, 158, 0.06), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+.kiosk-header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px 16px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 8px rgba(59, 48, 158, 0.04), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.kiosk-header-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.kiosk-header-icon {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: #534ab7;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(83, 74, 183, 0.35);
+}
+.kiosk-header-icon .material-symbols-outlined {
+  color: white;
+  font-size: 24px;
+}
+.kiosk-header-name {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #3b309e;
+  line-height: 1;
+}
+.kiosk-header-gym {
+  font-size: 13px;
+  font-weight: 500;
+  color: #474553;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.kiosk-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+.kiosk-clock {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1b1b1d;
+  letter-spacing: -0.01em;
+}
+.kiosk-connected-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #006e28;
+  background: rgba(111, 251, 133, 0.25);
+  border: 1px solid rgba(0, 110, 40, 0.2);
+  border-radius: 999px;
+  padding: 4px 12px;
+}
+.kiosk-connected-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #006e28;
+  animation: kiosk-pulse 2s infinite;
+}
+
+/* ── Mode Badge ───────────────────────────────────────────────────── */
+.kiosk-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 8px 24px;
+  border-radius: 999px;
+  backdrop-filter: blur(16px);
+}
+.kiosk-mode-badge.entry {
+  color: #3b309e;
+  background: rgba(83, 74, 183, 0.1);
+  border: 1px solid rgba(83, 74, 183, 0.2);
+}
+.kiosk-mode-badge.exit {
+  color: #00408b;
+  background: rgba(0, 86, 184, 0.1);
+  border: 1px solid rgba(0, 86, 184, 0.2);
+}
+
+/* ── Main Scan Area ───────────────────────────────────────────────── */
+.kiosk-main {
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 28px;
+  gap: 24px;
+}
+
+.kiosk-scanner-box {
+  position: relative;
+  width: min(320px, 80vw);
+  height: min(320px, 80vw);
+  border-radius: 28px;
+  background: rgba(224, 222, 240, 0.25);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 16px 48px rgba(59, 48, 158, 0.1), inset 0 4px 20px rgba(0,0,0,0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  touch-action: none;
+}
+.kiosk-scanner-box:active {
+  transform: scale(0.98);
+}
+
+.kiosk-scanner-glow {
+  position: absolute;
+  inset: 0;
+  background: rgba(83, 74, 183, 0.04);
+  border-radius: 28px;
+  animation: kiosk-glow 3s ease-in-out infinite;
+}
+
+/* Corner reticles */
+.kiosk-corner {
+  position: absolute;
+  width: 40px; height: 40px;
+  border-color: rgba(83, 74, 183, 0.7);
+  border-style: solid;
+}
+.kiosk-corner.tl { top: 20px; left: 20px; border-width: 3px 0 0 3px; border-radius: 8px 0 0 0; }
+.kiosk-corner.tr { top: 20px; right: 20px; border-width: 3px 3px 0 0; border-radius: 0 8px 0 0; }
+.kiosk-corner.bl { bottom: 20px; left: 20px; border-width: 0 0 3px 3px; border-radius: 0 0 0 8px; }
+.kiosk-corner.br { bottom: 20px; right: 20px; border-width: 0 3px 3px 0; border-radius: 0 0 8px 0; }
+
+/* Scan beam */
+.kiosk-scan-beam {
+  position: absolute;
+  left: 20px; right: 20px;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #534ab7, transparent);
+  box-shadow: 0 0 12px 2px rgba(83, 74, 183, 0.4);
+  animation: kiosk-scanbeam 2s ease-in-out infinite alternate;
+  border-radius: 2px;
+}
+
+.kiosk-qr-icon {
+  font-size: 100px;
+  color: rgba(83, 74, 183, 0.25);
+  animation: kiosk-qr-pulse 3s ease-in-out infinite;
+  z-index: 1;
+}
+
+/* Camera video (active scanning state) */
+.kiosk-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 28px;
+}
+.kiosk-canvas {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  pointer-events: none;
+}
+
+/* ── Instruction Text ─────────────────────────────────────────────── */
+.kiosk-instruction-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1b1b1d;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+.kiosk-instruction-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #474553;
+  text-align: center;
+  background: rgba(240, 237, 239, 0.7);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 999px;
+  padding: 10px 24px;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: background 0.2s, color 0.2s;
+}
+.kiosk-instruction-sub:active { background: rgba(83,74,183,0.1); color: #3b309e; }
+
+/* ── Footer ───────────────────────────────────────────────────────── */
+.kiosk-footer {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 28px 24px;
+  background: rgba(228, 226, 228, 0.5);
+  backdrop-filter: blur(24px);
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 -2px 8px rgba(59, 48, 158, 0.04), inset 0 -1px 0 rgba(255,255,255,0.5);
+}
+.kiosk-footer-occupancy {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.kiosk-footer-icon {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: rgba(83, 74, 183, 0.1);
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid rgba(83, 74, 183, 0.15);
+}
+.kiosk-footer-icon .material-symbols-outlined { color: #3b309e; font-size: 22px; }
+.kiosk-footer-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #787584;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+.kiosk-footer-count {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1b1b1d;
+  line-height: 1;
+}
+.kiosk-footer-count span {
+  font-size: 16px;
+  font-weight: 400;
+  color: #474553;
+}
+.kiosk-footer-entries {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* ── Result Overlay ───────────────────────────────────────────────── */
+.kiosk-result {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  animation: kiosk-fade-in 0.3s ease;
+}
+.kiosk-result.success { background: #0A2A1A; }
+.kiosk-result.expiring { background: #2A1A00; }
+.kiosk-result.expired  { background: #2A0A0A; }
+.kiosk-result.error    { background: #1A1A2E; }
+.kiosk-result.exit-success { background: #001A14; }
+.kiosk-result.no-session { background: #1A1A2E; }
+
+.kiosk-result-icon-circle {
+  width: 120px; height: 120px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 60px;
+  animation: kiosk-scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.success .kiosk-result-icon-circle { background: rgba(29,158,117,0.25); color: #1D9E75; }
+.expiring .kiosk-result-icon-circle { background: rgba(239,159,39,0.25); color: #EF9F27; }
+.expired .kiosk-result-icon-circle { background: rgba(226,75,74,0.25); color: #E24B4A; }
+.error .kiosk-result-icon-circle { background: rgba(120,117,132,0.25); color: #787584; }
+.exit-success .kiosk-result-icon-circle { background: rgba(0,64,139,0.25); color: #adc6ff; }
+.no-session .kiosk-result-icon-circle { background: rgba(120,117,132,0.25); color: #787584; }
+
+.kiosk-result-name {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.kiosk-result-subtitle {
+  font-size: 16px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.7);
+  line-height: 1.5;
+}
+.kiosk-result-badge {
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.85);
+}
+.kiosk-result-timer {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.5);
+  margin-top: 8px;
+}
+.kiosk-result-timer span {
+  color: rgba(255,255,255,0.9);
+  font-weight: 700;
+}
+
+/* ── Pairing / Setup Screen ───────────────────────────────────────── */
+.kiosk-setup {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 32px;
+  background: #fcf8fb;
+}
+.kiosk-setup-logo {
+  font-size: 40px;
+  font-weight: 700;
+  color: #3b309e;
+  letter-spacing: -0.03em;
+}
+.kiosk-setup-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1b1b1d;
+  text-align: center;
+}
+.kiosk-setup-sub {
+  font-size: 15px;
+  color: #474553;
+  text-align: center;
+  max-width: 360px;
+}
+.kiosk-pin-row {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0;
+}
+.kiosk-pin-cell {
+  width: 52px; height: 64px;
+  border-radius: 12px;
+  border: 2px solid rgba(83, 74, 183, 0.3);
+  background: rgba(255,255,255,0.7);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #3b309e;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.2s;
+}
+.kiosk-pin-cell.filled { border-color: #534ab7; background: rgba(83,74,183,0.06); }
+.kiosk-numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 80px);
+  gap: 12px;
+  margin: 4px 0;
+}
+.kiosk-numpad-btn {
+  height: 70px;
+  border-radius: 16px;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1b1b1d;
+  background: rgba(255,255,255,0.6);
+  border: 1px solid rgba(255,255,255,0.7);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.kiosk-numpad-btn:active { background: rgba(83,74,183,0.12); transform: scale(0.95); color: #3b309e; }
+.kiosk-numpad-btn.delete { font-size: 20px; color: #474553; }
+.kiosk-numpad-btn.connect {
+  grid-column: span 3;
+  height: 60px;
+  background: #534ab7;
+  color: white;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 16px rgba(83,74,183,0.35);
+}
+.kiosk-numpad-btn.connect:active { background: #3b309e; transform: scale(0.98); }
+.kiosk-numpad-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.kiosk-setup-error {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ba1a1a;
+  background: #ffdad6;
+  border-radius: 10px;
+  padding: 10px 20px;
+  max-width: 340px;
+  text-align: center;
+}
+
+/* ── Cancel Button (scanning state) ──────────────────────────────── */
+.kiosk-cancel-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #474553;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(255,255,255,0.7);
+  border-radius: 999px;
+  padding: 8px 16px;
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.kiosk-cancel-btn:active { background: rgba(83,74,183,0.1); color: #3b309e; }
+
+/* ── Animations ───────────────────────────────────────────────────── */
+@keyframes kiosk-scanbeam {
+  0%   { top: 20px; }
+  100% { bottom: 20px; top: calc(100% - 24px); }
+}
+@keyframes kiosk-glow {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+@keyframes kiosk-qr-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.25; }
+  50%       { transform: scale(0.94); opacity: 0.18; }
+}
+@keyframes kiosk-scale-in {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes kiosk-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes kiosk-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}

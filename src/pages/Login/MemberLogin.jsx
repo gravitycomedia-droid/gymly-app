@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sendOTP, verifyOTP } from '../../firebase/auth';
+import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
 import { getUser, linkMemberAccount } from '../../firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -35,6 +35,13 @@ const MemberLogin = () => {
 
   const otpRefs = useRef([]);
 
+  // Pre-initialise reCAPTCHA on mount so it's ready before the button click.
+  // Destroying on unmount prevents stale widget errors on remount.
+  useEffect(() => {
+    setupRecaptcha('member-recaptcha-container');
+    return () => destroyRecaptcha();
+  }, []);
+
   useEffect(() => {
     if (resendTimer <= 0) return;
     const timer = setInterval(() => {
@@ -55,7 +62,7 @@ const MemberLogin = () => {
     try {
       const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
       const fullPhone = `${countryCode}${cleaned}`;
-      const result = await sendOTP(fullPhone);
+      const result = await sendOTP(fullPhone, 'member-recaptcha-container');
       setConfirmationResult(result);
       setStep('otp');
       setResendTimer(30);
@@ -181,7 +188,7 @@ const MemberLogin = () => {
     try {
       const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
       const fullPhone = `${countryCode}${cleaned}`;
-      const result = await sendOTP(fullPhone);
+      const result = await sendOTP(fullPhone, 'member-recaptcha-container');
       setConfirmationResult(result);
       setResendTimer(30);
     } catch (err) {
@@ -321,7 +328,7 @@ const MemberLogin = () => {
         )}
       </div>
 
-      <div id="recaptcha-container"></div>
+      <div id="member-recaptcha-container"></div>
     </div>
   );
 };

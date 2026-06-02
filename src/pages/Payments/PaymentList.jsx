@@ -148,7 +148,7 @@ const PaymentList = () => {
       </header>
 
       {/* Main Content */}
-      <main className="px-4 pt-36 pb-8 flex flex-col gap-6 w-full max-w-7xl mx-auto relative z-10">
+      <main className="px-4 pt-32 pb-8 flex flex-col gap-6 w-full max-w-7xl mx-auto relative z-10">
         
         {/* KPI Grid */}
         <section className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">

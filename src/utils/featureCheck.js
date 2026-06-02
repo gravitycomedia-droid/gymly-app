@@ -5,6 +5,7 @@ export const FEATURE_MAP = {
   // Basic features (all plans)
   'manage_members': ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
   'qr_attendance': ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
+  'kiosk_attendance': ['BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
 
   // Professional features
   'payments': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],

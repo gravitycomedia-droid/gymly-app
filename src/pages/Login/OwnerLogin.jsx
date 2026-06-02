@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sendOTP, verifyOTP } from '../../firebase/auth';
+import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
 import { getUser } from '../../firebase/firestore';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -35,6 +35,13 @@ const OwnerLogin = () => {
 
   const otpRefs = useRef([]);
 
+  // Pre-initialise reCAPTCHA on mount so it's ready before the button click.
+  // Destroying on unmount prevents stale widget errors on remount.
+  useEffect(() => {
+    setupRecaptcha('owner-recaptcha-container');
+    return () => destroyRecaptcha();
+  }, []);
+
   // Resend timer countdown
   useEffect(() => {
     if (resendTimer <= 0) return;
@@ -55,7 +62,7 @@ const OwnerLogin = () => {
 
     try {
       const fullPhone = `${countryCode}${phone.replace(/\s/g, '')}`;
-      const result = await sendOTP(fullPhone);
+      const result = await sendOTP(fullPhone, 'owner-recaptcha-container');
       setConfirmationResult(result);
       setStep('otp');
       setResendTimer(30);
@@ -165,7 +172,7 @@ const OwnerLogin = () => {
     setLoading(true);
     try {
       const fullPhone = `${countryCode}${phone.replace(/\s/g, '')}`;
-      const result = await sendOTP(fullPhone);
+      const result = await sendOTP(fullPhone, 'owner-recaptcha-container');
       setConfirmationResult(result);
       setResendTimer(30);
     } catch (err) {
@@ -285,7 +292,7 @@ const OwnerLogin = () => {
         </div>
       </div>
 
-      <div id="recaptcha-container"></div>
+      <div id="owner-recaptcha-container"></div>
     </div>
   );
 };

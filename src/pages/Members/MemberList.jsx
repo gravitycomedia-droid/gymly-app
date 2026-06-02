@@ -24,16 +24,7 @@ const MemberList = ({ role = 'owner' }) => {
   const [activeFilter, setActiveFilter] = useState(searchParams.get('filter') || '');
   const [renewMember, setRenewMember] = useState(null);
   const [showFab, setShowFab] = useState(true);
-  const [isScrolled, setIsScrolled] = useState(false);
   const addCardRef = useRef(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
@@ -178,59 +169,61 @@ const MemberList = ({ role = 'owner' }) => {
   }
 
   return (
-    <div className="pb-24 md:pb-0 pt-[80px]">
+    <div className="pb-24 md:pb-0">
       {/* Gymly Global Header */}
-      <header className={`fixed top-0 left-0 w-full z-50 bg-transparent px-4 sm:px-6 lg:px-8 h-16 flex items-center transition-transform duration-300 ${isScrolled ? '-translate-y-full' : 'translate-y-0'}`}>
-        <div className="flex items-center gap-2">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" className="text-primary">
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-          <h1 className="font-headline-lg text-xl font-bold text-primary">Gymly</h1>
+      <header className="fixed top-0 w-full z-50 bg-surface/30 backdrop-blur-3xl border-b border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.1)]">
+        <div className="flex justify-between items-center px-4 pt-12 pb-4 w-full max-w-7xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-md bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white shadow-sm font-bold text-xl">
+              G
+            </div>
+            <div>
+              <p className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Owner Dashboard</p>
+              <h1 className="font-headline-sm text-lg font-bold text-on-surface">Member Directory</h1>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate(`${basePath}/members/add`)}
+            className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-primary hover:backdrop-blur-xl hover:bg-white/10 transition-all duration-300 active:scale-95 hidden md:flex"
+          >
+            <span className="material-symbols-outlined">add</span>
+          </button>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        {/* Page Title & Search/Filters Stacked */}
-        <div className="flex flex-col gap-6 mb-8 w-full">
-          {/* Member Directory Heading (Top) */}
-          <div className="text-left">
-            <h2 className="font-headline-lg text-2xl font-bold text-on-surface mb-1.5">Member Directory</h2>
-            <p className="font-body-md text-sm text-outline">Manage and view all your club members.</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-8">
+        {/* Filters & Search */}
+        <div className="flex flex-col gap-5 mb-8 w-full">
+          {/* Filter Pills */}
+          <div className="flex justify-start w-full">
+            <div className="flex bg-white/40 backdrop-blur-md rounded-lg p-1.5 border border-white/50 w-full max-w-md overflow-x-auto hide-scrollbar flex-nowrap shrink-0 shadow-sm">
+              {['all', 'active', 'expired'].map((t) => (
+                <button
+                  key={t}
+                  className={`flex-1 px-4 py-2 rounded-md font-label-md text-sm font-semibold transition-all whitespace-nowrap ${tab === t ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-primary'}`}
+                  onClick={() => { setTab(t); setActiveFilter(''); }}
+                >
+                  {t.charAt(0).toUpperCase() + t.slice(1)}
+                </button>
+              ))}
+            </div>
           </div>
 
-          {/* Search and Filters (Left-aligned) */}
-          <div className="flex flex-col items-start gap-5 w-full">
-            {/* Filter Pills Left */}
-            <div className="flex justify-start w-full">
-              <div className="flex bg-white/40 backdrop-blur-md rounded-lg p-1.5 border border-white/50 w-full max-w-md overflow-x-auto hide-scrollbar flex-nowrap shrink-0 shadow-sm">
-                {['all', 'active', 'expired'].map((t) => (
-                  <button
-                    key={t}
-                    className={`flex-1 px-4 py-2 rounded-md font-label-md text-sm font-semibold transition-all whitespace-nowrap ${tab === t ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-primary'}`}
-                    onClick={() => { setTab(t); setActiveFilter(''); }}
-                  >
-                    {t.charAt(0).toUpperCase() + t.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Search Bar */}
-            <div className="relative w-full max-w-md shrink-0">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-outline flex items-center">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/>
-                  <path d="M21 21l-4.35-4.35"/>
-                </svg>
-              </span>
-              <input 
-                className="w-full pl-11 pr-4 py-3 bg-white/40 backdrop-blur-md rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-body-md text-sm border border-white/50 shadow-sm placeholder-outline-variant" 
-                placeholder="Search members..." 
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
+          {/* Search Bar */}
+          <div className="relative w-full max-w-md shrink-0">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-outline flex items-center">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+            </span>
+            <input 
+              className="w-full pl-11 pr-4 py-3 bg-white/40 backdrop-blur-md rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-body-md text-sm border border-white/50 shadow-sm placeholder-outline-variant" 
+              placeholder="Search members..." 
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
 

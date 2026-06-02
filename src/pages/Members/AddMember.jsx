@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -15,6 +15,7 @@ import {
   generateMemberNumber, generateEnrollmentNumber,
   generateMemberId, initializeNumberingSettings
 } from '../../utils/numberingService';
+import { uploadMemberPhoto } from '../../firebase/storage';
 import BottomNav from '../../components/BottomNav';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -42,6 +43,16 @@ const AddMember = ({ quickAddOnly = false }) => {
   const [newEnrollmentNumber, setNewEnrollmentNumber] = useState(null);
   const [duplicate, setDuplicate] = useState(null);
   const [checkingPhone, setCheckingPhone] = useState(false);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const photoInputRef = useRef(null);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   // Form state
   const [form, setForm] = useState({
@@ -185,7 +196,7 @@ const AddMember = ({ quickAddOnly = false }) => {
         agreement_status: requireAgreement ? 'pending' : 'not_required',
         
         // Profile fields
-        profile_photo: null,
+        profile_photo: null, // will be updated below if photo uploaded
         date_of_birth: form.dob || null,
         gender: form.gender || null,
         blood_group: form.bloodGroup || null,
@@ -206,6 +217,16 @@ const AddMember = ({ quickAddOnly = false }) => {
       };
 
       const docMemberId = await createMember(memberData);
+
+      // Upload profile photo if selected
+      if (photoFile && userDoc.gym_id) {
+        try {
+          const photoUrl = await uploadMemberPhoto(userDoc.gym_id, docMemberId, photoFile);
+          await updateDoc(doc(db, 'users', docMemberId), { profile_photo: photoUrl });
+        } catch (photoErr) {
+          console.error('Profile photo upload error (non-critical):', photoErr);
+        }
+      }
 
       // Auto-assign workout plan
       try {
@@ -325,6 +346,8 @@ const AddMember = ({ quickAddOnly = false }) => {
     setPaidNow('');
     setDiscount('');
     setUpiRef('');
+    setPhotoFile(null);
+    setPhotoPreview(null);
   };
 
   // Success screen
@@ -430,6 +453,34 @@ const AddMember = ({ quickAddOnly = false }) => {
                 <span className="material-symbols-outlined text-primary">person</span>
                 Personal Details
               </h3>
+
+              {/* Photo Picker */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => photoInputRef.current?.click()}
+                    className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 shadow-lg bg-primary/10 flex items-center justify-center text-on-surface-variant hover:bg-primary/20 transition-colors group"
+                    title="Add photo"
+                  >
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="material-symbols-outlined text-3xl text-primary/60 group-hover:text-primary transition-colors">add_a_photo</span>
+                    )}
+                  </button>
+                  <div className="absolute bottom-0 right-0 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-md pointer-events-none">
+                    <span className="material-symbols-outlined text-white text-[14px]">photo_camera</span>
+                  </div>
+                </div>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">

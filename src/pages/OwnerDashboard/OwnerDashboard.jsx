@@ -9,6 +9,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { getInitials, getAvatarColor, getExpiryStatus, getPlanName, formatDate } from '../../utils/helpers';
 import StatusBadge from '../../components/StatusBadge';
+import useLiveOccupancy from '../../hooks/useLiveOccupancy';
 import './OwnerDashboard.css';
 
 function getGreeting() {
@@ -28,6 +29,7 @@ const OwnerDashboard = () => {
   const [payments, setPayments] = useState([]);
   const [newLeadsCount, setNewLeadsCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const { occupancy } = useLiveOccupancy(userDoc?.gym_id);
 
   useEffect(() => {
     const fetchGym = async () => {
@@ -163,6 +165,29 @@ const OwnerDashboard = () => {
             Inquiries
             {newLeadsCount > 0 && <span className="dash-action-badge">{newLeadsCount}</span>}
           </button>
+        </div>
+
+        {/* ══════ Live Occupancy Widget ══════ */}
+        <div
+          className="dash-occupancy-widget dash-glass"
+          onClick={() => navigate('/owner/attendance')}
+          role="button" tabIndex={0}
+        >
+          <div className="dash-occupancy-left">
+            <div className="dash-occupancy-live">
+              <span className="dash-occupancy-dot" />
+              LIVE
+            </div>
+            <div className="dash-occupancy-count">{occupancy}</div>
+            <div className="dash-occupancy-label">members inside now</div>
+          </div>
+          <div className="dash-occupancy-right">
+            <span className="material-symbols-outlined" style={{ fontSize: 36, color: 'rgba(83,74,183,0.3)' }}>group</span>
+          </div>
+          <div className="dash-occupancy-link">
+            View analytics
+            <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_right</span>
+          </div>
         </div>
 
         {/* ══════ Stats Grid ══════ */}
