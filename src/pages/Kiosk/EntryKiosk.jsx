@@ -79,20 +79,21 @@ const PairingScreen = ({ pair, pairing, pairingError }) => {
 const ResultOverlay = ({ result, countdown }) => {
   const icons = {
     success: '✓',
+    'exit-success': '👋',
     expiring: '⚠',
     expired: '✕',
     error: '?',
   };
   const titles = {
     success: `Welcome, ${result.member?.name || 'Member'}! 👋`,
-    exit: `Goodbye, ${result.member?.name || 'Member'}! 👋`,
+    'exit-success': `Goodbye, ${result.member?.name || 'Member'}! 👋`,
     expiring: `Welcome, ${result.member?.name || 'Member'}! 👋`,
     expired: 'Access Denied',
     error: 'Unknown QR Code',
   };
   const subtitles = {
     success: 'Your membership is valid. Entry logged.',
-    exit: `Checked out successfully. You worked out for ${result.durationMinutes || 0} minutes.`,
+    'exit-success': `Checked out successfully. You worked out for ${result.durationMinutes || 0} minutes.`,
     expiring: `Membership expires in ${result.daysLeft} day${result.daysLeft !== 1 ? 's' : ''}. Please renew soon.`,
     expired: result.member
       ? `${result.member.name}'s membership has expired. Please contact the front desk.`
@@ -254,16 +255,15 @@ const EntryKiosk = () => {
       if (actionType === 'exit') {
         if (!activeSession) {
           // Trying to exit but not inside? We'll just show success or create a 0 min session?
-          // For now, let's just create a quick exit session or show error.
-          // Let's just create an entry and immediate exit so it logs.
+          // For now, let's just create a quick entry and immediate exit so it logs.
           const sid = await createAttendanceSession({ memberId, gymId: expectedGym, entryDeviceId: 'manual' });
           await completeAttendanceSession(sid, { exitDeviceId: deviceId, durationMinutes: 1 });
-          setResult({ type: 'exit', member, durationMinutes: 1 });
+          setResult({ type: 'exit-success', member, durationMinutes: 1 });
         } else {
           const entryMs = activeSession.entryTime?.toDate ? activeSession.entryTime.toDate().getTime() : Date.now();
           const durationMinutes = Math.max(1, Math.round((Date.now() - entryMs) / 60000));
           await completeAttendanceSession(activeSession.id, { exitDeviceId: deviceId, durationMinutes });
-          setResult({ type: 'exit', member, durationMinutes });
+          setResult({ type: 'exit-success', member, durationMinutes });
         }
         playKioskSound('exit');
         autoReturn(4);
