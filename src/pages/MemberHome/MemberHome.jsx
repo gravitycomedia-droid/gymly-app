@@ -27,11 +27,19 @@ import {
 } from '../../utils/helpers';
 import { getTodaysDayNumber } from '../../data/exerciseLibrary';
 import { GYMLY_EXERCISE_DB } from '../../data/gymlyExerciseDb';
+import { QRCodeSVG } from 'qrcode.react';
 import BottomNav from '../../components/BottomNav';
 import './MemberHome.css';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// ── Default card settings ────────────────────────────────────
+const DEFAULT_CS = {
+  show_gym_name: true, show_member_name: true, show_photo: true,
+  show_member_id: true, show_enrollment_id: true, show_plan: true,
+  show_expiry: true, show_phone: false, show_qr: true, show_status: true,
+};
 
 const MemberHome = () => {
   const navigate = useNavigate();
@@ -44,12 +52,15 @@ const MemberHome = () => {
   const [recentLogs, setRecentLogs] = useState([]);
   const [caloriesToday, setCaloriesToday] = useState(0);
   const [totalSetsToday, setTotalSetsToday] = useState(0);
-  const [showQRCode, setShowQRCode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pendingPayments, setPendingPayments] = useState([]);
   const [uploadingPaymentId, setUploadingPaymentId] = useState(null);
-  const [showAgreementBanner, setShowAgreementBanner] = useState(false);
+  const [showAgreementPending, setShowAgreementPending] = useState(false);
   const screenshotInputRef = useRef(null);
+
+  // QR / Card tab state (0 = QR Check-in, 1 = Digital Card)
+  const [activeTab, setActiveTab] = useState(0);
+  const [cardExpanded, setCardExpanded] = useState(false);
 
   const prevAttendanceCount = useRef(null);
 
@@ -67,7 +78,6 @@ const MemberHome = () => {
   useEffect(() => {
     const fetchAll = async () => {
       if (!userDoc) { setLoading(false); return; }
-
       try {
         const promises = [];
         if (userDoc.gym_id) promises.push(getGym(userDoc.gym_id));
@@ -84,47 +94,39 @@ const MemberHome = () => {
         setWorkoutPlan(planData);
         setRecentLogs(logs);
 
-        // Agreement banner — check require_agreement after gym loads (default: required)
+        // Agreement — show inline card only if required and not yet agreed
         const requireAgreement = gymData?.settings?.require_agreement !== false;
         if (requireAgreement && userDoc.agreement_status !== 'agreed') {
-          setShowAgreementBanner(true);
+          setShowAgreementPending(true);
         }
 
-        // 1. Calculate today's caloric summary
+        // Caloric summary
         const todayAtZero = new Date();
-        todayAtZero.setHours(0,0,0,0);
-        
+        todayAtZero.setHours(0, 0, 0, 0);
         const logsToday = logs.filter(l => {
           const d = l.log_date?.toDate ? l.log_date.toDate() : null;
           const cd = l.client_date ? new Date(l.client_date) : null;
           const dateToUse = d || cd;
           return dateToUse && dateToUse.getTime() >= todayAtZero.getTime();
         });
-
-        let setsCount = 0;
-        let calsCount = 0;
+        let setsCount = 0, calsCount = 0;
         logsToday.forEach(log => {
           calsCount += (log.total_calories || 0);
-          log.exercises?.forEach(ex => {
-            setsCount += (ex.sets?.length || 0);
-          });
+          log.exercises?.forEach(ex => { setsCount += (ex.sets?.length || 0); });
         });
         setTotalSetsToday(setsCount);
         setCaloriesToday(calsCount || (setsCount * 15));
 
-        // 2. Soreness Check Logic
+        // Soreness check
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         const yestStr = yesterday.toDateString();
-
         const yestLog = logs.find(l => {
           const d = l.log_date?.toDate ? l.log_date.toDate() : null;
           return d && d.toDateString() === yestStr;
         });
-
-        const alreadyLoggedSoreness = recentSoreness && 
+        const alreadyLoggedSoreness = recentSoreness &&
           recentSoreness.logged_at?.toDate().toDateString() === new Date().toDateString();
-
         if (yestLog && !alreadyLoggedSoreness) {
           const muscles = new Set();
           yestLog.exercises?.forEach(ex => {
@@ -166,12 +168,7 @@ const MemberHome = () => {
     const unsub = onSnapshot(qLabel, (snap) => {
       const count = snap.docs.length;
       if (prevAttendanceCount.current !== null && count > prevAttendanceCount.current) {
-        setShowQRCode(false);
-        try {
-          playHapticSound('success');
-        } catch (e) {
-          console.log('Audio/Haptic not supported or blocked');
-        }
+        try { playHapticSound('success'); } catch (e) {}
       }
       prevAttendanceCount.current = count;
     });
@@ -182,10 +179,7 @@ const MemberHome = () => {
     try {
       const payload = {
         member_id: user.uid,
-        muscle_sorenesses: Object.entries(sorenessLevels).map(([m, level]) => ({
-          muscle: m,
-          level
-        }))
+        muscle_sorenesses: Object.entries(sorenessLevels).map(([m, level]) => ({ muscle: m, level }))
       };
       await saveSorenessLog(payload);
       setShowSorenessCheck(false);
@@ -196,7 +190,6 @@ const MemberHome = () => {
   };
 
   const [allPayments, setAllPayments] = useState([]);
-
   useEffect(() => {
     if (!userDoc?.gym_id || !user?.uid) return;
     const unsub = getMemberPaymentsRealtime(userDoc.gym_id, user.uid, (payments) => {
@@ -227,17 +220,19 @@ const MemberHome = () => {
   const daysRemaining = getDaysRemaining(userDoc?.subscription_expiry);
   const bmi = calculateBMI(userDoc?.height, userDoc?.weight);
   const avatarColor = getAvatarColor(userDoc?.name);
-
   const streak = userDoc?.streak || 0;
   const workoutsThisMonth = recentLogs.filter(l => {
     const d = l.log_date?.toDate ? l.log_date.toDate() : null;
     return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
-
   const todayLogged = recentLogs.some(l => {
     const d = l.log_date?.toDate ? l.log_date.toDate() : null;
     return d && d.toDateString() === now.toDateString();
   });
+
+  const cs = { ...DEFAULT_CS, ...(gym?.card_settings || {}) };
+  const sc = { active: { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' }, expiring: { bg: 'rgba(239,159,39,0.15)', color: '#EF9F27', dot: '#EF9F27' }, expired: { bg: 'rgba(186,26,26,0.15)', color: '#ba1a1a', dot: '#ba1a1a' } }[statusType] || { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' };
+  const publicUrl = `${window.location.origin}/public/member/${user?.uid}`;
 
   if (loading) {
     return (
@@ -252,6 +247,7 @@ const MemberHome = () => {
   return (
     <div className="screen member-home-screen">
       <div className="screen-content">
+        {/* Greeting */}
         <div className="member-greeting">
           <div>
             <h1 className="member-greeting-text">{greeting}, {firstName}</h1>
@@ -266,6 +262,37 @@ const MemberHome = () => {
           </div>
         </div>
 
+        {/* ── Agreement Pending inline card ── */}
+        {showAgreementPending && userDoc?.agreement_status !== 'agreed' && (
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(83,74,183,0.1), rgba(55,138,221,0.08))',
+            border: '1.5px solid rgba(83,74,183,0.25)',
+            borderRadius: 16, padding: '14px 16px',
+            display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4,
+          }}>
+            <span style={{ fontSize: 22 }}>📝</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#534ab7', marginBottom: 2 }}>Agreement Pending</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.4 }}>Sign your membership agreement to unlock full access.</div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <button
+                onClick={() => navigate('/member/agreement')}
+                style={{ background: '#534ab7', color: '#fff', border: 'none', padding: '7px 12px', borderRadius: 10, fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                Sign →
+              </button>
+              <button
+                onClick={() => setShowAgreementPending(false)}
+                style={{ background: 'transparent', color: 'var(--text-muted)', border: 'none', padding: '3px', fontSize: 11, cursor: 'pointer' }}
+              >
+                Later
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Soreness check */}
         {showSorenessCheck && (
           <div className="soreness-check-card glass-card">
             <div className="soreness-header">📋 Quick Recovery Check</div>
@@ -276,7 +303,7 @@ const MemberHome = () => {
                   <span className="soreness-muscle-name">{m}</span>
                   <div className="soreness-levels">
                     {['Not sore', 'A little', 'Very sore'].map((lbl, idx) => (
-                      <button 
+                      <button
                         key={idx}
                         className={`soreness-btn ${sorenessLevels[m] === idx ? `active-${idx}` : ''}`}
                         onClick={() => setSorenessLevels({...sorenessLevels, [m]: idx})}
@@ -292,78 +319,221 @@ const MemberHome = () => {
           </div>
         )}
 
-          {/* Membership card block */}
-          <div className={`membership-card glass-card status-${statusType}`}>
-            <div className="membership-card-top">
-              <span className="membership-gym-name">{gym?.name || 'My Gym'}</span>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-                <span className={`status-badge-mini ${statusType}`}>{statusLabel}</span>
-                {/* QR thumbnail */}
-                <div
-                  style={{ position: 'relative', width: 44, height: 44, cursor: daysRemaining > 0 ? 'pointer' : 'default' }}
-                  onClick={() => daysRemaining > 0 && setShowQRCode(true)}
-                >
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
-                    alt="QR"
-                    style={{
-                      width: 44, height: 44, background: '#fff', padding: 4, borderRadius: 6,
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      opacity: daysRemaining <= 0 ? 0.35 : 1,
-                      filter: daysRemaining <= 0 ? 'grayscale(1)' : 'none',
-                    }}
-                  />
-                  {daysRemaining <= 0 && (
-                    <div style={{
-                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: 'rgba(226,75,74,0.75)', borderRadius: 6,
-                      fontSize: 7, fontWeight: 800, color: '#fff', letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.1,
-                    }}>
-                      EXP<br/>IRED
+        {/* ── QR / Card Tab Strip ── */}
+        <div style={{
+          display: 'flex', background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(12px)',
+          borderRadius: 14, padding: 4, marginBottom: 4, border: '1px solid rgba(255,255,255,0.5)',
+          boxShadow: '0 2px 8px rgba(83,74,183,0.06)',
+        }}>
+          {[{ icon: '⬛', label: 'QR Check-in' }, { icon: '🪪', label: 'Digital ID' }].map((t, i) => (
+            <button
+              key={i}
+              onClick={() => setActiveTab(i)}
+              style={{
+                flex: 1, padding: '9px 12px', borderRadius: 11, border: 'none', cursor: 'pointer',
+                fontWeight: 700, fontSize: 13, transition: 'all 0.2s',
+                background: activeTab === i ? '#fff' : 'transparent',
+                color: activeTab === i ? '#534ab7' : '#787584',
+                boxShadow: activeTab === i ? '0 2px 8px rgba(83,74,183,0.12)' : 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 14 }}>{t.icon}</span> {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Tab 0: QR Check-in ── */}
+        {activeTab === 0 && (
+          <div style={{
+            background: 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #1a2980 100%)',
+            borderRadius: 20, padding: '20px 20px 24px',
+            position: 'relative', overflow: 'hidden', marginBottom: 4,
+            boxShadow: '0 8px 32px rgba(83,74,183,0.25)',
+          }}>
+            <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(83,74,183,0.25)', filter: 'blur(25px)' }} />
+            <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(55,138,221,0.2)', filter: 'blur(20px)' }} />
+            <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.5)', letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 14 }}>
+                Gym Check-in
+              </div>
+              {daysRemaining <= 0 ? (
+                <div style={{ padding: '20px 0' }}>
+                  <div style={{ fontSize: 48, marginBottom: 10 }}>🚫</div>
+                  <div style={{ fontWeight: 700, fontSize: 16, color: '#ff6b6b', marginBottom: 6 }}>Membership Expired</div>
+                  <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                    Expired {Math.abs(daysRemaining)} days ago. Renew to use check-in.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div style={{ background: '#fff', padding: 14, borderRadius: 18, display: 'inline-block', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
+                    <QRCodeSVG
+                      value={`gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
+                      size={160}
+                      bgColor="transparent"
+                      fgColor="#1A1A1A"
+                      level="M"
+                    />
+                  </div>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 10 }}>
+                    Show this QR at reception to log your attendance
+                  </p>
+                </>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 4 }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: sc.dot }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: sc.color }}>{statusLabel}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>•</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                  {daysRemaining > 0 ? `${daysRemaining} days left` : `Expired ${Math.abs(daysRemaining)}d ago`}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Tab 1: Digital Membership Card ── */}
+        {activeTab === 1 && (
+          <div>
+            {/* Collapsed preview / expand button */}
+            {!cardExpanded ? (
+              <div
+                onClick={() => setCardExpanded(true)}
+                style={{
+                  background: 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #1a2980 100%)',
+                  borderRadius: 20, padding: '16px 20px', cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  boxShadow: '0 8px 32px rgba(83,74,183,0.25)', marginBottom: 4,
+                  position: 'relative', overflow: 'hidden',
+                }}
+              >
+                <div style={{ position: 'absolute', top: -20, right: -20, width: 90, height: 90, borderRadius: '50%', background: 'rgba(83,74,183,0.3)', filter: 'blur(20px)' }} />
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {cs.show_photo && (
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg, ${avatarColor.bg}, #378add)`, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid rgba(255,255,255,0.3)', flexShrink: 0 }}>
+                      {userDoc?.profile_photo
+                        ? <img src={userDoc.profile_photo} alt="" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: 16, fontWeight: 700, color: avatarColor.text }}>{getInitials(userDoc?.name)}</span>
+                      }
+                    </div>
+                  )}
+                  <div>
+                    {cs.show_gym_name && <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontWeight: 600, letterSpacing: 0.5, textTransform: 'uppercase' }}>{gym?.name || 'My Gym'}</div>}
+                    {cs.show_member_name && <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>{userDoc?.name}</div>}
+                    {cs.show_plan && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{getPlanName(gym, userDoc?.plan_id)}</div>}
+                  </div>
+                </div>
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  {cs.show_qr && (
+                    <div style={{ background: 'rgba(255,255,255,0.15)', padding: 6, borderRadius: 8 }}>
+                      <QRCodeSVG value={publicUrl} size={32} bgColor="transparent" fgColor="#ffffff" level="M" />
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>Tap to expand</div>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 2 }}>
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Expanded full card */
+              <div style={{
+                background: 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #1a2980 100%)',
+                borderRadius: 20, padding: 20, position: 'relative', overflow: 'hidden', marginBottom: 4,
+                boxShadow: '0 12px 48px rgba(83,74,183,0.35)',
+              }}>
+                <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(83,74,183,0.3)', filter: 'blur(30px)' }} />
+                <div style={{ position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: '50%', background: 'rgba(55,138,221,0.25)', filter: 'blur(25px)' }} />
+
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  {/* Top row */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                    <div>
+                      {cs.show_gym_name && <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>{gym?.name || 'My Gym'}</div>}
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      {cs.show_status && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: sc.bg, padding: '4px 10px', borderRadius: 99 }}>
+                          <div style={{ width: 6, height: 6, borderRadius: '50%', background: sc.dot }} />
+                          <span style={{ fontSize: 10, fontWeight: 700, color: sc.color }}>{statusLabel}</span>
+                        </div>
+                      )}
+                      <button onClick={() => setCardExpanded(false)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: 'rgba(255,255,255,0.6)', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Middle row */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                    {cs.show_photo && (
+                      <div style={{ width: 52, height: 52, borderRadius: '50%', flexShrink: 0, border: '2px solid rgba(255,255,255,0.3)', overflow: 'hidden', background: `linear-gradient(135deg, ${avatarColor.bg}, #378add)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {userDoc?.profile_photo
+                          ? <img src={userDoc.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <span style={{ fontSize: 18, fontWeight: 700, color: avatarColor.text }}>{getInitials(userDoc?.name)}</span>
+                        }
+                      </div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      {cs.show_member_name && <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userDoc?.name}</div>}
+                      {cs.show_plan && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{getPlanName(gym, userDoc?.plan_id)}</div>}
+                      {cs.show_member_id && (userDoc?.memberNumber || userDoc?.id) && (
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
+                          #{userDoc?.memberNumber || `MEM-${userDoc?.id?.substring(0, 6)}`}
+                        </div>
+                      )}
+                      {cs.show_enrollment_id && userDoc?.latestEnrollmentNumber && (
+                        <div style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.15)', padding: '2px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
+                          {userDoc.latestEnrollmentNumber}
+                        </div>
+                      )}
+                    </div>
+                    {cs.show_qr && (
+                      <div style={{ background: '#fff', padding: 6, borderRadius: 10, flexShrink: 0 }}>
+                        <QRCodeSVG value={publicUrl} size={52} bgColor="transparent" fgColor="#1A1A1A" level="M" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Bottom row */}
+                  {(cs.show_expiry || cs.show_phone) && (
+                    <div style={{ display: 'flex', gap: 20, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12 }}>
+                      {cs.show_expiry && (
+                        <div>
+                          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Valid Till</div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginTop: 1 }}>{formatDate(userDoc?.subscription_expiry)}</div>
+                        </div>
+                      )}
+                      {cs.show_phone && userDoc?.phone && (
+                        <div>
+                          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Phone</div>
+                          <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginTop: 1 }}>{userDoc.phone}</div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-            {getPlanName(gym, userDoc?.plan_id) && (
-              <div className="membership-plan-name">{getPlanName(gym, userDoc?.plan_id)}</div>
             )}
-            {/* Member ID and Enrollment ID — shown per card_settings */}
-            {(() => {
-              const cs = gym?.card_settings || {};
-              const showMemberId = cs.show_member_id !== false;
-              const showEnrollmentId = cs.show_enrollment_id !== false;
-              const memberId = userDoc?.memberNumber || (userDoc?.id ? `MEM-${userDoc.id.substring(0,6)}` : null);
-              const enrollmentId = userDoc?.latestEnrollmentNumber;
-              if (!showMemberId && !showEnrollmentId) return null;
-              return (
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2, marginBottom: 2 }}>
-                  {showMemberId && memberId && (
-                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)', background: 'rgba(83,74,183,0.07)', padding: '2px 8px', borderRadius: 6 }}>
-                      #{memberId}
-                    </span>
-                  )}
-                  {showEnrollmentId && enrollmentId && (
-                    <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#1D9E75', background: 'rgba(29,158,117,0.1)', padding: '2px 8px', borderRadius: 6 }}>
-                      {enrollmentId}
-                    </span>
-                  )}
-                </div>
-              );
-            })()}
-            <div className="membership-days-pill">
-              {daysRemaining > 0 ? `${daysRemaining} days left` : `Expired ${Math.abs(daysRemaining)} days ago`}
-            </div>
-            <div className="membership-expiry">Valid till {formatDate(userDoc?.subscription_expiry)}</div>
+            <button
+              onClick={() => navigate('/member/card')}
+              style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 12, background: 'rgba(83,74,183,0.08)', border: '1px solid rgba(83,74,183,0.15)', color: '#534ab7', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            >
+              View Full Digital ID →
+            </button>
           </div>
+        )}
 
+        {/* Pending payments */}
         {pendingPayments.map(p => (
           <div key={p.id} style={{
             background: 'linear-gradient(135deg, rgba(239,159,39,0.12), rgba(226,75,74,0.08))',
             border: '1.5px solid rgba(239,159,39,0.3)',
-            borderRadius: 16,
-            padding: '14px 16px',
-            marginBottom: 12,
+            borderRadius: 16, padding: '14px 16px', marginBottom: 12,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
               <span style={{ fontSize: 18 }}>⚠️</span>
@@ -379,56 +549,28 @@ const MemberHome = () => {
                 {p.screenshot_url ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12 }}>
                     <span style={{ color: '#1D9E75', fontWeight: 600 }}>✓ Screenshot submitted</span>
-                    <a href={p.screenshot_url} target="_blank" rel="noreferrer"
-                      style={{ color: 'var(--primary)', fontSize: 11 }}>View →</a>
+                    <a href={p.screenshot_url} target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', fontSize: 11 }}>View →</a>
                   </div>
                 ) : (
                   <div>
                     <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 8 }}>
                       Upload your UPI payment screenshot so the gym can verify and clear your due.
                     </p>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      id={`screenshot-${p.id}`}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleScreenshotUpload(p.id, file);
-                      }}
+                    <input type="file" accept="image/*" style={{ display: 'none' }} id={`screenshot-${p.id}`}
+                      onChange={(e) => { const file = e.target.files?.[0]; if (file) handleScreenshotUpload(p.id, file); }}
                     />
-                    <label htmlFor={`screenshot-${p.id}`} style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6,
-                      padding: '8px 16px', borderRadius: 10, cursor: 'pointer',
-                      background: uploadingPaymentId === p.id ? 'var(--primary-light)' : 'var(--primary-light)',
-                      color: 'var(--primary)', fontWeight: 600, fontSize: 13,
-                      border: '1.5px solid var(--primary-border)',
-                    }}>
-                      {uploadingPaymentId === p.id ? (
-                        <span>Uploading...</span>
-                      ) : (
-                        <>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"
-                              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                          Upload UPI Screenshot
-                        </>
-                      )}
+                    <label htmlFor={`screenshot-${p.id}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 10, cursor: 'pointer', background: 'var(--primary-light)', color: 'var(--primary)', fontWeight: 600, fontSize: 13, border: '1.5px solid var(--primary-border)' }}>
+                      {uploadingPaymentId === p.id ? <span>Uploading...</span> : <><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>Upload UPI Screenshot</>}
                     </label>
                   </div>
                 )}
               </div>
             )}
-            {p.method !== 'upi' && (
-              <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>
-                Please pay at the gym counter to clear this due.
-              </p>
-            )}
+            {p.method !== 'upi' && <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Please pay at the gym counter to clear this due.</p>}
           </div>
         ))}
 
-
+        {/* Today's workout */}
         <div className="today-workout glass-card" onClick={() => navigate('/member/workout')}>
           <div className="today-workout-header">
             <span style={{ fontSize: 16, fontWeight: 600 }}>Today&apos;s workout</span>
@@ -438,9 +580,7 @@ const MemberHome = () => {
             <>
               <div className="today-workout-day">{todayDay.name}</div>
               <div className="today-workout-focus">{todayDay.focus}</div>
-              <div className="today-workout-meta">
-                {todayDay.exercises?.length || 0} exercises • ~{(todayDay.exercises?.length || 0) * 8} min
-              </div>
+              <div className="today-workout-meta">{todayDay.exercises?.length || 0} exercises • ~{(todayDay.exercises?.length || 0) * 8} min</div>
             </>
           )}
           {!todayDay && <div className="today-workout-focus">Pick your session for today →</div>}
@@ -448,22 +588,22 @@ const MemberHome = () => {
 
         <div className="calorie-summary-calm glass-card">
           <div className="csc-header">
-             <div className="csc-icon">🔥</div>
-             <div className="csc-title">Energy Burned Today</div>
+            <div className="csc-icon">🔥</div>
+            <div className="csc-title">Energy Burned Today</div>
           </div>
           <div className="csc-metrics">
-             <div className="csc-metric">
-                <span className="csc-val">{caloriesToday}</span>
-                <span className="csc-lbl">kcal burned</span>
-             </div>
-             <div className="csc-divider" />
-             <div className="csc-metric">
-                <span className="csc-val">{totalSetsToday}</span>
-                <span className="csc-lbl">sets logged</span>
-             </div>
+            <div className="csc-metric">
+              <span className="csc-val">{caloriesToday}</span>
+              <span className="csc-lbl">kcal burned</span>
+            </div>
+            <div className="csc-divider" />
+            <div className="csc-metric">
+              <span className="csc-val">{totalSetsToday}</span>
+              <span className="csc-lbl">sets logged</span>
+            </div>
           </div>
           <div className="csc-progress-track">
-             <div className="csc-progress-bar" style={{ width: `${Math.min((caloriesToday / 500) * 100, 100)}%` }} />
+            <div className="csc-progress-bar" style={{ width: `${Math.min((caloriesToday / 500) * 100, 100)}%` }} />
           </div>
         </div>
 
@@ -500,92 +640,7 @@ const MemberHome = () => {
         )}
       </div>
 
-      {showQRCode && (
-        <div className="modal-overlay" style={{ alignItems: 'center' }} onClick={() => setShowQRCode(false)}>
-          <div className="qr-modal glass-card" onClick={e => e.stopPropagation()}>
-            <div className="qr-modal-header">
-              <h3>Gym Check-in</h3>
-              <button className="qr-close" onClick={() => setShowQRCode(false)}>×</button>
-            </div>
-
-            {daysRemaining <= 0 ? (
-              <div style={{ padding: '20px 16px', textAlign: 'center' }}>
-                <div style={{ fontSize: 48, marginBottom: 12 }}>🚫</div>
-                <div style={{ fontWeight: 700, fontSize: 16, color: 'var(--error)', marginBottom: 6 }}>Membership Expired</div>
-                <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                  Your membership expired {Math.abs(daysRemaining)} days ago. Please renew to use the gym check-in QR.
-                </p>
-              </div>
-            ) : (
-              <>
-                <div className="qr-placeholder" style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
-                    alt="Gym Check-in QR"
-                    style={{ display: 'block', width: 180, height: 180 }}
-                  />
-                </div>
-                <p className="qr-help">
-                  Show this code at the reception to log your daily attendance automatically.
-                </p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
       <BottomNav activeTab="home" role="member" />
-
-      {/* ─── Agreement popup banner ─── */}
-      {showAgreementBanner && userDoc?.agreement_status !== 'agreed' && (
-        <div style={{
-          position: 'fixed', bottom: 72, left: 0, right: 0, zIndex: 200,
-          padding: '0 16px',
-          animation: 'slideUp 0.3s ease',
-        }}>
-          <div style={{
-            background: 'linear-gradient(135deg, #534AB7 0%, #378ADD 100%)',
-            borderRadius: 18, padding: '16px 18px',
-            boxShadow: '0 -4px 32px var(--primary)',
-            display: 'flex', alignItems: 'center', gap: 14,
-          }}>
-            <div style={{ fontSize: 28, flexShrink: 0 }}>📝</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#fff', marginBottom: 2 }}>
-                Agreement pending
-              </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-                Sign your membership agreement to unlock full access.
-              </div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
-              <button
-                onClick={() => navigate('/member/agreement')}
-                style={{
-                  background: '#fff', color: 'var(--primary)', border: 'none',
-                  padding: '8px 14px', borderRadius: 10,
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                Sign Now →
-              </button>
-              <button
-                onClick={() => setShowAgreementBanner(false)}
-                style={{
-                  background: 'rgba(255,255,255,0.15)', color: '#fff', border: 'none',
-                  padding: '5px 14px', borderRadius: 10,
-                  fontSize: 11, cursor: 'pointer',
-                }}
-              >
-                Later
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
     </div>
   );
 };

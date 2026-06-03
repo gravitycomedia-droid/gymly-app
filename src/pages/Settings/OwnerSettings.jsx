@@ -84,6 +84,7 @@ const OwnerSettings = () => {
 
   // Member Experience
   const [requireAgreement, setRequireAgreement] = useState(true);
+  const [workoutEnabled, setWorkoutEnabled] = useState(false); // default: locked
 
   // Gallery
   const [photos, setPhotos] = useState([]);
@@ -127,6 +128,7 @@ const OwnerSettings = () => {
       setEquipment(g.equipment || []);
       setPhotos(g.photos || []);
       setRequireAgreement(g.settings?.require_agreement !== false); // default true
+      setWorkoutEnabled(g.settings?.workout_enabled === true); // default false (locked)
       setLoading(false);
     });
   }, [userDoc?.gym_id]);
@@ -336,6 +338,18 @@ const OwnerSettings = () => {
     }
   };
 
+  // ── Save workout enabled toggle ──
+  const saveWorkoutEnabled = async (value) => {
+    setWorkoutEnabled(value);
+    try {
+      await updateGym(userDoc.gym_id, { 'settings.workout_enabled': value });
+      showToast(value ? 'Workout access enabled for members' : 'Workout access locked', 'success');
+    } catch (e) {
+      showToast('Failed to save: ' + e.message, 'error');
+      setWorkoutEnabled(!value);
+    }
+  };
+
   // ── Equipment ──
   const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Legs', 'Core', 'Cardio', 'Full Body', 'Glutes'];
 
@@ -533,6 +547,20 @@ const OwnerSettings = () => {
                 className={`plan-toggle ${requireAgreement ? 'on' : 'off'}`}
                 onClick={() => saveRequireAgreement(!requireAgreement)}
                 title={requireAgreement ? 'Required' : 'Disabled'}
+              />
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>🏋️</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Workout Plan Access</div>
+                <div className="settings-row-desc">
+                  {workoutEnabled ? 'Members can access workout & progress pages' : 'Workout pages are locked for members'}
+                </div>
+              </div>
+              <button
+                className={`plan-toggle ${workoutEnabled ? 'on' : 'off'}`}
+                onClick={() => saveWorkoutEnabled(!workoutEnabled)}
+                title={workoutEnabled ? 'Enabled' : 'Locked'}
               />
             </div>
           </div>

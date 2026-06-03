@@ -61,6 +61,7 @@ const CardEditor           = lazy(() => import('./pages/Settings/CardEditor'));
 const EntryKiosk           = lazy(() => import('./pages/Kiosk/EntryKiosk'));
 const ExitKiosk            = lazy(() => import('./pages/Kiosk/ExitKiosk'));
 const KioskDevices         = lazy(() => import('./pages/Attendance/KioskDevices'));
+import WorkoutGate from './components/WorkoutGate';
 
 // ── Loading Spinner (shown while lazy chunks load) ──
 const PageSpinner = () => (
@@ -191,8 +192,8 @@ function AnimatedRoutes() {
 
           {/* Member routes */}
           <Route path="/member/home" element={<ProtectedRoute><MemberLayout activeTab="home"><PageTransition><MemberHome /></PageTransition></MemberLayout></ProtectedRoute>} />
-          <Route path="/member/workout" element={<ProtectedRoute><MemberLayout activeTab="workout"><PageTransition><MemberWorkoutScreen /></PageTransition></MemberLayout></ProtectedRoute>} />
-          <Route path="/member/progress" element={<ProtectedRoute allowedRoles={['member']}><MemberLayout activeTab="progress"><PageTransition><MemberProgressScreen /></PageTransition></MemberLayout></ProtectedRoute>} />
+          <Route path="/member/workout" element={<ProtectedRoute><MemberLayout activeTab="workout"><PageTransition><WorkoutGate><MemberWorkoutScreen /></WorkoutGate></PageTransition></MemberLayout></ProtectedRoute>} />
+          <Route path="/member/progress" element={<ProtectedRoute allowedRoles={['member']}><MemberLayout activeTab="progress"><PageTransition><WorkoutGate><MemberProgressScreen /></WorkoutGate></PageTransition></MemberLayout></ProtectedRoute>} />
           <Route path="/member/profile" element={<ProtectedRoute allowedRoles={['member']}><MemberLayout activeTab="profile"><PageTransition><MemberProfileScreen /></PageTransition></MemberLayout></ProtectedRoute>} />
           <Route path="/member/edit-profile" element={<ProtectedRoute allowedRoles={['member']}><MemberLayout activeTab="profile"><PageTransition><MemberEditProfileScreen /></PageTransition></MemberLayout></ProtectedRoute>} />
           <Route path="/member/notifications" element={<ProtectedRoute allowedRoles={['member']}><MemberLayout activeTab="home"><PageTransition><MemberNotificationsScreen /></PageTransition></MemberLayout></ProtectedRoute>} />
