@@ -48,6 +48,7 @@ const NumberingSettings = () => {
   // UI state
   const [prefixStatus, setPrefixStatus] = useState(null); // 'available' | 'taken' | 'checking' | null
   const [prefixError, setPrefixError] = useState('');
+  const [useEnrollmentIdForAdmin, setUseEnrollmentIdForAdmin] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -70,6 +71,7 @@ const NumberingSettings = () => {
       setSerialDigits(settings.serialDigits || 2);
       setEnrollTemplate(settings.enrollmentTemplate || '{JOIN_DATE}-{PLAN_DURATION}-{SERIAL}');
       setEnrollReset(settings.enrollmentSerialReset || 'monthly');
+      setUseEnrollmentIdForAdmin(settings.useEnrollmentIdForAdmin || false);
       setPrefixStatus('available');
     } catch (err) {
       console.error('Error loading numbering settings:', err);
@@ -140,10 +142,12 @@ const NumberingSettings = () => {
           gymPrefix: gymPrefix.toUpperCase(),
           memberNumberTemplate: memberTemplate,
           serialDigits,
+          useEnrollmentIdForAdmin,
         }
         : {
           enrollmentTemplate: enrollTemplate,
           enrollmentSerialReset: enrollReset,
+          useEnrollmentIdForAdmin,
         };
 
       await saveNumberingSettings(userDoc.gym_id, data);
@@ -201,6 +205,51 @@ const NumberingSettings = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* ── Administration ID Preference ── */}
+        <div className="glass-panel rounded-2xl p-5 mb-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-primary" style={{ fontSize: 20 }}>badge</span>
+                <h3 className="font-headline-md text-lg text-on-surface font-semibold">Use Enrollment ID for Administration</h3>
+              </div>
+              <p className="font-body-md text-sm text-on-surface-variant">
+                When enabled, the member's <strong>latest Enrollment ID</strong> is shown prominently in their profile.
+                The <strong>Member ID</strong> will be hidden and revealed only on click (like a password).
+                By default this is <strong>off</strong> and Member ID is shown.
+              </p>
+            </div>
+            <button
+              onClick={() => setUseEnrollmentIdForAdmin(v => !v)}
+              className={`relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
+                useEnrollmentIdForAdmin ? 'bg-primary' : 'bg-surface-variant'
+              }`}
+              id="use-enrollment-id-toggle"
+              role="switch"
+              aria-checked={useEnrollmentIdForAdmin}
+            >
+              <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${
+                useEnrollmentIdForAdmin ? 'translate-x-6' : 'translate-x-0'
+              }`} />
+            </button>
+          </div>
+          <button
+            onClick={async () => {
+              setSaving(true);
+              try {
+                await saveNumberingSettings(userDoc.gym_id, { useEnrollmentIdForAdmin });
+                showToast('Administration ID preference saved!', 'success');
+              } catch (e) { showToast('Failed to save', 'error'); }
+              finally { setSaving(false); }
+            }}
+            disabled={saving}
+            className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md hover:opacity-90 transition-opacity disabled:opacity-50 text-sm"
+            id="save-admin-id-pref-btn"
+          >
+            {saving ? <div className="spinner" style={{ width: 16, height: 16, margin: '0 auto' }} /> : 'Save Preference'}
+          </button>
         </div>
 
         {/* ═════════════════════════ MEMBER NUMBER FORMAT ═════════════════════════ */}

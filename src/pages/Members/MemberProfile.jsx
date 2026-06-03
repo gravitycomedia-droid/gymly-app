@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getUser, getGym, deleteMember, updateMember } from '../../firebase/firestore';
 import { getMemberPaymentsRealtime, clearPaymentDue, updatePayment, getMemberPayments } from '../../firebase/firestore-payments';
+import { getNumberingSettings } from '../../utils/numberingService';
 import {
   getInitials, getAvatarColor, getExpiryStatus,
   formatDate, getPlanName, calculateBMI, getDaysRemaining,
@@ -47,6 +48,8 @@ const MemberProfile = ({ readOnly = false }) => {
   const [clearingId, setClearingId] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [downloadingCard, setDownloadingCard] = useState(false);
+  const [numberingSettings, setNumberingSettings] = useState(null);
+  const [showMemberId, setShowMemberId] = useState(false);
   const photoInputRef = useRef(null);
 
   const handlePhotoChange = async (e) => {
@@ -83,6 +86,12 @@ const MemberProfile = ({ readOnly = false }) => {
   };
 
   useEffect(() => { fetchData(); }, [id, userDoc?.gym_id]);
+
+  // Load numbering settings for enrollment ID admin preference
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    getNumberingSettings(userDoc.gym_id).then(s => setNumberingSettings(s)).catch(() => {});
+  }, [userDoc?.gym_id]);
 
   useEffect(() => {
     if (!userDoc?.gym_id || !id) return;
@@ -339,23 +348,68 @@ const MemberProfile = ({ readOnly = false }) => {
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 text-center md:text-left">
               <div>
                 <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface mb-1">{member.name}</h2>
-                <p className="font-body-md text-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-1">
-                  <span className="material-symbols-outlined text-sm">fingerprint</span>
-                  {member.memberNumber ? (
-                    <span className="font-mono tracking-wide">
-                      #{member.memberNumber}
-                      <button
-                        onClick={() => { navigator.clipboard.writeText(member.memberNumber); showToast('Member number copied!', 'success'); }}
-                        className="ml-1.5 text-primary/50 hover:text-primary inline-flex"
-                        title="Copy member number"
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14 }}>content_copy</span>
-                      </button>
-                    </span>
-                  ) : (
-                    <span>ID: MEM-{member.id.substring(0, 6).toUpperCase()}</span>
-                  )}
-                </p>
+                
+                {numberingSettings?.useEnrollmentIdForAdmin ? (
+                  // Show Enrollment ID prominently, Member ID hidden with click-to-reveal
+                  <div className="flex flex-col gap-1">
+                    {member.latestEnrollmentNumber && (
+                      <p className="font-body-md text-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-1">
+                        <span className="material-symbols-outlined text-sm text-[#1D9E75]">confirmation_number</span>
+                        <span className="font-mono tracking-wide text-[#1D9E75] font-semibold">{member.latestEnrollmentNumber}</span>
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(member.latestEnrollmentNumber); showToast('Enrollment ID copied!', 'success'); }}
+                          className="ml-1 text-[#1D9E75]/50 hover:text-[#1D9E75] inline-flex"
+                          title="Copy enrollment ID"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>content_copy</span>
+                        </button>
+                      </p>
+                    )}
+                    <p className="font-body-md text-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-1">
+                      <span className="material-symbols-outlined text-sm">fingerprint</span>
+                      {showMemberId ? (
+                        <>
+                          <span className="font-mono tracking-wide">
+                            #{member.memberNumber || `MEM-${member.id.substring(0, 6).toUpperCase()}`}
+                          </span>
+                          <button onClick={() => setShowMemberId(false)} className="ml-1 text-primary/50 hover:text-primary inline-flex" title="Hide">
+                            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>visibility_off</span>
+                          </button>
+                          <button
+                            onClick={() => { navigator.clipboard.writeText(member.memberNumber || `MEM-${member.id.substring(0,6)}`); showToast('Member number copied!', 'success'); }}
+                            className="text-primary/50 hover:text-primary inline-flex" title="Copy"
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 13 }}>content_copy</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => setShowMemberId(true)} className="font-mono tracking-wide text-on-surface-variant/60 hover:text-primary flex items-center gap-1" title="Click to reveal Member ID">
+                          <span className="text-xs">Member ID: ••••••</span>
+                          <span className="material-symbols-outlined" style={{ fontSize: 13 }}>visibility</span>
+                        </button>
+                      )}
+                    </p>
+                  </div>
+                ) : (
+                  // Default: show Member ID prominently
+                  <p className="font-body-md text-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-1">
+                    <span className="material-symbols-outlined text-sm">fingerprint</span>
+                    {member.memberNumber ? (
+                      <span className="font-mono tracking-wide">
+                        #{member.memberNumber}
+                        <button
+                          onClick={() => { navigator.clipboard.writeText(member.memberNumber); showToast('Member number copied!', 'success'); }}
+                          className="ml-1.5 text-primary/50 hover:text-primary inline-flex"
+                          title="Copy member number"
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 14 }}>content_copy</span>
+                        </button>
+                      </span>
+                    ) : (
+                      <span>ID: MEM-{member.id.substring(0, 6).toUpperCase()}</span>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="text-center md:text-right">
                 <div className="font-headline-md text-headline-md text-primary mb-1">{planName}</div>
@@ -475,33 +529,8 @@ const MemberProfile = ({ readOnly = false }) => {
 
         </div>
 
-        {/* Extended Details Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <section className="glass-panel rounded-3xl p-6">
-            <h3 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary">info</span> Personal Info
-            </h3>
-            <div className="space-y-3">
-              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">DOB</span><span className="font-body-md">{member.date_of_birth || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">Gender</span><span className="font-body-md capitalize">{member.gender || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">Blood</span><span className="font-body-md">{member.blood_group || '—'}</span></div>
-              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">Contact</span><span className="font-body-md">{member.emergency_contact || '—'}</span></div>
-              <div className="flex justify-between border-t border-black/5 pt-3"><span className="text-on-surface-variant font-label-sm">Address</span><span className="font-body-md text-right max-w-[200px] truncate">{member.address || '—'}</span></div>
-            </div>
-          </section>
-
-          <section className="glass-panel rounded-3xl p-6 flex flex-col">
-            <h3 className="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#1D9E75]">health_and_safety</span> Medical Notes
-            </h3>
-            <div className="flex-1 bg-surface/50 rounded-2xl p-4 border border-white/40 font-body-md text-on-surface-variant italic">
-              {member.medical_notes || 'No medical notes or conditions reported.'}
-            </div>
-          </section>
-        </div>
-
-        {/* Payment History */}
-        <section className="glass-panel rounded-3xl p-6 mb-12">
+        {/* Payment History — above Extended Details */}
+        <section className="glass-panel rounded-3xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">receipt_long</span> Payment History
@@ -560,6 +589,31 @@ const MemberProfile = ({ readOnly = false }) => {
             )}
           </div>
         </section>
+
+        {/* Extended Details Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <section className="glass-panel rounded-3xl p-6">
+            <h3 className="font-headline-md text-headline-md text-on-surface mb-6 flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary">info</span> Personal Info
+            </h3>
+            <div className="space-y-3">
+              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">DOB</span><span className="font-body-md">{member.date_of_birth || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">Gender</span><span className="font-body-md capitalize">{member.gender || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">Blood</span><span className="font-body-md">{member.blood_group || '—'}</span></div>
+              <div className="flex justify-between"><span className="text-on-surface-variant font-label-sm">Contact</span><span className="font-body-md">{member.emergency_contact || '—'}</span></div>
+              <div className="flex justify-between border-t border-black/5 pt-3"><span className="text-on-surface-variant font-label-sm">Address</span><span className="font-body-md text-right max-w-[200px] truncate">{member.address || '—'}</span></div>
+            </div>
+          </section>
+
+          <section className="glass-panel rounded-3xl p-6 flex flex-col">
+            <h3 className="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
+              <span className="material-symbols-outlined text-[#1D9E75]">health_and_safety</span> Medical Notes
+            </h3>
+            <div className="flex-1 bg-surface/50 rounded-2xl p-4 border border-white/40 font-body-md text-on-surface-variant italic">
+              {member.medical_notes || 'No medical notes or conditions reported.'}
+            </div>
+          </section>
+        </div>
 
       </main>
       <BottomNav activeTab="members" role="owner" />

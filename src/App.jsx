@@ -78,8 +78,8 @@ function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <AnimatePresence mode="wait">
-      <Suspense fallback={<PageSpinner />}>
+    <Suspense fallback={<PageSpinner />}>
+      <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Auto-redirect based on auth state */}
           <Route path="/" element={<AutoRedirect />} />
@@ -208,9 +208,7 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <OwnerLayout activeTab="payments">
-                  <Suspense fallback={<PageSpinner />}>
-                    <SubscriptionGate feature="payments"><PageTransition><PaymentList /></PageTransition></SubscriptionGate>
-                  </Suspense>
+                  <SubscriptionGate feature="payments"><PageTransition><PaymentList /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
               </ProtectedRoute>
             }
@@ -220,9 +218,7 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <OwnerLayout activeTab="payments">
-                  <Suspense fallback={<PageSpinner />}>
-                    <SubscriptionGate feature="payments"><PageTransition><AddPayment /></PageTransition></SubscriptionGate>
-                  </Suspense>
+                  <SubscriptionGate feature="payments"><PageTransition><AddPayment /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
               </ProtectedRoute>
             }
@@ -232,9 +228,7 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <OwnerLayout activeTab="payments">
-                  <Suspense fallback={<PageSpinner />}>
-                    <SubscriptionGate feature="payments"><PageTransition><PaymentDetail /></PageTransition></SubscriptionGate>
-                  </Suspense>
+                  <SubscriptionGate feature="payments"><PageTransition><PaymentDetail /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
               </ProtectedRoute>
             }
@@ -246,9 +240,7 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <OwnerLayout activeTab="analytics">
-                  <Suspense fallback={<PageSpinner />}>
-                    <SubscriptionGate feature="analytics"><PageTransition><Analytics /></PageTransition></SubscriptionGate>
-                  </Suspense>
+                  <SubscriptionGate feature="analytics"><PageTransition><Analytics /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
               </ProtectedRoute>
             }
@@ -260,9 +252,7 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <OwnerLayout activeTab="settings">
-                  <Suspense fallback={<PageSpinner />}>
-                    <SubscriptionGate feature="whatsapp_automation"><PageTransition><WhatsAppLogs /></PageTransition></SubscriptionGate>
-                  </Suspense>
+                  <SubscriptionGate feature="whatsapp_automation"><PageTransition><WhatsAppLogs /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
               </ProtectedRoute>
             }
@@ -274,9 +264,7 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <OwnerLayout activeTab="analytics">
-                  <Suspense fallback={<PageSpinner />}>
-                    <SubscriptionGate feature="attendance_heatmap"><PageTransition><AttendanceLogs /></PageTransition></SubscriptionGate>
-                  </Suspense>
+                  <SubscriptionGate feature="attendance_heatmap"><PageTransition><AttendanceLogs /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
               </ProtectedRoute>
             }
@@ -296,9 +284,7 @@ function AnimatedRoutes() {
             element={
               <ProtectedRoute>
                 <OwnerLayout activeTab="settings">
-                  <Suspense fallback={<PageSpinner />}>
-                    <SubscriptionGate feature="kiosk_attendance"><PageTransition><KioskDevices /></PageTransition></SubscriptionGate>
-                  </Suspense>
+                  <SubscriptionGate feature="kiosk_attendance"><PageTransition><KioskDevices /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
               </ProtectedRoute>
             }
@@ -352,8 +338,8 @@ function AnimatedRoutes() {
             element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="settings"><PageTransition><AddMembershipPlan /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
         </Routes>
-      </Suspense>
-    </AnimatePresence>
+      </AnimatePresence>
+    </Suspense>
   );
 }
 
