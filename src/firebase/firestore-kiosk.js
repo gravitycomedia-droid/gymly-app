@@ -142,7 +142,18 @@ export const findActiveSession = async (memberId, gymId) => {
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  return { id: snap.docs[0].id, ...snap.docs[0].data() };
+  
+  const docSnap = snap.docs[0];
+  const data = docSnap.data();
+  const entryMs = data.entryTime?.toDate ? data.entryTime.toDate().getTime() : Date.now();
+  
+  // Auto-exit if older than 90 mins (1.5 hours)
+  if (Date.now() - entryMs > 90 * 60 * 1000) {
+    await completeAttendanceSession(docSnap.id, { exitDeviceId: 'auto-exit', durationMinutes: 90 });
+    return null;
+  }
+  
+  return { id: docSnap.id, ...data };
 };
 
 /**
@@ -156,7 +167,19 @@ export const getLiveOccupancy = (gymId, callback) => {
     where('status', '==', 'inside')
   );
   return onSnapshot(q, (snap) => {
-    callback(snap.size, snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    const now = Date.now();
+    const sessions = [];
+    snap.docs.forEach((d) => {
+      const data = d.data();
+      const entryMs = data.entryTime?.toDate ? data.entryTime.toDate().getTime() : now;
+      if (now - entryMs > 90 * 60 * 1000) {
+        // Auto-exit if older than 90 mins
+        completeAttendanceSession(d.id, { exitDeviceId: 'auto-exit', durationMinutes: 90 }).catch(() => {});
+      } else {
+        sessions.push({ id: d.id, ...data });
+      }
+    });
+    callback(sessions.length, sessions);
   });
 };
 

@@ -58,11 +58,11 @@ const MemberHome = () => {
   const [showAgreementPending, setShowAgreementPending] = useState(false);
   const screenshotInputRef = useRef(null);
 
-  // QR / Card tab state (0 = QR Check-in, 1 = Digital Card)
   const [activeTab, setActiveTab] = useState(0);
   const [cardExpanded, setCardExpanded] = useState(false);
 
   const prevAttendanceCount = useRef(null);
+  const [kioskMessage, setKioskMessage] = useState(null);
 
   // Soreness logic
   const [showSorenessCheck, setShowSorenessCheck] = useState(false);
@@ -156,24 +156,68 @@ const MemberHome = () => {
     fetchAll();
   }, [userDoc, user?.uid]);
 
-  // Realtime Attendance Auto-Close Listener
+  // Realtime Kiosk Scanning Feedback (Haptic + Overlay)
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid || !userDoc?.gym_id) return;
     if (localStorage.getItem('mockRole')) return;
-    const qLabel = query(
-      collection(db, 'attendance_logs'),
-      where('member_id', '==', user.uid),
-      where('date', '==', formatDateKey(new Date()))
+
+    const qSession = query(
+      collection(db, 'attendance_sessions'),
+      where('memberId', '==', user.uid),
+      where('gymId', '==', userDoc.gym_id),
+      orderBy('createdAt', 'desc'),
+      limit(1)
     );
-    const unsub = onSnapshot(qLabel, (snap) => {
-      const count = snap.docs.length;
-      if (prevAttendanceCount.current !== null && count > prevAttendanceCount.current) {
-        try { playHapticSound('success'); } catch (e) {}
+
+    let isInitialLoad = true;
+
+    const unsub = onSnapshot(qSession, (snap) => {
+      if (snap.empty) {
+        isInitialLoad = false;
+        return;
       }
-      prevAttendanceCount.current = count;
+
+      const doc = snap.docs[0];
+      const data = doc.data();
+
+      if (isInitialLoad) {
+        prevAttendanceCount.current = { id: doc.id, status: data.status, duration: data.durationMinutes };
+        isInitialLoad = false;
+        return;
+      }
+
+      const prev = prevAttendanceCount.current;
+
+      // New Entry (Welcome)
+      if (!prev || (prev.id !== doc.id && data.status === 'inside')) {
+        try { playHapticSound('success'); } catch (e) {}
+        if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+        setKioskMessage({
+          type: 'success',
+          icon: '👋',
+          title: `Welcome, ${firstName}!`,
+          subtitle: 'Your entry was successfully logged.'
+        });
+        setTimeout(() => setKioskMessage(null), 5000);
+      }
+      // Exit (Goodbye)
+      else if (prev && prev.id === doc.id && prev.status === 'inside' && data.status === 'completed') {
+        try { playHapticSound('exit'); } catch (e) {}
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 100]);
+        setKioskMessage({
+          type: 'exit-success',
+          icon: '👋',
+          title: `Goodbye, ${firstName}!`,
+          subtitle: `You worked out for ${data.durationMinutes || 0} minutes.`
+        });
+        setTimeout(() => setKioskMessage(null), 5000);
+      }
+
+      prevAttendanceCount.current = { id: doc.id, status: data.status, duration: data.durationMinutes };
     });
+
     return () => unsub();
-  }, [user?.uid]);
+  }, [user?.uid, userDoc?.gym_id, firstName]);
 
   const handleSorenessSubmit = async () => {
     try {
@@ -246,6 +290,40 @@ const MemberHome = () => {
 
   return (
     <div className="screen member-home-screen">
+      {/* Kiosk Scan Feedback Overlay */}
+      {kioskMessage && (
+        <div 
+          onClick={() => setKioskMessage(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 9999,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            background: kioskMessage.type === 'success' ? 'rgba(10, 42, 26, 0.95)' : 'rgba(0, 26, 20, 0.95)',
+            backdropFilter: 'blur(12px)', color: '#fff',
+            animation: 'kiosk-fade-in 0.3s ease', cursor: 'pointer'
+          }}
+        >
+          <div style={{
+            width: 100, height: 100, borderRadius: '50%',
+            background: kioskMessage.type === 'success' ? 'rgba(29, 158, 117, 0.25)' : 'rgba(0, 64, 139, 0.25)',
+            color: kioskMessage.type === 'success' ? '#1D9E75' : '#adc6ff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 50, marginBottom: 24,
+            animation: 'kiosk-scale-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+          }}>
+            {kioskMessage.icon}
+          </div>
+          <h2 style={{ fontSize: 28, fontWeight: 700, marginBottom: 12, textAlign: 'center', padding: '0 20px' }}>
+            {kioskMessage.title}
+          </h2>
+          <p style={{ fontSize: 16, color: 'rgba(255,255,255,0.7)', textAlign: 'center', padding: '0 30px' }}>
+            {kioskMessage.subtitle}
+          </p>
+          <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 40 }}>
+            Tap anywhere to dismiss
+          </p>
+        </div>
+      )}
+
       <div className="screen-content">
         {/* Greeting */}
         <div className="member-greeting">
