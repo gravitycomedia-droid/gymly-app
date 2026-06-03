@@ -204,6 +204,15 @@
       "collectionGroup": "attendance_sessions",
       "queryScope": "COLLECTION",
       "fields": [
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance_sessions",
+      "queryScope": "COLLECTION",
+      "fields": [
         { "fieldPath": "gymId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" }
       ]
