@@ -205,7 +205,7 @@ const ExitKiosk = () => {
     }
   }, [gymId, deviceId, autoReturn]);
 
-  const { videoRef, canvasRef, cameraState, startCamera, stopCamera } = useKioskCamera(handleQR);
+  const { videoRef, canvasRef, cameraState, startCamera, stopCamera, toggleCamera, facingMode } = useKioskCamera(handleQR);
 
   const handleTap = () => {
     resumeAudioContext();
@@ -258,13 +258,21 @@ const ExitKiosk = () => {
         <div className="kiosk-scanner-box" style={{ borderColor: 'rgba(0,86,184,0.3)' }}>
           {scanning ? (
             <>
-              <video ref={videoRef} className="kiosk-video" playsInline muted autoPlay />
+              <video ref={videoRef} className="kiosk-video" style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} playsInline muted autoPlay />
               <canvas ref={canvasRef} className="kiosk-canvas" />
               <div className="kiosk-corner tl" style={{ borderColor: 'rgba(0,86,184,0.7)' }} />
               <div className="kiosk-corner tr" style={{ borderColor: 'rgba(0,86,184,0.7)' }} />
               <div className="kiosk-corner bl" style={{ borderColor: 'rgba(0,86,184,0.7)' }} />
               <div className="kiosk-corner br" style={{ borderColor: 'rgba(0,86,184,0.7)' }} />
               {cameraState === 'active' && <div className="kiosk-scan-beam" style={{ background: 'linear-gradient(to right, transparent, #007aff, transparent)' }} />}
+              
+              <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 20 }}>
+                <button className="kiosk-cancel-btn" style={{ position: 'static' }} onClick={toggleCamera}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>flip_camera_ios</span>
+                  Flip
+                </button>
+              </div>
+
               <button className="kiosk-cancel-btn" onClick={(e) => { e.stopPropagation(); stopCamera(); setScanning(false); }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>Cancel
               </button>

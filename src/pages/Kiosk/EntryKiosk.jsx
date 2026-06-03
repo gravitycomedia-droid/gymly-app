@@ -305,7 +305,7 @@ const EntryKiosk = () => {
     }
   }, [gymId, deviceId, autoReturn]);
 
-  const { videoRef, canvasRef, cameraState, startCamera, stopCamera } = useKioskCamera(handleQR);
+  const { videoRef, canvasRef, cameraState, startCamera, stopCamera, toggleCamera, facingMode } = useKioskCamera(handleQR);
 
   const handleTap = () => {
     resumeAudioContext();
@@ -381,13 +381,21 @@ const EntryKiosk = () => {
         <div className="kiosk-scanner-box">
           {scanning ? (
             <>
-              <video ref={videoRef} className="kiosk-video" playsInline muted autoPlay />
+              <video ref={videoRef} className="kiosk-video" style={{ transform: facingMode === 'user' ? 'scaleX(-1)' : 'none' }} playsInline muted autoPlay />
               <canvas ref={canvasRef} className="kiosk-canvas" />
               <div className="kiosk-corner tl" />
               <div className="kiosk-corner tr" />
               <div className="kiosk-corner bl" />
               <div className="kiosk-corner br" />
               {cameraState === 'active' && <div className="kiosk-scan-beam" />}
+              
+              <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 20 }}>
+                <button className="kiosk-cancel-btn" style={{ position: 'static' }} onClick={toggleCamera}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 16 }}>flip_camera_ios</span>
+                  Flip
+                </button>
+              </div>
+
               <button className="kiosk-cancel-btn" onClick={handleCancel}>
                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>close</span>
                 Cancel

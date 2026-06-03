@@ -7,6 +7,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import jsQR from 'jsqr';
 
 const INACTIVITY_TIMEOUT_MS = 30000; // 30 seconds
+const STORAGE_KEY = 'kiosk_camera_facing_mode';
 
 const useKioskCamera = (onQRDetected) => {
   const videoRef = useRef(null);
@@ -18,6 +19,11 @@ const useKioskCamera = (onQRDetected) => {
 
   const [cameraState, setCameraState] = useState('idle'); // 'idle' | 'active' | 'error'
   const [cameraError, setCameraError] = useState(null);
+  
+  // Initialize facingMode from localStorage, default to 'environment'
+  const [facingMode, setFacingMode] = useState(() => {
+    return localStorage.getItem(STORAGE_KEY) || 'environment';
+  });
 
   // Cleanup on unmount
   useEffect(() => {
@@ -65,6 +71,8 @@ const useKioskCamera = (onQRDetected) => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
+      // If front camera, we might want to mirror it for display, but jsQR needs raw image.
+      // We flip display via CSS, so we don't need to flip canvas here.
       ctx.drawImage(video, 0, 0);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const code = jsQR(imageData.data, imageData.width, imageData.height);
@@ -79,12 +87,16 @@ const useKioskCamera = (onQRDetected) => {
     scanLoopRef.current = requestAnimationFrame(scanFrame);
   }, [stopCamera, onQRDetected]);
 
-  const startCamera = useCallback(async () => {
+  const startCamera = useCallback(async (modeOverride) => {
+    const modeToUse = modeOverride || facingMode;
     setCameraError(null);
     try {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+      }
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
-          facingMode: 'environment',
+          facingMode: modeToUse,
           width: { ideal: 1280 },
           height: { ideal: 720 },
         },
@@ -103,7 +115,21 @@ const useKioskCamera = (onQRDetected) => {
       setCameraError('Camera access denied. Please allow camera permissions.');
       setCameraState('error');
     }
-  }, [scanFrame, startInactivityTimer]);
+  }, [facingMode, scanFrame, startInactivityTimer]);
+
+  const toggleCamera = useCallback((e) => {
+    if (e) {
+      e.stopPropagation(); // prevent clicking on scanner box
+    }
+    setFacingMode((prev) => {
+      const newMode = prev === 'environment' ? 'user' : 'environment';
+      localStorage.setItem(STORAGE_KEY, newMode);
+      if (activeRef.current) {
+        startCamera(newMode);
+      }
+      return newMode;
+    });
+  }, [startCamera]);
 
   return {
     videoRef,
@@ -112,6 +138,8 @@ const useKioskCamera = (onQRDetected) => {
     cameraError,
     startCamera,
     stopCamera,
+    toggleCamera,
+    facingMode,
   };
 };
 
