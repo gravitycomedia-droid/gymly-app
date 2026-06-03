@@ -16,6 +16,20 @@ import html2canvas from 'html2canvas';
 import { uploadMemberPhoto } from '../../firebase/storage';
 import '../MemberCard/MemberCard.css';
 
+// ── Default card settings (mirrors CardEditor defaults) ─────────
+const DEFAULT_CS = {
+  show_gym_name: true,
+  show_member_name: true,
+  show_photo: true,
+  show_member_id: true,
+  show_enrollment_id: true,
+  show_plan: true,
+  show_expiry: true,
+  show_phone: false,
+  show_qr: true,
+  show_status: true,
+};
+
 const MemberProfile = ({ readOnly = false }) => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -32,6 +46,7 @@ const MemberProfile = ({ readOnly = false }) => {
   const [memberPayments, setMemberPayments] = useState([]);
   const [clearingId, setClearingId] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [downloadingCard, setDownloadingCard] = useState(false);
   const photoInputRef = useRef(null);
 
   const handlePhotoChange = async (e) => {
@@ -47,7 +62,6 @@ const MemberProfile = ({ readOnly = false }) => {
       showToast('Photo upload failed: ' + err.message, 'error');
     } finally {
       setUploadingPhoto(false);
-      // Reset file input so same file can be re-selected
       if (photoInputRef.current) photoInputRef.current.value = '';
     }
   };
@@ -99,9 +113,11 @@ const MemberProfile = ({ readOnly = false }) => {
     }
   };
 
+  // ── Download card as PNG ──────────────────────────────────────
   const downloadCard = async () => {
     const element = document.getElementById('membership-card-to-download');
     if (!element) return;
+    setDownloadingCard(true);
     try {
       const canvas = await html2canvas(element, { scale: 3, backgroundColor: null, useCORS: true });
       const dataUrl = canvas.toDataURL('image/png');
@@ -110,9 +126,79 @@ const MemberProfile = ({ readOnly = false }) => {
       link.href = dataUrl;
       link.click();
       showToast('Membership card downloaded!', 'success');
+      return dataUrl;
     } catch (err) {
       console.error('Failed to download card:', err);
       showToast('Failed to download card', 'error');
+    } finally {
+      setDownloadingCard(false);
+    }
+  };
+
+  // ── WhatsApp share ───────────────────────────────────────────
+  const sendWhatsApp = async () => {
+    if (!member?.phone) { showToast('No phone number for this member', 'error'); return; }
+
+    const latestPayment = memberPayments
+      .filter(p => p.membership_end)
+      .sort((a, b) => {
+        const tA = a.membership_end?.toDate ? a.membership_end.toDate().getTime() : 0;
+        const tB = b.membership_end?.toDate ? b.membership_end.toDate().getTime() : 0;
+        return tB - tA;
+      })[0];
+
+    const planNameStr = getPlanName(gym, member.plan_id) || 'your membership plan';
+    const amountPaid = latestPayment?.paid_amount != null
+      ? `₹${latestPayment.paid_amount.toLocaleString('en-IN')}`
+      : null;
+    const pendingAmt = latestPayment?.pending_amount > 0
+      ? `₹${latestPayment.pending_amount.toLocaleString('en-IN')}`
+      : null;
+    const expiryStr = formatDate(member.subscription_expiry);
+    const gymName = gym?.name || 'our gym';
+
+    let msg = `Hi ${member.name}! 👋\n\nWelcome to *${gymName}*! 🏋️\n\n`;
+    msg += `📋 *Your Membership Details:*\n`;
+    msg += `• Plan: *${planNameStr}*\n`;
+    if (amountPaid) msg += `• Amount Paid: *${amountPaid}*\n`;
+    if (pendingAmt) msg += `• Due Amount: *${pendingAmt}* ⚠️\n`;
+    msg += `• Valid Till: *${expiryStr}*\n\n`;
+    msg += `We're excited to have you with us! 💪`;
+
+    const phone = String(member.phone).replace(/[^0-9]/g, '');
+    const encodedMsg = encodeURIComponent(msg);
+    window.open(`https://wa.me/${phone}?text=${encodedMsg}`, '_blank');
+  };
+
+  // ── WhatsApp share with card attached ───────────────────────
+  const shareCardOnWhatsApp = async () => {
+    try {
+      const element = document.getElementById('membership-card-to-download');
+      if (!element) { showToast('Card not ready', 'error'); return; }
+
+      const canvas = await html2canvas(element, { scale: 3, backgroundColor: null, useCORS: true });
+      canvas.toBlob(async (blob) => {
+        if (!blob) { showToast('Failed to generate card image', 'error'); return; }
+        const file = new File([blob], `Gymly_Card_${member.name.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              title: 'Gymly Membership Card',
+              text: `${member.name}'s membership card at ${gym?.name || 'Gymly'}`,
+              files: [file],
+            });
+          } catch (e) {
+            // User cancelled or share failed — fallback to text-only
+            sendWhatsApp();
+          }
+        } else {
+          // Browser doesn't support file sharing — just open WhatsApp with message
+          sendWhatsApp();
+        }
+      }, 'image/png');
+    } catch (err) {
+      console.error(err);
+      sendWhatsApp();
     }
   };
 
@@ -139,9 +225,17 @@ const MemberProfile = ({ readOnly = false }) => {
   const plans = gym?.settings?.plans?.filter((p) => p.is_active) || [];
   const currentPlan = plans.find((p) => p.id === member.plan_id);
   const bmi = calculateBMI(member.height, member.weight);
-  
-  // ── Usage bar: derive from latest payment's membership_start/end (more accurate)
-  // Sort payments by membership_end descending to find the actual latest subscription period
+
+  // ── card_settings ───────────────────────────────────────────
+  const cs = { ...DEFAULT_CS, ...(gym?.card_settings || {}) };
+
+  const statusColors = {
+    active:   { bg: 'rgba(29,158,117,0.15)',  color: '#006e28',  dot: '#006e28' },
+    expiring: { bg: 'rgba(239,159,39,0.15)',  color: '#EF9F27',  dot: '#EF9F27' },
+    expired:  { bg: 'rgba(186,26,26,0.15)',   color: '#ba1a1a',  dot: '#ba1a1a' },
+  };
+  const sc = statusColors[type] || statusColors.active;
+
   const activePayments = [...memberPayments].filter(p => p.membership_end).sort((a, b) => {
     const tA = a.membership_end?.toDate ? a.membership_end.toDate().getTime() : new Date(a.membership_end).getTime();
     const tB = b.membership_end?.toDate ? b.membership_end.toDate().getTime() : new Date(b.membership_end).getTime();
@@ -158,22 +252,17 @@ const MemberProfile = ({ readOnly = false }) => {
     const start = latestPayment.membership_start?.toDate ? latestPayment.membership_start.toDate() : new Date(latestPayment.membership_start);
     const end = latestPayment.membership_end?.toDate ? latestPayment.membership_end.toDate() : new Date(latestPayment.membership_end);
     const now = new Date();
-    
-    // Normalize to start of day for accurate day counts
     const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
     const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
     totalDays = Math.max(1, Math.round((endDay - startDay) / (1000 * 60 * 60 * 24)));
-    
     if (today < startDay) {
-      daysUsed = 0; // Future subscription
+      daysUsed = 0;
     } else if (today >= endDay) {
-      daysUsed = totalDays; // Past subscription
+      daysUsed = totalDays;
     } else {
       daysUsed = Math.floor((today - startDay) / (1000 * 60 * 60 * 24)) + 1;
     }
-    
     daysRemaining = Math.max(0, totalDays - daysUsed);
     progressPercent = Math.min(100, (daysUsed / totalDays) * 100);
   } else {
@@ -183,6 +272,7 @@ const MemberProfile = ({ readOnly = false }) => {
   }
 
   const isExpired = daysRemaining <= 0;
+  const publicUrl = `${window.location.origin}/public/member/${member.id}`;
 
   return (
     <div className="mesh-bg min-h-screen pb-24 md:pb-8 font-body-md antialiased text-on-surface pt-16 md:pt-0">
@@ -296,9 +386,13 @@ const MemberProfile = ({ readOnly = false }) => {
                     <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">More</span>
                   </button>
                   {showMoreActions && (
-                    <div className="absolute top-full right-0 mt-2 w-32 glass-panel rounded-xl shadow-lg flex flex-col overflow-hidden z-20 border-black/10">
-                      <button onClick={() => navigate(`/owner/members/${id}/edit`)} className="px-4 py-3 text-sm text-left hover:bg-white/50 font-label-md flex items-center gap-2"><span className="material-symbols-outlined text-sm text-secondary">edit</span> Edit</button>
-                      <button onClick={() => setShowDelete(true)} className="px-4 py-3 text-sm text-left hover:bg-error-container/50 font-label-md text-error flex items-center gap-2"><span className="material-symbols-outlined text-sm">delete</span> Delete</button>
+                    <div className="absolute top-full right-0 mt-2 w-36 glass-panel rounded-xl shadow-lg flex flex-col overflow-hidden z-20 border border-black/10">
+                      <button onClick={() => { navigate(`/owner/members/${id}/edit`); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-white/50 font-label-md flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm text-secondary">edit</span> Edit Member
+                      </button>
+                      <button onClick={() => { setShowDelete(true); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-error-container/50 font-label-md text-error flex items-center gap-2">
+                        <span className="material-symbols-outlined text-sm">delete</span> Delete
+                      </button>
                     </div>
                   )}
                 </div>
@@ -479,64 +573,140 @@ const MemberProfile = ({ readOnly = false }) => {
         <DeleteConfirmModal memberName={member.name} onConfirm={handleDelete} onClose={() => setShowDelete(false)} />
       )}
 
-      {/* Membership Card QR Modal */}
+      {/* ── Membership Card / Access QR Modal ── */}
       {showQRModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowQRModal(false)}>
           <div className="glass-panel p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-white/20" onClick={e => e.stopPropagation()}>
             
-            {/* The actual card that gets downloaded */}
-            <div id="membership-card-to-download" className="id-card-wrapper" style={{ margin: '0 auto', background: 'transparent' }}>
-              <div className={`id-card type-${type}`} style={{ transform: 'scale(1)', margin: 0 }}>
-                {/* Background design */}
-                <div className="id-card-blob blob-1"></div>
-                <div className="id-card-blob blob-2"></div>
-                
-                <div className="id-card-content">
-                  <div className="id-card-top">
-                    <div className="id-gym-name">{gym?.name || 'My Gym'}</div>
-                    <div className="id-logo-text">GYMLY</div>
-                  </div>
+            {/* The membership card respecting card_settings */}
+            <div
+              id="membership-card-to-download"
+              style={{
+                background: 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #1a2980 100%)',
+                borderRadius: 20, padding: 20, position: 'relative', overflow: 'hidden', margin: '0 auto',
+              }}
+            >
+              {/* Decorative blobs */}
+              <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(83,74,183,0.3)', filter: 'blur(30px)' }} />
+              <div style={{ position: 'absolute', bottom: -30, left: -30, width: 100, height: 100, borderRadius: '50%', background: 'rgba(55,138,221,0.25)', filter: 'blur(25px)' }} />
 
-                  <div className="id-card-middle">
-                    <div>
-                      <div className="id-member-name">{member.name}</div>
-                      <div className="id-plan-name">{planName}</div>
-                      <div className="mt-2 text-[10px] text-on-surface-variant font-mono">
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                {/* Top row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+                  <div>
+                    {cs.show_gym_name && (
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>
+                        {gym?.name || 'My Gym'}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>
+                  </div>
+                  {cs.show_status && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: sc.bg, padding: '4px 10px', borderRadius: 99 }}>
+                      <div style={{ width: 6, height: 6, borderRadius: '50%', background: sc.dot }} />
+                      <span style={{ fontSize: 10, fontWeight: 700, color: sc.color }}>{label}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Middle row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
+                  {cs.show_photo && (
+                    <div style={{
+                      width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+                      border: '2px solid rgba(255,255,255,0.3)', overflow: 'hidden',
+                      background: `linear-gradient(135deg, ${avatarColor.bg}, #378add)`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      {member.profile_photo
+                        ? <img src={member.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <span style={{ fontSize: 18, fontWeight: 700, color: avatarColor.text }}>{getInitials(member.name)}</span>
+                      }
+                    </div>
+                  )}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {cs.show_member_name && (
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {member.name}
+                      </div>
+                    )}
+                    {cs.show_plan && (
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{planName}</div>
+                    )}
+                    {cs.show_member_id && (
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: 'monospace' }}>
                         #{member.memberNumber || `MEM-${member.id.substring(0, 6)}`}
                       </div>
-                      {member.latestEnrollmentNumber && (
-                        <div className="mt-1 text-[11px] font-bold text-[#1D9E75] bg-[#1D9E75]/10 px-2 py-0.5 rounded inline-block font-mono">
-                          {member.latestEnrollmentNumber}
-                        </div>
-                      )}
-                    </div>
-                    <div className="id-qr-box">
-                      <QRCodeSVG value={`${window.location.origin}/public/member/${member.id}`} size={64} bgColor="transparent" fgColor="#1A1A1A" level="M" />
-                    </div>
+                    )}
+                    {cs.show_enrollment_id && member.latestEnrollmentNumber && (
+                      <div style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.15)', padding: '2px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
+                        {member.latestEnrollmentNumber}
+                      </div>
+                    )}
                   </div>
-
-                  <div className="id-card-bottom">
-                    <div>
-                      <div className="id-label">Valid Till</div>
-                      <div className="id-value">{member.subscription_expiry ? formatDate(member.subscription_expiry) : 'N/A'}</div>
+                  {cs.show_qr && (
+                    <div style={{ background: '#fff', padding: 6, borderRadius: 10, flexShrink: 0 }}>
+                      <QRCodeSVG value={publicUrl} size={52} bgColor="transparent" fgColor="#1A1A1A" level="M" />
                     </div>
-                    <div>
-                      <div className="id-label">Phone</div>
-                      <div className="id-value">{member.phone}</div>
-                    </div>
-                    <div className="id-status-badge">
-                      <span className={`status-dot ${type}`}></span>
-                      {label}
-                    </div>
-                  </div>
+                  )}
                 </div>
+
+                {/* Bottom row */}
+                {(cs.show_expiry || cs.show_phone) && (
+                  <div style={{ display: 'flex', gap: 20, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12 }}>
+                    {cs.show_expiry && (
+                      <div>
+                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Valid Till</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginTop: 1 }}>
+                          {member.subscription_expiry ? formatDate(member.subscription_expiry) : 'N/A'}
+                        </div>
+                      </div>
+                    )}
+                    {cs.show_phone && member.phone && (
+                      <div>
+                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 0.5 }}>Phone</div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginTop: 1 }}>{member.phone}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Modal Actions */}
-            <button onClick={downloadCard} className="w-full mt-6 py-3 rounded-xl bg-white text-primary font-label-md flex items-center justify-center gap-2 hover:bg-white/90 transition-colors shadow-lg">
-              <span className="material-symbols-outlined">download</span> Download Card
+            <button
+              onClick={downloadCard}
+              disabled={downloadingCard}
+              className="w-full mt-5 py-3 rounded-xl bg-white text-primary font-label-md flex items-center justify-center gap-2 hover:bg-white/90 transition-colors shadow-lg"
+            >
+              {downloadingCard ? <div className="w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" /> : <span className="material-symbols-outlined" style={{ fontSize: 18 }}>download</span>}
+              Download Card
             </button>
+
+            {/* WhatsApp — send message with details */}
+            <button
+              onClick={sendWhatsApp}
+              className="w-full mt-3 py-3 rounded-xl font-label-md flex items-center justify-center gap-2 transition-colors"
+              style={{ background: '#25D366', color: '#fff' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+              Send Welcome Message
+            </button>
+
+            {/* WhatsApp — share card image */}
+            <button
+              onClick={shareCardOnWhatsApp}
+              className="w-full mt-3 py-3 rounded-xl font-label-md flex items-center justify-center gap-2 transition-colors border"
+              style={{ background: 'rgba(37,211,102,0.08)', color: '#128c7e', borderColor: 'rgba(37,211,102,0.3)' }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25D366' }}>
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+              </svg>
+              Share Card on WhatsApp
+            </button>
+
             <button onClick={() => setShowQRModal(false)} className="w-full mt-3 py-3 rounded-xl border border-black/20 text-on-surface-variant font-label-md hover:bg-black/5 transition-colors">
               Close
             </button>
