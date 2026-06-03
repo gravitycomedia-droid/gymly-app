@@ -1,6 +1,6 @@
 import { getInitials, getPlanName } from '../utils/helpers';
 
-const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showActions = true, isSelected = false, onSelect = null }) => {
+const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showActions = true, isSelected = false, onSelect = null, useEnrollmentIdForAdmin = false }) => {
   const now = new Date();
   const exp = member.subscription_expiry?.toDate ? member.subscription_expiry.toDate() : null;
   const isExpired = !exp || exp <= now;
@@ -64,8 +64,20 @@ const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showAction
           {/* Info */}
           <div className="min-w-0">
             <h3 className="font-headline-md text-[15px] text-[#1b1b1d] font-semibold truncate">{member.name}</h3>
-            {member.memberNumber && (
-              <p className="font-body-md text-[11px] text-[#9BA3B5] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
+            {useEnrollmentIdForAdmin ? (
+              // Show enrollment ID prominently when feature is enabled
+              member.latestEnrollmentNumber ? (
+                <p className="font-body-md text-[11px] mt-0.5 font-mono tracking-wide font-semibold" style={{ color: '#1D9E75' }}>
+                  {member.latestEnrollmentNumber}
+                </p>
+              ) : member.memberNumber ? (
+                <p className="font-body-md text-[11px] text-[#9BA3B5] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
+              ) : null
+            ) : (
+              // Default: show member number
+              member.memberNumber && (
+                <p className="font-body-md text-[11px] text-[#9BA3B5] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
+              )
             )}
             <p className="font-body-md text-[13px] text-[#717786] mt-0.5 truncate">{planName}</p>
           </div>

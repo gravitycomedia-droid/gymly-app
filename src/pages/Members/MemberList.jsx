@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym, getGymMembersRealtime, deleteMember } from '../../firebase/firestore';
 import { getExpiryStatus } from '../../utils/helpers';
-import { backfillMemberNumbers } from '../../utils/numberingService';
+import { backfillMemberNumbers, getNumberingSettings } from '../../utils/numberingService';
 import MemberCard from '../../components/MemberCard';
 import RenewModal from '../../components/RenewModal';
 import BottomNav from '../../components/BottomNav';
@@ -25,6 +25,7 @@ const MemberList = ({ role = 'owner' }) => {
   const [renewMember, setRenewMember] = useState(null);
   const [showFab, setShowFab] = useState(true);
   const addCardRef = useRef(null);
+  const [numberingSettings, setNumberingSettings] = useState(null);
 
   // ── Multi-select delete state ──────────────────────────────
   const [selectMode, setSelectMode] = useState(false);
@@ -55,6 +56,13 @@ const MemberList = ({ role = 'owner' }) => {
       }
     };
     fetchGym();
+  }, [userDoc?.gym_id]);
+
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    getNumberingSettings(userDoc.gym_id)
+      .then(s => setNumberingSettings(s))
+      .catch(() => {});
   }, [userDoc?.gym_id]);
 
   useEffect(() => {
@@ -352,6 +360,7 @@ const MemberList = ({ role = 'owner' }) => {
                 onDelete={role === 'owner' ? handleDeleteClick : undefined}
                 isSelected={selectedIds.has(member.id)}
                 onSelect={selectMode ? toggleSelect : null}
+                useEnrollmentIdForAdmin={numberingSettings?.useEnrollmentIdForAdmin || false}
               />
             ))
           ) : search.trim() ? (
