@@ -348,7 +348,7 @@ const MemberHome = () => {
           <div style={{
             background: 'linear-gradient(135deg, #1a1040 0%, #2d1b69 50%, #1a2980 100%)',
             borderRadius: 20, padding: '20px 20px 24px',
-            position: 'relative', overflow: 'hidden', marginBottom: 4,
+            position: 'relative', overflow: 'hidden', marginBottom: 16,
             boxShadow: '0 8px 32px rgba(83,74,183,0.25)',
           }}>
             <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(83,74,183,0.25)', filter: 'blur(25px)' }} />
@@ -570,6 +570,79 @@ const MemberHome = () => {
             {p.method !== 'upi' && <p style={{ fontSize: 11, color: 'var(--text-muted)', margin: 0 }}>Please pay at the gym counter to clear this due.</p>}
           </div>
         ))}
+
+        {/* ── Membership Status Tracker ── */}
+        {(() => {
+          const expDate = userDoc?.subscription_expiry?.toDate ? userDoc.subscription_expiry.toDate() : (userDoc?.subscription_expiry ? new Date(userDoc.subscription_expiry) : null);
+          const totalDays = 30; // approximate default
+          const daysLeft = Math.max(0, daysRemaining);
+          const daysUsed = Math.max(0, totalDays - daysLeft);
+          const progress = Math.min(100, Math.max(0, (daysUsed / totalDays) * 100));
+          const circumference = 2 * Math.PI * 38;
+          const strokeDash = circumference - (progress / 100) * circumference;
+          const trackColor = statusType === 'expired' ? '#ba1a1a' : statusType === 'expiring' ? '#EF9F27' : '#1D9E75';
+          const gradStart = statusType === 'expired' ? '#E24B4A' : statusType === 'expiring' ? '#EF9F27' : '#1D9E75';
+          const gradEnd = statusType === 'expired' ? '#ba1a1a' : statusType === 'expiring' ? '#B06000' : '#006e28';
+          return (
+            <div style={{
+              background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255,255,255,0.7)', borderRadius: 20,
+              padding: '16px 18px', marginBottom: 12,
+              boxShadow: '0 2px 12px rgba(83,74,183,0.06)',
+              display: 'flex', alignItems: 'center', gap: 16,
+            }}>
+              {/* Circular progress */}
+              <div style={{ position: 'relative', width: 84, height: 84, flexShrink: 0 }}>
+                <svg width="84" height="84" style={{ transform: 'rotate(-90deg)' }}>
+                  <defs>
+                    <linearGradient id="memberProgressGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor={gradStart} />
+                      <stop offset="100%" stopColor={gradEnd} />
+                    </linearGradient>
+                  </defs>
+                  {/* Track */}
+                  <circle cx="42" cy="42" r="38" fill="none" stroke="rgba(0,0,0,0.06)" strokeWidth="7" />
+                  {/* Progress */}
+                  <circle
+                    cx="42" cy="42" r="38" fill="none"
+                    stroke="url(#memberProgressGrad)" strokeWidth="7"
+                    strokeLinecap="round"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDash}
+                    style={{ transition: 'stroke-dashoffset 0.8s ease' }}
+                  />
+                </svg>
+                <div style={{
+                  position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: trackColor, lineHeight: 1 }}>
+                    {daysRemaining > 0 ? daysLeft : '0'}
+                  </div>
+                  <div style={{ fontSize: 8, color: '#9BA3B5', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 0.5 }}>days</div>
+                </div>
+              </div>
+              {/* Info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: '#9BA3B5', fontWeight: 600, marginBottom: 4 }}>Membership Status</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#1b1b1d', marginBottom: 2 }}>
+                  {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Membership Expired'}
+                </div>
+                <div style={{ fontSize: 11, color: '#9BA3B5', marginBottom: 8 }}>
+                  {expDate ? `Valid till ${expDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}` : 'No active plan'}
+                </div>
+                {/* Mini progress bar */}
+                <div style={{ height: 5, background: 'rgba(0,0,0,0.07)', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${progress}%`, borderRadius: 99, background: `linear-gradient(90deg, ${gradStart}, ${gradEnd})`, transition: 'width 0.8s ease' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+                  <span style={{ fontSize: 9.5, color: '#9BA3B5' }}>Start</span>
+                  <span style={{ fontSize: 9.5, color: '#9BA3B5' }}>Expiry</span>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Today's workout */}
         <div className="today-workout glass-card" onClick={() => navigate('/member/workout')}>
