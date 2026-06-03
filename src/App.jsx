@@ -8,6 +8,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PageTransition from './components/PageTransition';
 import OwnerLayout from './components/layouts/OwnerLayout';
 import MemberLayout from './components/layouts/MemberLayout';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 // ── Lazy-loaded pages ──
 const RoleSelection        = lazy(() => import('./pages/RoleSelection/RoleSelection'));
@@ -362,6 +363,7 @@ function App() {
       <AuthProvider>
         <ToastProvider>
           <AnimatedRoutes />
+          <PWAInstallPrompt />
         </ToastProvider>
       </AuthProvider>
     </BrowserRouter>

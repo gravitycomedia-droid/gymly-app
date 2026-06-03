@@ -521,10 +521,11 @@ const MemberHome = () => {
             )}
             <button
               onClick={() => navigate('/member/card')}
-              style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 12, background: 'rgba(83,74,183,0.08)', border: '1px solid rgba(83,74,183,0.15)', color: '#534ab7', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+              style={{ width: '100%', marginTop: 8, marginBottom: 8, padding: '12px', borderRadius: 12, background: 'rgba(83,74,183,0.08)', border: '1px solid rgba(83,74,183,0.15)', color: '#534ab7', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
             >
               View Full Digital ID →
             </button>
+            <div style={{ height: 8 }} />
           </div>
         )}
 
