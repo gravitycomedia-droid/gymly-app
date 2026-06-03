@@ -281,6 +281,7 @@ const EntryKiosk = () => {
           memberId,
           gymId: expectedGym,
           entryDeviceId: deviceId || 'manual',
+          memberName: member.name || '',
         });
         
         autoReturn(4);

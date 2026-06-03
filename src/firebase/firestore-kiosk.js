@@ -101,10 +101,11 @@ export const pairDeviceByCode = async (code) => {
 // ─── Attendance Sessions ──────────────────────────────────────────
 
 /** Create an entry session (member just scanned in) */
-export const createAttendanceSession = async ({ memberId, gymId, entryDeviceId }) => {
+export const createAttendanceSession = async ({ memberId, gymId, entryDeviceId, memberName }) => {
   const ref = await addDoc(collection(db, 'attendance_sessions'), {
     memberId,
     gymId,
+    memberName: memberName || '',
     entryTime: serverTimestamp(),
     exitTime: null,
     durationMinutes: null,

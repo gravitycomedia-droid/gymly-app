@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getAttendanceSessions, getAccessDeniedLogs, getLiveOccupancy } from '../../firebase/firestore-kiosk';
+import { getAttendanceSessions, getAccessDeniedLogs } from '../../firebase/firestore-kiosk';
+import { db } from '../../firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import { getInitials, getAvatarColor } from '../../utils/helpers';
 import useLiveOccupancy from '../../hooks/useLiveOccupancy';
 import './AttendanceAnalytics.css';
@@ -170,7 +172,37 @@ const AttendanceLogs = () => {
         getAttendanceSessions(gymId, start, end),
         getAccessDeniedLogs(gymId, start, end),
       ]);
-      setSessions(sess);
+
+      // ── Resolve member names for sessions that don't have one stored ──
+      // (Sessions created before we started storing memberName will have '' or undefined)
+      const missingIds = [...new Set(
+        sess
+          .filter(s => !s.memberName)
+          .map(s => s.memberId)
+          .filter(Boolean)
+      )];
+
+      if (missingIds.length > 0) {
+        const nameMap = {};
+        await Promise.all(
+          missingIds.map(async (uid) => {
+            try {
+              const snap = await getDoc(doc(db, 'users', uid));
+              if (snap.exists()) nameMap[uid] = snap.data().name || uid;
+              else nameMap[uid] = uid;
+            } catch (_) {
+              nameMap[uid] = uid;
+            }
+          })
+        );
+        const hydrated = sess.map(s =>
+          s.memberName ? s : { ...s, memberName: nameMap[s.memberId] || s.memberId }
+        );
+        setSessions(hydrated);
+      } else {
+        setSessions(sess);
+      }
+
       setDeniedLogs(denied);
     } catch (err) {
       console.error(err);

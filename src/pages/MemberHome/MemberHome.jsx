@@ -68,10 +68,6 @@ const MemberHome = () => {
     const fetchAll = async () => {
       if (!userDoc) { setLoading(false); return; }
 
-      // Agreement banner — show popup instead of redirect
-      if (userDoc.agreement_status !== 'agreed') {
-        setShowAgreementBanner(true);
-      }
       try {
         const promises = [];
         if (userDoc.gym_id) promises.push(getGym(userDoc.gym_id));
@@ -87,6 +83,12 @@ const MemberHome = () => {
         setGym(gymData);
         setWorkoutPlan(planData);
         setRecentLogs(logs);
+
+        // Agreement banner — check require_agreement after gym loads (default: required)
+        const requireAgreement = gymData?.settings?.require_agreement !== false;
+        if (requireAgreement && userDoc.agreement_status !== 'agreed') {
+          setShowAgreementBanner(true);
+        }
 
         // 1. Calculate today's caloric summary
         const todayAtZero = new Date();
@@ -290,46 +292,70 @@ const MemberHome = () => {
           </div>
         )}
 
-        <div className={`membership-card glass-card status-${statusType}`}>
-          <div className="membership-card-top">
-            <span className="membership-gym-name">{gym?.name || 'My Gym'}</span>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
-              <span className={`status-badge-mini ${statusType}`}>{statusLabel}</span>
-              {/* QR thumbnail — show EXPIRED overlay if membership has lapsed */}
-              <div
-                style={{ position: 'relative', width: 44, height: 44, cursor: daysRemaining > 0 ? 'pointer' : 'default' }}
-                onClick={() => daysRemaining > 0 && setShowQRCode(true)}
-              >
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
-                  alt="QR"
-                  style={{
-                    width: 44, height: 44, background: '#fff', padding: 4, borderRadius: 6,
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                    opacity: daysRemaining <= 0 ? 0.35 : 1,
-                    filter: daysRemaining <= 0 ? 'grayscale(1)' : 'none',
-                  }}
-                />
-                {daysRemaining <= 0 && (
-                  <div style={{
-                    position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(226,75,74,0.75)', borderRadius: 6,
-                    fontSize: 7, fontWeight: 800, color: '#fff', letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.1,
-                  }}>
-                    EXP<br/>IRED
-                  </div>
-                )}
+          {/* Membership card block */}
+          <div className={`membership-card glass-card status-${statusType}`}>
+            <div className="membership-card-top">
+              <span className="membership-gym-name">{gym?.name || 'My Gym'}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
+                <span className={`status-badge-mini ${statusType}`}>{statusLabel}</span>
+                {/* QR thumbnail */}
+                <div
+                  style={{ position: 'relative', width: 44, height: 44, cursor: daysRemaining > 0 ? 'pointer' : 'default' }}
+                  onClick={() => daysRemaining > 0 && setShowQRCode(true)}
+                >
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=50x50&data=gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
+                    alt="QR"
+                    style={{
+                      width: 44, height: 44, background: '#fff', padding: 4, borderRadius: 6,
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      opacity: daysRemaining <= 0 ? 0.35 : 1,
+                      filter: daysRemaining <= 0 ? 'grayscale(1)' : 'none',
+                    }}
+                  />
+                  {daysRemaining <= 0 && (
+                    <div style={{
+                      position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(226,75,74,0.75)', borderRadius: 6,
+                      fontSize: 7, fontWeight: 800, color: '#fff', letterSpacing: 0.3, textAlign: 'center', lineHeight: 1.1,
+                    }}>
+                      EXP<br/>IRED
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+            {getPlanName(gym, userDoc?.plan_id) && (
+              <div className="membership-plan-name">{getPlanName(gym, userDoc?.plan_id)}</div>
+            )}
+            {/* Member ID and Enrollment ID — shown per card_settings */}
+            {(() => {
+              const cs = gym?.card_settings || {};
+              const showMemberId = cs.show_member_id !== false;
+              const showEnrollmentId = cs.show_enrollment_id !== false;
+              const memberId = userDoc?.memberNumber || (userDoc?.id ? `MEM-${userDoc.id.substring(0,6)}` : null);
+              const enrollmentId = userDoc?.latestEnrollmentNumber;
+              if (!showMemberId && !showEnrollmentId) return null;
+              return (
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2, marginBottom: 2 }}>
+                  {showMemberId && memberId && (
+                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: 'var(--text-muted)', background: 'rgba(83,74,183,0.07)', padding: '2px 8px', borderRadius: 6 }}>
+                      #{memberId}
+                    </span>
+                  )}
+                  {showEnrollmentId && enrollmentId && (
+                    <span style={{ fontSize: 11, fontFamily: 'monospace', fontWeight: 700, color: '#1D9E75', background: 'rgba(29,158,117,0.1)', padding: '2px 8px', borderRadius: 6 }}>
+                      {enrollmentId}
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+            <div className="membership-days-pill">
+              {daysRemaining > 0 ? `${daysRemaining} days left` : `Expired ${Math.abs(daysRemaining)} days ago`}
+            </div>
+            <div className="membership-expiry">Valid till {formatDate(userDoc?.subscription_expiry)}</div>
           </div>
-          {getPlanName(gym, userDoc?.plan_id) && (
-            <div className="membership-plan-name">{getPlanName(gym, userDoc?.plan_id)}</div>
-          )}
-          <div className="membership-days-pill">
-            {daysRemaining > 0 ? `${daysRemaining} days left` : `Expired ${Math.abs(daysRemaining)} days ago`}
-          </div>
-          <div className="membership-expiry">Valid till {formatDate(userDoc?.subscription_expiry)}</div>
-        </div>
 
         {pendingPayments.map(p => (
           <div key={p.id} style={{

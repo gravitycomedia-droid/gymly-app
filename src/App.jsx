@@ -57,6 +57,7 @@ const MemberAgreement      = lazy(() => import('./pages/Agreement/MemberAgreemen
 const AdminDashboard       = lazy(() => import('./pages/Admin/AdminDashboard'));
 const SubscriptionGate     = lazy(() => import('./components/SubscriptionGate'));
 const NumberingSettings    = lazy(() => import('./pages/Settings/NumberingSettings'));
+const CardEditor           = lazy(() => import('./pages/Settings/CardEditor'));
 const EntryKiosk           = lazy(() => import('./pages/Kiosk/EntryKiosk'));
 const ExitKiosk            = lazy(() => import('./pages/Kiosk/ExitKiosk'));
 const KioskDevices         = lazy(() => import('./pages/Attendance/KioskDevices'));
@@ -329,6 +330,10 @@ function AnimatedRoutes() {
           <Route
             path="/owner/settings/numbering"
             element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="settings"><PageTransition><NumberingSettings /></PageTransition></OwnerLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/owner/settings/card-editor"
+            element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="settings"><PageTransition><CardEditor /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
 
           {/* Membership Plans */}

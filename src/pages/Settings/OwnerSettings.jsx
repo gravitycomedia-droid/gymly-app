@@ -82,6 +82,9 @@ const OwnerSettings = () => {
   const [editingEquipment, setEditingEquipment] = useState(null);
   const [uploadingEquipImg, setUploadingEquipImg] = useState(false);
 
+  // Member Experience
+  const [requireAgreement, setRequireAgreement] = useState(true);
+
   // Gallery
   const [photos, setPhotos] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
@@ -123,6 +126,7 @@ const OwnerSettings = () => {
       });
       setEquipment(g.equipment || []);
       setPhotos(g.photos || []);
+      setRequireAgreement(g.settings?.require_agreement !== false); // default true
       setLoading(false);
     });
   }, [userDoc?.gym_id]);
@@ -320,6 +324,18 @@ const OwnerSettings = () => {
       .catch(() => showToast('Failed to copy link', 'error'));
   };
 
+  // ── Save agreement toggle ──
+  const saveRequireAgreement = async (value) => {
+    setRequireAgreement(value);
+    try {
+      await updateGym(userDoc.gym_id, { 'settings.require_agreement': value });
+      showToast(value ? 'Agreement required on login' : 'Agreement disabled', 'success');
+    } catch (e) {
+      showToast('Failed to save: ' + e.message, 'error');
+      setRequireAgreement(!value);
+    }
+  };
+
   // ── Equipment ──
   const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Legs', 'Core', 'Cardio', 'Full Body', 'Glutes'];
 
@@ -489,6 +505,35 @@ const OwnerSettings = () => {
                 <div className="settings-row-desc">Member numbers & enrollment codes</div>
               </div>
               <span className="settings-row-arrow">›</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Member Experience */}
+        <div className="settings-section">
+          <div className="settings-section-title">Member Experience</div>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="settings-row" onClick={() => navigate('/owner/settings/card-editor')}>
+              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>🪪</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Membership Card Design</div>
+                <div className="settings-row-desc">Customise what appears on digital member ID</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
+            <div className="settings-row">
+              <div className="settings-row-icon" style={{ background: 'rgba(29,158,117,0.08)' }}>📝</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Require Member Agreement</div>
+                <div className="settings-row-desc">
+                  {requireAgreement ? 'Members must sign agreement on first login' : 'Agreement disabled — members go straight to home'}
+                </div>
+              </div>
+              <button
+                className={`plan-toggle ${requireAgreement ? 'on' : 'off'}`}
+                onClick={() => saveRequireAgreement(!requireAgreement)}
+                title={requireAgreement ? 'Required' : 'Disabled'}
+              />
             </div>
           </div>
         </div>
