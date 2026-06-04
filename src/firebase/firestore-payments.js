@@ -4,7 +4,7 @@
 import * as real from './firestore-payments_real';
 import * as mock from './mockFirestore';
 
-const isMock = () => typeof window !== 'undefined' && localStorage.getItem('mockRole');
+const isMock = () => import.meta.env.DEV && typeof window !== 'undefined' && localStorage.getItem('mockRole');
 
 const run = (fnName, realFn, ...args) => {
   if (isMock()) {
@@ -23,6 +23,7 @@ export const updatePayment = (...args) => run('updatePayment', real.updatePaymen
 export const deletePayment = (...args) => run('deletePayment', real.deletePayment, ...args);
 export const getPaymentsRealtime = (...args) => run('getPaymentsRealtime', real.getPaymentsRealtime, ...args);
 export const getMemberPayments = (...args) => run('getMemberPayments', real.getMemberPayments, ...args);
+export const deleteMemberPayments = (...args) => run('deleteMemberPayments', real.deleteMemberPayments, ...args);
 export const getMemberPaymentsRealtime = (...args) => run('getMemberPaymentsRealtime', real.getMemberPaymentsRealtime, ...args);
 
 export const createAttendanceLog = (...args) => run('createAttendanceLog', real.createAttendanceLog, ...args);

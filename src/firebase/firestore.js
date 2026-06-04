@@ -5,7 +5,7 @@ import * as real from './firestore_real';
 import * as mock from './mockFirestore';
 export * from 'firebase/firestore';
 
-const isMock = () => typeof window !== 'undefined' && localStorage.getItem('mockRole');
+const isMock = () => import.meta.env.DEV && typeof window !== 'undefined' && localStorage.getItem('mockRole');
 
 // Wrapper helper
 const run = (fnName, realFn, ...args) => {
