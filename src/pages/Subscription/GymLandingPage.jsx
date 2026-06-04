@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getGym } from '../../firebase/firestore';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import { db, auth } from '../../firebase/config';
 import { getInitials, getAvatarColor } from '../../utils/helpers';
 import InquiryModal from '../../components/InquiryModal';
 
@@ -40,6 +40,7 @@ const GymLandingPage = () => {
         ]);
         return;
       }
+      if (!auth?.currentUser) return;
       try {
         const q = query(collection(db, 'users'), where('gym_id', '==', gymId), where('role', '==', 'trainer'));
         const snap = await getDocs(q);
