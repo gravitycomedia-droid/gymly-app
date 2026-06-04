@@ -37,9 +37,11 @@ service cloud.firestore {
         && resource.data.owner_id == request.auth.uid;
     }
 
-    // Leads — public can create, authenticated gym staff can read/update
+    // Leads — public can create with validated fields only; staff can read/update (L-2)
     match /leads/{leadId} {
-      allow create: if true;
+      allow create: if request.resource.data.keys().hasOnly(['name', 'phone', 'email', 'gym_id', 'created_at', 'message'])
+        && request.resource.data.name is string && request.resource.data.name.size() < 100
+        && request.resource.data.phone is string && request.resource.data.phone.size() < 100;
       allow read, update: if request.auth != null;
     }
 

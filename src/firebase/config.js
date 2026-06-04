@@ -35,7 +35,7 @@ try {
     });
   }
 } catch (error) {
-  console.error('Firebase initialization error:', error);
+  if (import.meta.env.DEV) console.error('Firebase initialization error:', error);
 }
 
 export { auth, db, storage, functions };
