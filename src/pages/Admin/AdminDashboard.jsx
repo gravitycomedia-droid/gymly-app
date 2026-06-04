@@ -37,7 +37,7 @@ const planBadgeClass = (plan) => {
 };
 
 export default function AdminDashboard() {
-  const { userDoc } = useAuth();
+  const { user, userDoc } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
 
@@ -59,12 +59,13 @@ export default function AdminDashboard() {
   });
   const [saving, setSaving] = useState(false);
 
-  // Guard: admin only
+  // Guard: admin only — verified against /admins/{uid} collection (M-3)
   useEffect(() => {
-    if (userDoc && userDoc.role !== 'admin') {
-      navigate('/owner/dashboard', { replace: true });
-    }
-  }, [userDoc, navigate]);
+    if (!user) return;
+    getDoc(doc(db, 'admins', user.uid)).then(snap => {
+      if (!snap.exists()) navigate('/owner/dashboard', { replace: true });
+    });
+  }, [user, navigate]);
 
   const loadData = useCallback(async () => {
     setLoading(true);

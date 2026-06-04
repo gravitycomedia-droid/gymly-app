@@ -169,9 +169,9 @@ service cloud.firestore {
 
     match /admin_logs/{logId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
       allow create: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
       allow update, delete: if false;
     }
 
