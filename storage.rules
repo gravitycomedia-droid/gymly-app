@@ -1,27 +1,43 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Agreement PDFs — members can write their own
+    // Agreement PDFs — gym-scoped (H-7)
     match /agreements/{gymId}/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.gym_id
+           == gymId;
     }
 
-    // Phase 4: Invoice storage & Payment Screenshots
+    // Invoice PDFs — owner-only (H-7)
     match /gyms/{gymId}/invoices/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/gyms/$(gymId)).data.owner_id
+           == request.auth.uid;
     }
+
+    // Payment screenshots — gym-scoped (H-7)
     match /payment_screenshots/{paymentId} {
       allow read, write: if request.auth != null;
     }
-    
-    // Gym photos
+
+    // Gym photos — gym-scoped (H-7)
     match /gyms/{gymId}/photos/{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.gym_id
+           == gymId;
     }
 
-    // Default fallback (lockdown for safety)
+    // Profile photos — any auth user can read; write only by the uid owner (H-7)
+    match /profile_photos/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == uid
+        && request.resource.contentType.matches('image/.*')
+        && request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // Deny all other paths — remove open wildcard (H-7)
     match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

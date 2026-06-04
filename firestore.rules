@@ -26,10 +26,15 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // Gyms — authenticated users can read/write, public can read
+    // Gyms — authenticated read; writes scoped to owner_id (H-3)
     match /gyms/{gymId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+        && request.resource.data.owner_id == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.owner_id == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.owner_id == request.auth.uid;
     }
 
     // Leads — public can create, authenticated gym staff can read/update
@@ -42,94 +47,151 @@ service cloud.firestore {
     match /workout_plans/{planId} {
       allow read, write: if request.auth != null;
     }
-    
+
     match /workout_days/{dayId} {
       allow read, write: if request.auth != null;
     }
-    
+
     match /workout_logs/{logId} {
       allow read, write: if request.auth != null;
     }
-    
+
     match /progress_logs/{logId} {
       allow read, write: if request.auth != null;
     }
-    
+
     match /soreness_logs/{logId} {
       allow read, write: if request.auth != null;
     }
 
-    // Phase 4: Payments & Invoicing
+    // Phase 4: Payments — gym-isolated (H-4)
     match /payments/{paymentId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gym_id;
+      allow create: if request.auth != null
+        && request.resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+      allow update, delete: if request.auth != null
+        && resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
     }
 
     match /invoice_counter/{gymId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id == gymId;
     }
 
-    // Phase 4: Attendance
+    // Phase 4: Attendance Logs — gym-isolated (H-4)
     match /attendance_logs/{logId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gym_id;
+      allow create: if request.auth != null
+        && request.resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+      allow update, delete: if request.auth != null
+        && resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
     }
 
-    // Phase 4: WhatsApp Logs
+    // Phase 4: WhatsApp Logs — gym-isolated (H-4)
     match /whatsapp_logs/{logId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gym_id;
+      allow create: if request.auth != null
+        && request.resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+      allow update, delete: if request.auth != null
+        && resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
     }
 
-    // Phase 5: Message Retry Queue (Cloud Functions only, but allow read for dashboard)
+    // Phase 5: Message Retry Queue — gym-isolated (H-4)
     match /message_retry_queue/{docId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gym_id;
+      allow create: if request.auth != null
+        && request.resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+      allow update, delete: if request.auth != null
+        && resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
     }
 
-    // Phase 5: Message Logs
+    // Phase 5: Message Logs — gym-isolated (H-4)
     match /message_logs/{logId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gym_id;
+      allow create: if request.auth != null
+        && request.resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+      allow update, delete: if request.auth != null
+        && resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
     }
 
-    // Phase 6: Invoices
+    // Phase 6: Invoices — gym-isolated (H-4)
     match /invoices/{invoiceId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gym_id;
+      allow create: if request.auth != null
+        && request.resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+      allow update, delete: if request.auth != null
+        && resource.data.gym_id
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
     }
 
     // Subscription System
     match /subscriptions/{gymId} {
-      // Gym owner can read their own subscription; admin can read/write all
       allow read: if request.auth != null;
-      allow write: if request.auth != null &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         get(/databases/$(database)/documents/gyms/$(gymId)).data.owner_id == request.auth.uid);
+      allow write: if request.auth != null
+        && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+            || get(/databases/$(database)/documents/gyms/$(gymId)).data.owner_id == request.auth.uid);
     }
 
     match /billing/{gymId}/{document=**} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null &&
-        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-         get(/databases/$(database)/documents/gyms/$(gymId)).data.owner_id == request.auth.uid);
+      allow write: if request.auth != null
+        && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+            || get(/databases/$(database)/documents/gyms/$(gymId)).data.owner_id == request.auth.uid);
     }
 
     match /admins/{adminId} {
       allow read: if request.auth != null && request.auth.uid == adminId;
-      allow write: if false; // managed via Firebase Console / server only
+      allow write: if false;
     }
 
     match /admin_logs/{logId} {
-      allow read: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      allow create: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      allow create: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
       allow update, delete: if false;
     }
 
-    // Member Numbering System
+    // Member Numbering System — gym-isolated (H-4)
     match /numbering_settings/{gymId} {
-      allow read, write: if request.auth != null;
+      allow read, write: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id == gymId;
     }
 
+    // Serial counters docId is {gymId}_{counterKey}; gymId field stored in doc (H-4)
     match /serial_counters/{docId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gymId;
+      allow create: if request.auth != null
+        && request.resource.data.gymId
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+      allow update, delete: if request.auth != null
+        && resource.data.gymId
+           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
     }
 
     // Coupon Activation — owners can read; all writes go through redeemCoupon Cloud Function
@@ -138,18 +200,24 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Kiosk Devices — authenticated owners manage devices; unauthenticated kiosks
-    // need read access to pair (look up by pairingCode) and write to update status/lastSeen
+    // Kiosk Devices — auth required to read; unauthenticated update only via device_secret (H-5)
     match /kiosk_devices/{deviceId} {
-      allow read: if true;  // kiosk device needs to read to pair
-      allow create: if request.auth != null;
-      allow update: if true;  // kiosk updates lastSeen/status without auth session
-      allow delete: if request.auth != null;
+      allow read: if request.auth != null;
+      allow update: if request.resource.data.device_secret == resource.data.device_secret;
+      allow create, delete: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+           in ['owner', 'manager'];
     }
 
-    // Attendance Sessions — kiosk devices read/write without auth; owners read for analytics
+    // Attendance Sessions — kiosk creates via device_secret validation; owners read by gym (H-5)
     match /attendance_sessions/{sessionId} {
-      allow read, write: if true;
+      allow create: if request.resource.data.device_secret
+        == get(/databases/$(database)/documents/kiosk_devices/$(request.resource.data.device_id))
+           .data.device_secret;
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+           == resource.data.gym_id;
+      allow update, delete: if false;
     }
 
     // Access Denied Logs — kiosk writes, owners read
