@@ -10,8 +10,9 @@ import { db } from '../../firebase/config';
 
 const OWNER_NAV = [
   { id: 'home',      label: 'Dashboard',  path: '/owner/dashboard',  icon: 'home' },
-  { id: 'members',   label: 'Members',    path: '/owner/members',    icon: 'group' },
-  { id: 'payments',  label: 'Payments',   path: '/owner/payments',   icon: 'payments' },
+  { id: 'members',     label: 'Members',     path: '/owner/members',     icon: 'group' },
+  { id: 'recycle-bin', label: 'Recycle Bin', path: '/owner/recycle-bin', icon: 'delete' },
+  { id: 'payments',    label: 'Payments',    path: '/owner/payments',    icon: 'payments' },
   { id: 'analytics', label: 'Analytics',  path: '/owner/analytics',  icon: 'bar_chart' },
   { id: 'settings',  label: 'Settings',   path: '/owner/settings',   icon: 'settings' },
 ];

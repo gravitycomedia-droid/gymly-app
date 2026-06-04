@@ -39,7 +39,7 @@ export const mockGym = {
   ]
 };
 
-export const mockMembers = [
+export let mockMembers = [
   {
     id: 'm1',
     name: 'Rohan Sharma',
@@ -129,7 +129,7 @@ export const mockStaff = [
   { id: 's3', name: 'Rahul Manager', role: 'manager', gym_id: 'mock_gym_123', email: 'rahul@irontemple.com', created_at: mockTimestamp(d(-200)) }
 ];
 
-export const mockPayments = [
+export let mockPayments = [
   {
     id: 'pay1',
     member_name: 'Rohan Sharma',
@@ -312,6 +312,17 @@ export const getTodayActiveMembers = (gymId, cb) => { cb(mockAttendanceLogs.filt
 export const getAttendanceRange = async () => mockAttendanceLogs;
 export const getWhatsAppLogsRealtime = (gymId, cb) => { cb(mockWhatsAppLogs); return () => {}; };
 export const getPaymentById = async (id) => mockPayments.find(p => p.id === id) || null;
+
+// Mutations for mock data
+export const deleteMember = async (uid) => {
+  mockMembers = mockMembers.filter(m => m.id !== uid);
+};
+
+export const deleteMemberPayments = async (gymId, memberId) => {
+  const initialLength = mockPayments.length;
+  mockPayments = mockPayments.filter(p => !(p.gym_id === gymId && p.member_id === memberId));
+  return initialLength - mockPayments.length;
+};
 
 const dateKeyToday = () => {
   const dObj = new Date();

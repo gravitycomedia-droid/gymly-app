@@ -508,6 +508,13 @@ exports.processNewPayment = invoicing.processNewPayment;
 exports.resendInvoice = invoicing.resendInvoice;
 exports.generateInvoice = invoicing.generateInvoice;
 
+// Member Lifecycle (soft delete / restore / permanent purge)
+const lifecycle = require("./src/memberLifecycle");
+exports.softDeleteMember = lifecycle.softDeleteMember;
+exports.restoreMember = lifecycle.restoreMember;
+exports.permanentlyDeleteExpired = lifecycle.permanentlyDeleteExpired;
+exports.redeemCoupon = lifecycle.redeemCoupon;
+
 // ─────────────────────────────────────────────────────────────────
 // SUBSCRIPTION SYSTEM FUNCTIONS
 // ─────────────────────────────────────────────────────────────────

@@ -189,6 +189,19 @@ export const getMemberPayments = async (gymId, memberId) => {
   return payments;
 };
 
+// Simpler query without orderBy — used for deletion (no composite index needed)
+export const deleteMemberPayments = async (gymId, memberId) => {
+  const q = query(
+    collection(db, 'payments'),
+    where('gym_id', '==', gymId),
+    where('member_id', '==', memberId)
+  );
+  const snap = await getDocs(q);
+  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)));
+  return snap.size;
+};
+
+
 // ─── Attendance Logs ───
 
 export const createAttendanceLog = async (data) => {

@@ -90,6 +90,11 @@ const OwnerSettings = () => {
   const [photos, setPhotos] = useState([]);
   const [uploadingImage, setUploadingImage] = useState(false);
 
+  // Coupon activation
+  const [couponCode, setCouponCode] = useState('');
+  const [couponSaving, setCouponSaving] = useState(false);
+  const [activeSubInfo, setActiveSubInfo] = useState(null);
+
   useEffect(() => {
     if (!userDoc?.gym_id) return;
     getGym(userDoc.gym_id).then(g => {
@@ -129,6 +134,11 @@ const OwnerSettings = () => {
       setPhotos(g.photos || []);
       setRequireAgreement(g.settings?.require_agreement !== false); // default true
       setWorkoutEnabled(g.settings?.workout_enabled === true); // default false (locked)
+      // Load existing coupon subscription info
+      if (g.subscription_valid_until) {
+        const until = g.subscription_valid_until?.toDate ? g.subscription_valid_until.toDate() : new Date(g.subscription_valid_until);
+        setActiveSubInfo({ validUntil: until, label: g.subscription_coupon_label || 'Active' });
+      }
       setLoading(false);
     });
   }, [userDoc?.gym_id]);
@@ -303,6 +313,30 @@ const OwnerSettings = () => {
       showToast('Photo deleted', 'success');
     } catch (err) {
       showToast('Failed to delete', 'error');
+    }
+  };
+
+  // ── Activate Coupon ──
+  const handleActivateCoupon = async () => {
+    if (!couponCode.trim()) {
+      showToast('Enter a coupon code', 'error'); return;
+    }
+    setCouponSaving(true);
+    try {
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../../firebase/config');
+      const redeem = httpsCallable(functions, 'redeemCoupon');
+      const result = await redeem({ code: couponCode.trim(), gymId: userDoc.gym_id });
+      const newExpiry = new Date(result.data.newExpiry);
+      setActiveSubInfo({ validUntil: newExpiry, label: result.data.label });
+      setCouponCode('');
+      setActiveSheet(null);
+      showToast(`✅ ${result.data.label} activated until ${newExpiry.toLocaleDateString('en-IN')}!`, 'success');
+    } catch (e) {
+      const msg = e?.details?.message || e?.message || 'Invalid or already used code';
+      showToast(msg, 'error');
+    } finally {
+      setCouponSaving(false);
     }
   };
 
@@ -665,6 +699,33 @@ const OwnerSettings = () => {
               </div>
               <span className="settings-row-arrow">›</span>
             </div>
+            <div className="settings-row" onClick={() => navigate('/owner/kiosk-devices')}>
+              <div className="settings-row-icon" style={{ background: 'rgba(83,74,183,0.08)' }}>🖥️</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Kiosk Mode</div>
+                <div className="settings-row-desc">Manage kiosk devices & self check-in</div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Subscription */}
+        <div className="settings-section">
+          <div className="settings-section-title">Subscription</div>
+          <div className="glass-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="settings-row" onClick={() => setActiveSheet('coupon')}>
+              <div className="settings-row-icon" style={{ background: 'rgba(109,54,212,0.08)' }}>🎟️</div>
+              <div className="settings-row-content">
+                <div className="settings-row-label">Activate with Coupon</div>
+                <div className="settings-row-desc">
+                  {activeSubInfo
+                    ? `${activeSubInfo.label} — valid until ${activeSubInfo.validUntil.toLocaleDateString('en-IN')}`
+                    : 'Enter a coupon code to unlock access'}
+                </div>
+              </div>
+              <span className="settings-row-arrow">›</span>
+            </div>
           </div>
         </div>
 
@@ -967,6 +1028,44 @@ const OwnerSettings = () => {
           <button className="btn-primary" onClick={saveMessagingConfig} disabled={saving} style={{ marginTop: 24 }}>
             {saving ? <div className="spinner" /> : 'Save Settings'}
           </button>
+        </EditSheet>
+      )}
+
+      {/* Coupon Activation Sheet */}
+      {activeSheet === 'coupon' && (
+        <EditSheet title="Activate Subscription" onClose={() => { setActiveSheet(null); setCouponCode(''); }}>
+          <div style={{ marginBottom: 16 }}>
+            {activeSubInfo ? (
+              <div style={{ background: 'rgba(0,103,98,0.08)', border: '1px solid rgba(0,103,98,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--success)' }}>✅ Active Subscription</div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                  {activeSubInfo.label} — valid until {activeSubInfo.validUntil.toLocaleDateString('en-IN')}
+                </div>
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16, lineHeight: 1.5 }}>
+                Enter a coupon code provided by Gymly to activate or extend your subscription.
+              </div>
+            )}
+          </div>
+          <div className="input-group">
+            <label className="input-label">Coupon Code</label>
+            <input
+              type="text"
+              className="input-field"
+              placeholder="e.g. GYM1Y-XXXXXX"
+              value={couponCode}
+              onChange={e => setCouponCode(e.target.value.toUpperCase())}
+              style={{ letterSpacing: '0.06em', fontFamily: 'Geist, monospace', fontSize: 15 }}
+            />
+          </div>
+          <button className="btn-primary" onClick={handleActivateCoupon} disabled={couponSaving || !couponCode.trim()} style={{ marginTop: 8 }}>
+            {couponSaving ? <div className="spinner" /> : '🎟️ Activate Code'}
+          </button>
+          <div style={{ marginTop: 16, padding: '12px', background: 'rgba(0,88,188,0.05)', borderRadius: 10, fontSize: 11, color: 'var(--text-muted)', lineHeight: 1.5 }}>
+            <strong>Available tiers:</strong> 1 Month · 3 Months · 6 Months · 1 Year<br />
+            Each code is single-use. Codes can be stacked to extend access.
+          </div>
         </EditSheet>
       )}
 

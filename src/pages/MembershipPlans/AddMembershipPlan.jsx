@@ -18,6 +18,7 @@ export default function AddMembershipPlan() {
   // Form State
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Monthly');
+  const [customDays, setCustomDays] = useState(30);
   const [description, setDescription] = useState('');
   const [basePrice, setBasePrice] = useState(1000);
   const [discountPercent, setDiscountPercent] = useState(0);
@@ -54,6 +55,7 @@ export default function AddMembershipPlan() {
             setBasePrice(planToEdit.basePrice || planToEdit.price || 0);
             setDiscountPercent(planToEdit.discount || 0);
             setMaxVisits(planToEdit.maxVisits || 0);
+            if (planToEdit.customDays) setCustomDays(planToEdit.customDays);
             if (planToEdit.features) setFeatures(planToEdit.features);
             if (planToEdit.access) setAccess(planToEdit.access);
           }
@@ -64,6 +66,27 @@ export default function AddMembershipPlan() {
   }, [userDoc?.gym_id, planId]);
 
   // Derived values
+  const DURATION_DAYS = {
+    Monthly: 30,
+    Quarterly: 90,
+    'Six Months': 180,
+    'Nine Months': 270,
+    Yearly: 365,
+    Custom: customDays,
+  };
+
+  const getDurationLabel = () => {
+    switch (category) {
+      case 'Monthly': return 'mo';
+      case 'Quarterly': return 'qtr';
+      case 'Six Months': return '6mo';
+      case 'Nine Months': return '9mo';
+      case 'Yearly': return 'yr';
+      case 'Custom': return `${customDays}d`;
+      default: return 'mo';
+    }
+  };
+
   const finalPrice = basePrice - (basePrice * (discountPercent / 100));
   
   const handleSave = async () => {
@@ -82,7 +105,8 @@ export default function AddMembershipPlan() {
         discount: discountPercent,
         finalPrice,
         price: finalPrice, // Keep legacy field for backwards compatibility
-        duration_days: category === 'Monthly' ? 30 : category === 'Yearly' ? 365 : 90, // Keep legacy field
+        duration_days: DURATION_DAYS[category] ?? 30,
+        customDays: category === 'Custom' ? customDays : null,
         maxVisits,
         features,
         access,
@@ -100,7 +124,8 @@ export default function AddMembershipPlan() {
       showToast('Membership plan saved!', 'success');
       navigate('/owner/plans');
     } catch (error) {
-      showToast('Failed to save plan', 'error');
+      console.error('Failed to save plan:', error);
+      showToast('Failed to save plan: ' + (error?.message || 'Unknown error'), 'error');
     }
   };
 
@@ -132,7 +157,7 @@ export default function AddMembershipPlan() {
       </header>
 
       <main className="pt-24 pb-32 px-4 md:px-8 max-w-7xl mx-auto relative z-10">
-        {/* Close/Back Action */}
+        {/* Close/Back Action + Save Button Row */}
         <div className="mb-8 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
@@ -144,6 +169,22 @@ export default function AddMembershipPlan() {
             <h1 className="font-headline-md md:font-headline-lg text-on-surface font-bold">
               {planId ? 'Edit Membership Plan' : 'Add New Membership Plan'}
             </h1>
+          </div>
+          {/* Save Plan button — accessible above the bottom navbar */}
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate('/owner/plans')}
+              className="px-5 py-2.5 rounded-xl border border-outline-variant text-on-surface font-label-md hover:bg-white/50 transition-all text-sm"
+            >
+              Cancel
+            </button>
+            <button 
+              onClick={handleSave}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-tr from-primary to-secondary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all text-sm flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-[18px]">save</span>
+              Save Plan
+            </button>
           </div>
         </div>
 
@@ -176,10 +217,30 @@ export default function AddMembershipPlan() {
                     onChange={e => setCategory(e.target.value)}
                     className="w-full bg-white/40 border border-white/50 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none transition-shadow appearance-none"
                   >
-                    <option value="Monthly">Monthly</option>
-                    <option value="Quarterly">Quarterly</option>
-                    <option value="Yearly">Yearly</option>
+                    <option value="Monthly">Monthly (30 days)</option>
+                    <option value="Quarterly">Quarterly (90 days)</option>
+                    <option value="Six Months">Six Months (180 days)</option>
+                    <option value="Nine Months">Nine Months (270 days)</option>
+                    <option value="Yearly">Yearly (365 days)</option>
+                    <option value="Custom">Custom (specify days)</option>
                   </select>
+                  {category === 'Custom' && (
+                    <div className="mt-3 space-y-1">
+                      <label className="font-label-md text-on-surface-variant ml-1">Number of Days</label>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="1"
+                          max="3650"
+                          value={customDays}
+                          onChange={e => setCustomDays(Math.max(1, Number(e.target.value)))}
+                          className="w-full bg-white/40 border border-white/50 rounded-xl px-4 py-3 focus:ring-2 focus:ring-primary outline-none"
+                          placeholder="e.g. 45"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[12px] font-bold uppercase tracking-wider">days</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="md:col-span-2 space-y-2">
                   <label className="font-label-md text-on-surface-variant ml-1">Description (Benefits)</label>
@@ -377,7 +438,7 @@ export default function AddMembershipPlan() {
                     <div className="flex items-baseline gap-1">
                       <span className="text-4xl font-bold text-primary">₹{finalPrice.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                       <span className="text-on-surface-variant text-[13px] font-medium">
-                        / {category === 'Yearly' ? 'yr' : category === 'Quarterly' ? 'qtr' : 'mo'}
+                        / {getDurationLabel()}
                       </span>
                     </div>
                     {discountPercent > 0 && (
@@ -441,26 +502,13 @@ export default function AddMembershipPlan() {
         </div>
       </main>
 
-      {/* Footer Bar */}
-      <footer className="fixed bottom-0 left-0 w-full glass-panel border-t border-white/20 py-4 px-4 md:px-6 z-50 bg-surface/80 backdrop-blur-2xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="hidden md:flex items-center gap-4 text-on-surface-variant text-[12px]">
-            <span className="flex items-center gap-1 font-medium"><span className="material-symbols-outlined text-[16px] text-tertiary">task_alt</span> Live Preview Active</span>
-          </div>
-          <div className="flex items-center gap-4 w-full md:w-auto">
-            <button 
-              onClick={() => navigate('/owner/plans')}
-              className="flex-1 md:flex-none px-8 py-3 rounded-xl border border-outline-variant text-on-surface font-label-md hover:bg-white/50 transition-all"
-            >
-              Cancel
-            </button>
-            <button 
-              onClick={handleSave}
-              className="flex-1 md:flex-none px-12 py-3 rounded-xl bg-gradient-to-tr from-primary to-secondary text-white font-bold shadow-lg shadow-primary/30 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all"
-            >
-              Save Plan
-            </button>
-          </div>
+      {/* Footer Bar — Live Preview indicator only (Save is above) */}
+      <footer className="fixed bottom-0 left-0 w-full glass-panel border-t border-white/20 py-3 px-4 md:px-6 z-50 bg-surface/80 backdrop-blur-2xl">
+        <div className="max-w-7xl mx-auto flex items-center justify-center">
+          <span className="flex items-center gap-2 text-on-surface-variant text-[12px] font-medium">
+            <span className="material-symbols-outlined text-[16px] text-tertiary">task_alt</span>
+            Live Preview Active — Use Save Plan button above
+          </span>
         </div>
       </footer>
     </div>

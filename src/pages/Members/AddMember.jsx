@@ -45,13 +45,16 @@ const AddMember = ({ quickAddOnly = false }) => {
   const [checkingPhone, setCheckingPhone] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const photoInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
+    setShowPhotoPicker(false);
   };
 
   // Form state
@@ -243,7 +246,7 @@ const AddMember = ({ quickAddOnly = false }) => {
 
       // Create payment record if plan selected
       let enrollmentNumber = null;
-      if (selectedPlan && finalAmount > 0) {
+      if (selectedPlan) {
         try {
           // Generate enrollment number
           try {
@@ -254,6 +257,8 @@ const AddMember = ({ quickAddOnly = false }) => {
             });
           } catch (enErr) {
             console.error('Enrollment number error (non-critical):', enErr);
+            // Fallback enrollment number if generation fails
+            enrollmentNumber = `ENR-${Date.now().toString(36).toUpperCase()}`;
           }
 
           const invoiceNumber = await getNextInvoiceNumber(userDoc.gym_id);
@@ -292,12 +297,14 @@ const AddMember = ({ quickAddOnly = false }) => {
             console.error('Member enrollment update error:', enUpdateErr);
           }
 
-          try {
-            const blob = await generateInvoicePDF({ ...paymentData, id: paymentId }, gym, { id: docMemberId, name: form.name.trim(), phone: fullPhone });
-            const invoiceUrl = await uploadInvoice(userDoc.gym_id, invoiceNumber, blob);
-            await updateDoc(doc(db, 'payments', paymentId), { invoice_url: invoiceUrl });
-          } catch (pdfErr) {
-            console.error('Invoice error (non-critical):', pdfErr);
+          if (finalAmount > 0) {
+            try {
+              const blob = await generateInvoicePDF({ ...paymentData, id: paymentId }, gym, { id: docMemberId, name: form.name.trim(), phone: fullPhone });
+              const invoiceUrl = await uploadInvoice(userDoc.gym_id, invoiceNumber, blob);
+              await updateDoc(doc(db, 'payments', paymentId), { invoice_url: invoiceUrl });
+            } catch (pdfErr) {
+              console.error('Invoice error (non-critical):', pdfErr);
+            }
           }
         } catch (payErr) {
           console.error('Payment record error (non-critical):', payErr);
@@ -459,7 +466,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                 <div className="relative">
                   <button
                     type="button"
-                    onClick={() => photoInputRef.current?.click()}
+                    onClick={() => setShowPhotoPicker(true)}
                     className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 shadow-lg bg-primary/10 flex items-center justify-center text-on-surface-variant hover:bg-primary/20 transition-colors group"
                     title="Add photo"
                   >
@@ -473,10 +480,19 @@ const AddMember = ({ quickAddOnly = false }) => {
                     <span className="material-symbols-outlined text-white text-[14px]">photo_camera</span>
                   </div>
                 </div>
+                {/* Hidden file inputs */}
                 <input
                   ref={photoInputRef}
                   type="file"
                   accept="image/*"
+                  className="hidden"
+                  onChange={handlePhotoChange}
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
                   className="hidden"
                   onChange={handlePhotoChange}
                 />
@@ -806,6 +822,52 @@ const AddMember = ({ quickAddOnly = false }) => {
       </main>
 
       <BottomNav activeTab="home" role="owner" />
+
+      {/* Photo Picker Modal */}
+      {showPhotoPicker && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end justify-center"
+          onClick={() => setShowPhotoPicker(false)}
+        >
+          <div
+            className="glass-panel w-full max-w-sm mx-4 mb-6 rounded-3xl p-6 flex flex-col gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-black/20 rounded-full mx-auto mb-2" />
+            <p className="font-label-md text-on-surface-variant text-center text-sm mb-2">Add Member Photo</p>
+            <button
+              onClick={() => { cameraInputRef.current?.click(); }}
+              className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-primary/10 hover:bg-primary/15 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[20px]">photo_camera</span>
+              </div>
+              <div className="text-left">
+                <p className="font-label-md text-on-surface font-semibold">Open Camera</p>
+                <p className="text-xs text-on-surface-variant">Take a new photo</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { photoInputRef.current?.click(); }}
+              className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-secondary/10 hover:bg-secondary/15 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[20px]">photo_library</span>
+              </div>
+              <div className="text-left">
+                <p className="font-label-md text-on-surface font-semibold">Choose from Gallery</p>
+                <p className="text-xs text-on-surface-variant">Pick an existing photo</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setShowPhotoPicker(false)}
+              className="mt-1 py-3 rounded-xl border border-outline-variant text-on-surface-variant font-label-md text-sm hover:bg-black/5 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

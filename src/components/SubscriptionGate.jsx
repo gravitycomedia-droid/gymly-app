@@ -1,10 +1,10 @@
-// src/components/SubscriptionGate.jsx
-// Route-level subscription gating — wraps pages and shows upgrade prompt if plan is insufficient
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { checkFeatureAccess, PLAN_PRICES, PLAN_HIERARCHY } from '../utils/featureCheck';
+import { getGym } from '../firebase/firestore';
+import { useEffect } from 'react';
 
 /**
  * Usage in App.jsx:
@@ -14,10 +14,26 @@ import { checkFeatureAccess, PLAN_PRICES, PLAN_HIERARCHY } from '../utils/featur
  */
 export default function SubscriptionGate({ feature, children }) {
   const { plan, loading } = useSubscription();
+  const { userDoc } = useAuth();
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
+  const [couponActive, setCouponActive] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(true);
 
-  if (loading) {
+  useEffect(() => {
+    if (!userDoc?.gym_id) { setCouponLoading(false); return; }
+    getGym(userDoc.gym_id).then(g => {
+      if (g?.subscription_valid_until) {
+        const until = g.subscription_valid_until?.toDate
+          ? g.subscription_valid_until.toDate()
+          : new Date(g.subscription_valid_until);
+        if (until > new Date()) setCouponActive(true);
+      }
+      setCouponLoading(false);
+    }).catch(() => setCouponLoading(false));
+  }, [userDoc?.gym_id]);
+
+  if (loading || couponLoading) {
     return (
       <div className="screen" style={{ background: 'var(--grad-dashboard)' }}>
         <div className="screen-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -26,6 +42,9 @@ export default function SubscriptionGate({ feature, children }) {
       </div>
     );
   }
+
+  // Coupon bypass — if gym has active coupon subscription, allow all features
+  if (couponActive) return children;
 
   const { hasAccess, minimumPlan } = checkFeatureAccess(plan, feature);
 

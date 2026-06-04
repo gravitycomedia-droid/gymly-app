@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { initializeFirestore, memoryLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getFunctions } from 'firebase/functions';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -16,6 +17,7 @@ let app = null;
 let auth = null;
 let db = null;
 let storage = null;
+let functions = null;
 
 try {
   app = initializeApp(firebaseConfig);
@@ -24,10 +26,10 @@ try {
     localCache: memoryLocalCache()
   });
   storage = getStorage(app);
+  functions = getFunctions(app);
 } catch (error) {
   console.error('Firebase initialization error:', error);
-  console.warn('App will run in offline/demo mode. Set up .env with Firebase config.');
 }
 
-export { auth, db, storage };
+export { auth, db, storage, functions };
 export default app;

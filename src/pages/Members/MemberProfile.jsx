@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getUser, getGym, deleteMember, updateMember } from '../../firebase/firestore';
+import { getUser, getGym, updateMember } from '../../firebase/firestore';
 import { getMemberPaymentsRealtime, clearPaymentDue, updatePayment, getMemberPayments } from '../../firebase/firestore-payments';
 import { getNumberingSettings } from '../../utils/numberingService';
 import {
@@ -50,12 +50,15 @@ const MemberProfile = ({ readOnly = false }) => {
   const [downloadingCard, setDownloadingCard] = useState(false);
   const [numberingSettings, setNumberingSettings] = useState(null);
   const [showMemberId, setShowMemberId] = useState(false);
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const photoInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
     if (!file || !userDoc?.gym_id) return;
     setUploadingPhoto(true);
+    setShowPhotoPicker(false);
     try {
       const photoUrl = await uploadMemberPhoto(userDoc.gym_id, id, file);
       await updateMember(id, { profile_photo: photoUrl });
@@ -66,6 +69,7 @@ const MemberProfile = ({ readOnly = false }) => {
     } finally {
       setUploadingPhoto(false);
       if (photoInputRef.current) photoInputRef.current.value = '';
+      if (cameraInputRef.current) cameraInputRef.current.value = '';
     }
   };
 
@@ -114,8 +118,11 @@ const MemberProfile = ({ readOnly = false }) => {
 
   const handleDelete = async () => {
     try {
-      await deleteMember(member.id);
-      showToast('Member removed', 'success');
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../../firebase/config');
+      const softDelete = httpsCallable(functions, 'softDeleteMember');
+      await softDelete({ memberId: member.id, gymId: member.gym_id });
+      showToast('Member moved to Recycle Bin', 'success');
       navigate(-1);
     } catch (err) {
       showToast('Failed to delete member', 'error');
@@ -316,7 +323,7 @@ const MemberProfile = ({ readOnly = false }) => {
               {!readOnly && (
                 <>
                   <button
-                    onClick={() => photoInputRef.current?.click()}
+                    onClick={() => setShowPhotoPicker(true)}
                     disabled={uploadingPhoto}
                     className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
                     title="Change photo"
@@ -331,6 +338,14 @@ const MemberProfile = ({ readOnly = false }) => {
                     ref={photoInputRef}
                     type="file"
                     accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
                     className="hidden"
                     onChange={handlePhotoChange}
                   />
@@ -618,6 +633,52 @@ const MemberProfile = ({ readOnly = false }) => {
       </main>
       <BottomNav activeTab="members" role="owner" />
 
+      {/* Photo Picker Modal */}
+      {showPhotoPicker && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-end justify-center"
+          onClick={() => setShowPhotoPicker(false)}
+        >
+          <div
+            className="glass-panel w-full max-w-sm mx-4 mb-6 rounded-3xl p-6 flex flex-col gap-3"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-black/20 rounded-full mx-auto mb-2" />
+            <p className="font-label-md text-on-surface-variant text-center text-sm mb-2">Change Member Photo</p>
+            <button
+              onClick={() => { cameraInputRef.current?.click(); }}
+              className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-primary/10 hover:bg-primary/15 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[20px]">photo_camera</span>
+              </div>
+              <div className="text-left">
+                <p className="font-label-md text-on-surface font-semibold">Open Camera</p>
+                <p className="text-xs text-on-surface-variant">Take a new photo</p>
+              </div>
+            </button>
+            <button
+              onClick={() => { photoInputRef.current?.click(); }}
+              className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl bg-secondary/10 hover:bg-secondary/15 transition-colors"
+            >
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[20px]">photo_library</span>
+              </div>
+              <div className="text-left">
+                <p className="font-label-md text-on-surface font-semibold">Choose from Gallery</p>
+                <p className="text-xs text-on-surface-variant">Pick an existing photo</p>
+              </div>
+            </button>
+            <button
+              onClick={() => setShowPhotoPicker(false)}
+              className="mt-1 py-3 rounded-xl border border-outline-variant text-on-surface-variant font-label-md text-sm hover:bg-black/5 transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       {showRenew && (
         <RenewModal member={member} plans={plans} onClose={() => setShowRenew(false)} onSuccess={() => { fetchData(); }} />
@@ -678,9 +739,9 @@ const MemberProfile = ({ readOnly = false }) => {
                       }
                     </div>
                   )}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     {cs.show_member_name && (
-                      <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: '#fff', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2, verticalAlign: 'middle' }}>
                         {member.name}
                       </div>
                     )}

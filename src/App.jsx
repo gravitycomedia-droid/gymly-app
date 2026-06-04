@@ -62,6 +62,7 @@ const CardEditor           = lazy(() => import('./pages/Settings/CardEditor'));
 const EntryKiosk           = lazy(() => import('./pages/Kiosk/EntryKiosk'));
 const ExitKiosk            = lazy(() => import('./pages/Kiosk/ExitKiosk'));
 const KioskDevices         = lazy(() => import('./pages/Attendance/KioskDevices'));
+const RecycleBin           = lazy(() => import('./pages/Members/RecycleBin'));
 import WorkoutGate from './components/WorkoutGate';
 
 // ── Loading Spinner (shown while lazy chunks load) ──
@@ -125,6 +126,10 @@ function AnimatedRoutes() {
           <Route
             path="/owner/members/:id/edit"
             element={<ProtectedRoute requiredPermission="edit_member"><OwnerLayout activeTab="members"><PageTransition><EditMember /></PageTransition></OwnerLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/owner/recycle-bin"
+            element={<ProtectedRoute requiredPermission="delete_member"><OwnerLayout activeTab="members"><PageTransition><RecycleBin /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
 
           {/* Owner — Staff */}

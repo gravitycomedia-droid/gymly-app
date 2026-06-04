@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getGym, getGymMembersRealtime, deleteMember } from '../../firebase/firestore';
+import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
 import { getExpiryStatus } from '../../utils/helpers';
 import { backfillMemberNumbers, getNumberingSettings } from '../../utils/numberingService';
 import MemberCard from '../../components/MemberCard';
@@ -34,7 +34,7 @@ const MemberList = ({ role = 'owner' }) => {
   const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // ── Single delete state ────────────────────────────────────
-  const [pendingDelete, setPendingDelete] = useState(null); // { id, name }
+  const [pendingDelete, setPendingDelete] = useState(null); // { id, name, gymId }
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -97,22 +97,24 @@ const MemberList = ({ role = 'owner' }) => {
     }
   }, [loading, members.length, gym]);
 
+  const visibleMembers = useMemo(() => members.filter(m => !m.is_deleted), [members]);
+
   const now = new Date();
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const counts = useMemo(() => {
     let active = 0, expired = 0;
-    members.forEach((m) => {
+    visibleMembers.forEach((m) => {
       const exp = m.subscription_expiry?.toDate ? m.subscription_expiry.toDate() : null;
       if (exp && exp > now) active++;
       else expired++;
     });
-    return { all: members.length, active, expired };
-  }, [members]);
+    return { all: visibleMembers.length, active, expired };
+  }, [visibleMembers]);
 
   const filteredMembers = useMemo(() => {
-    let result = [...members];
+    let result = [...visibleMembers];
 
     if (tab === 'active') {
       result = result.filter((m) => {
@@ -158,7 +160,7 @@ const MemberList = ({ role = 'owner' }) => {
     }
 
     return result;
-  }, [members, tab, activeFilter, search]);
+  }, [visibleMembers, tab, activeFilter, search]);
 
   const plans = gym?.settings?.plans?.filter((p) => p.is_active) || [];
   const basePath = role === 'manager' ? '/manager' : '/owner';
@@ -168,14 +170,17 @@ const MemberList = ({ role = 'owner' }) => {
   const handleRenew = (member) => setRenewMember(member);
 
   // ── Single delete ──────────────────────────────────────────
-  const handleDeleteClick = (member) => setPendingDelete({ id: member.id, name: member.name });
+  const handleDeleteClick = (member) => setPendingDelete({ id: member.id, name: member.name, gymId: member.gym_id });
 
   const confirmSingleDelete = async () => {
     if (!pendingDelete) return;
     setDeleting(true);
     try {
-      await deleteMember(pendingDelete.id);
-      showToast(`${pendingDelete.name} removed`, 'success');
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../../firebase/config');
+      const softDelete = httpsCallable(functions, 'softDeleteMember');
+      await softDelete({ memberId: pendingDelete.id, gymId: pendingDelete.gymId });
+      showToast(`${pendingDelete.name} moved to Recycle Bin`, 'success');
       setPendingDelete(null);
     } catch (e) {
       showToast('Failed to delete member', 'error');
@@ -209,15 +214,18 @@ const MemberList = ({ role = 'owner' }) => {
   const confirmBulkDelete = async () => {
     setBulkDeleting(true);
     let successCount = 0;
+    const { httpsCallable } = await import('firebase/functions');
+    const { functions } = await import('../../firebase/config');
+    const softDelete = httpsCallable(functions, 'softDeleteMember');
     for (const id of selectedIds) {
       try {
-        await deleteMember(id);
+        await softDelete({ memberId: id, gymId: userDoc.gym_id });
         successCount++;
       } catch (e) {
         console.error('Failed to delete', id, e);
       }
     }
-    showToast(`${successCount} member${successCount !== 1 ? 's' : ''} deleted`, 'success');
+    showToast(`${successCount} member${successCount !== 1 ? 's' : ''} moved to Recycle Bin`, 'success');
     setBulkDeleting(false);
     setShowBulkDeleteConfirm(false);
     exitSelectMode();
@@ -372,7 +380,7 @@ const MemberList = ({ role = 'owner' }) => {
             <div className="col-span-full py-12 text-center">
               <h3 className="text-xl text-tertiary mb-2">All members are active!</h3>
             </div>
-          ) : members.length > 0 ? (
+          ) : visibleMembers.length > 0 ? (
             <div className="col-span-full py-12 text-center">
               <h3 className="text-xl text-on-surface mb-2">No matches</h3>
               <button className="text-primary underline" onClick={() => { setActiveFilter(''); setTab('all'); }}>
@@ -429,7 +437,7 @@ const MemberList = ({ role = 'owner' }) => {
             <div className="text-4xl mb-3 text-center">🗑️</div>
             <h3 className="text-lg font-bold text-center text-gray-900 mb-1">Delete Member?</h3>
             <p className="text-sm text-center text-gray-500 mb-6">
-              Remove <strong>{pendingDelete.name}</strong> from the gym? This cannot be undone.
+              Delete <strong>{pendingDelete.name}</strong>? They can be restored from Recycle Bin within 30 days.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setPendingDelete(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
@@ -454,7 +462,7 @@ const MemberList = ({ role = 'owner' }) => {
             <div className="text-4xl mb-3 text-center">⚠️</div>
             <h3 className="text-lg font-bold text-center text-gray-900 mb-1">Delete {selectedIds.size} Members?</h3>
             <p className="text-sm text-center text-gray-500 mb-6">
-              This will permanently remove {selectedIds.size} member{selectedIds.size !== 1 ? 's' : ''}. This cannot be undone.
+              Move {selectedIds.size} member{selectedIds.size !== 1 ? 's' : ''} to Recycle Bin? They can be restored within 30 days.
             </p>
             <div className="flex gap-3">
               <button onClick={() => setShowBulkDeleteConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">

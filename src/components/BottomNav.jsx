@@ -6,7 +6,6 @@ const NAV_CONFIGS = {
     { id: 'members', label: 'Members', path: '/owner/members', icon: 'members' },
     { id: 'payments', label: 'Payments', path: '/owner/payments', icon: 'payments' },
     { id: 'analytics', label: 'Analytics', path: '/owner/analytics', icon: 'analytics' },
-    { id: 'kiosk', label: 'Kiosk', path: '/owner/kiosk-devices', icon: 'devices' },
     { id: 'settings', label: 'Settings', path: '/owner/settings', icon: 'settings' },
   ],
   manager: [

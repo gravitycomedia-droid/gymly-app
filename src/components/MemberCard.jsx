@@ -65,16 +65,12 @@ const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showAction
           <div className="min-w-0">
             <h3 className="font-headline-md text-[15px] text-[#1b1b1d] font-semibold truncate">{member.name}</h3>
             {useEnrollmentIdForAdmin ? (
-              // Show enrollment ID prominently when feature is enabled
-              member.latestEnrollmentNumber ? (
+              (member.latestEnrollmentNumber || member.memberNumber) ? (
                 <p className="font-body-md text-[11px] mt-0.5 font-mono tracking-wide font-semibold" style={{ color: '#1D9E75' }}>
-                  {member.latestEnrollmentNumber}
+                  {member.latestEnrollmentNumber || member.memberNumber}
                 </p>
-              ) : member.memberNumber ? (
-                <p className="font-body-md text-[11px] text-[#9BA3B5] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
               ) : null
             ) : (
-              // Default: show member number
               member.memberNumber && (
                 <p className="font-body-md text-[11px] text-[#9BA3B5] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
               )
