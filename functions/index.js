@@ -779,6 +779,10 @@ exports.addManualPayment = functions.https.onRequest(async (req, res) => {
   }
 });
 
+// Custom JWT Claims — embeds role + gym_id into Auth token (O-2)
+const { onUserWrite } = require("./src/userClaims");
+exports.onUserWrite = onUserWrite;
+
 // ─── 4. Trial Expiry Check (Hourly Scheduled) ───
 exports.checkTrialExpiry = functions.pubsub
   .schedule("0 * * * *")

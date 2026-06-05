@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import jsQR from 'jsqr';
 import { db } from '../../firebase/config';
-import { getDoc, doc, updateDoc, addDoc, collection, query, where, getDocs, serverTimestamp, increment } from 'firebase/firestore';
+import { getDoc, doc, updateDoc, addDoc, collection, query, where, getDocs, serverTimestamp } from 'firebase/firestore';
 import { formatDateKey, createAttendanceLog } from '../../firebase/firestore-payments';
 import { getInitials, getAvatarColor, playHapticSound } from '../../utils/helpers';
 import './Scanner.css';
@@ -136,11 +136,13 @@ const QRScanner = () => {
         is_expired: false,
       });
 
-      // 6. Update user
-      await updateDoc(doc(db, 'users', memberId), {
-        last_seen: serverTimestamp(),
-        attendance_count: increment(1),
-      });
+      // 6. Update user last_seen (throttled to once per 30 min)
+      const _lsKey = `last_seen_write_${memberId}`;
+      const _lastWrite = parseInt(sessionStorage.getItem(_lsKey) || '0', 10);
+      if (Date.now() - _lastWrite >= 30 * 60 * 1000) {
+        await updateDoc(doc(db, 'users', memberId), { last_seen: serverTimestamp() });
+        sessionStorage.setItem(_lsKey, String(Date.now()));
+      }
 
       playHapticSound('success');
       setResult({ type: 'success', member });

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { db } from '../../firebase/config';
-import { getDoc, doc, updateDoc, serverTimestamp, increment } from 'firebase/firestore';
+import { getDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import useKioskCamera from '../../hooks/useKioskCamera';
 import useKioskAuth from '../../hooks/useKioskAuth';
 import useLiveOccupancy from '../../hooks/useLiveOccupancy';
@@ -292,10 +292,13 @@ const EntryKiosk = () => {
         updateKioskDevice(deviceId, { lastSeen: serverTimestamp() }).catch(() => {});
       }
       if (actionType === 'entry') {
-        updateDoc(doc(db, 'users', memberId), {
-          last_seen: serverTimestamp(),
-          attendance_count: increment(1),
-        }).catch(() => {});
+        const _lsKey = `last_seen_write_${memberId}`;
+        const _lastWrite = parseInt(sessionStorage.getItem(_lsKey) || '0', 10);
+        if (Date.now() - _lastWrite >= 30 * 60 * 1000) {
+          updateDoc(doc(db, 'users', memberId), { last_seen: serverTimestamp() })
+            .then(() => sessionStorage.setItem(_lsKey, String(Date.now())))
+            .catch(() => {});
+        }
       }
     } catch (err) {
       console.error('Kiosk scan error:', err);

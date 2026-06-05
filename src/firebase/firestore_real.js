@@ -301,11 +301,12 @@ export const getAssignedMembers = (gymId, trainerId, callback) => {
  * Mark attendance for a member.
  */
 export const markAttendance = async (uid) => {
-  const docRef = doc(db, 'users', uid);
-  await updateDoc(docRef, {
-    last_seen: serverTimestamp(),
-    attendance_count: increment(1),
-  });
+  const key = `last_seen_write_${uid}`;
+  const lastWrite = parseInt(sessionStorage.getItem(key) || '0', 10);
+  const now = Date.now();
+  if (now - lastWrite < 30 * 60 * 1000) return;
+  await updateDoc(doc(db, 'users', uid), { last_seen: serverTimestamp() });
+  sessionStorage.setItem(key, String(now));
 };
 
 // ─── Workout Plans ───

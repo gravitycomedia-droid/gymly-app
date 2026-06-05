@@ -133,9 +133,12 @@ const TabletMode = () => {
         date: formatDateKey(now), scanned_by: 'qr_self', scan_mode: 'tablet', is_expired: false,
       });
 
-      await updateDoc(doc(db, 'users', memberId), {
-        last_seen: serverTimestamp(), attendance_count: increment(1),
-      });
+      const _lsKey = `last_seen_write_${memberId}`;
+      const _lastWrite = parseInt(sessionStorage.getItem(_lsKey) || '0', 10);
+      if (Date.now() - _lastWrite >= 30 * 60 * 1000) {
+        await updateDoc(doc(db, 'users', memberId), { last_seen: serverTimestamp() });
+        sessionStorage.setItem(_lsKey, String(Date.now()));
+      }
 
       playHapticSound('success');
       setResult({ type: 'success', member });

@@ -7,7 +7,7 @@ service cloud.firestore {
                   && (
                     request.auth.uid == uid
                     ||
-                    get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+                    request.auth.token.gym_id
                       == resource.data.gym_id
                   );
 
@@ -17,7 +17,7 @@ service cloud.firestore {
                     && (
                       request.auth.uid == uid
                       ||
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+                      request.auth.token.gym_id
                         == resource.data.gym_id
                     )
                     && !('role' in request.resource.data)
@@ -69,98 +69,98 @@ service cloud.firestore {
     // Phase 4: Payments — gym-isolated (H-4)
     match /payments/{paymentId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gym_id;
       allow create: if request.auth != null
         && request.resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
       allow update, delete: if request.auth != null
         && resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
     }
 
     match /invoice_counter/{gymId} {
       allow read, write: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id == gymId;
+        && request.auth.token.gym_id == gymId;
     }
 
     // Phase 4: Attendance Logs — gym-isolated (H-4)
     match /attendance_logs/{logId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gym_id;
       allow create: if request.auth != null
         && request.resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
       allow update, delete: if request.auth != null
         && resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
     }
 
     // Phase 4: WhatsApp Logs — gym-isolated (H-4)
     match /whatsapp_logs/{logId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gym_id;
       allow create: if request.auth != null
         && request.resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
       allow update, delete: if request.auth != null
         && resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
     }
 
     // Phase 5: Message Retry Queue — gym-isolated (H-4)
     match /message_retry_queue/{docId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gym_id;
       allow create: if request.auth != null
         && request.resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
       allow update, delete: if request.auth != null
         && resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
     }
 
     // Phase 5: Message Logs — gym-isolated (H-4)
     match /message_logs/{logId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gym_id;
       allow create: if request.auth != null
         && request.resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
       allow update, delete: if request.auth != null
         && resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
     }
 
     // Phase 6: Invoices — gym-isolated (H-4)
     match /invoices/{invoiceId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gym_id;
       allow create: if request.auth != null
         && request.resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
       allow update, delete: if request.auth != null
         && resource.data.gym_id
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
     }
 
     // Subscription System
     match /subscriptions/{gymId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
-        && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && (request.auth.token.role == 'admin'
             || get(/databases/$(database)/documents/gyms/$(gymId)).data.owner_id == request.auth.uid);
     }
 
     match /billing/{gymId}/{document=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
-        && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+        && (request.auth.token.role == 'admin'
             || get(/databases/$(database)/documents/gyms/$(gymId)).data.owner_id == request.auth.uid);
     }
 
@@ -180,20 +180,20 @@ service cloud.firestore {
     // Member Numbering System — gym-isolated (H-4)
     match /numbering_settings/{gymId} {
       allow read, write: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id == gymId;
+        && request.auth.token.gym_id == gymId;
     }
 
     // Serial counters docId is {gymId}_{counterKey}; gymId field stored in doc (H-4)
     match /serial_counters/{docId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gymId;
       allow create: if request.auth != null
         && request.resource.data.gymId
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
       allow update, delete: if request.auth != null
         && resource.data.gymId
-           == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id;
+           == request.auth.token.gym_id;
     }
 
     // Coupon Activation — owners can read; all writes go through redeemCoupon Cloud Function
@@ -207,7 +207,7 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow update: if request.resource.data.device_secret == resource.data.device_secret;
       allow create, delete: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        && request.auth.token.role
            in ['owner', 'manager'];
     }
 
@@ -217,7 +217,7 @@ service cloud.firestore {
         == get(/databases/$(database)/documents/kiosk_devices/$(request.resource.data.device_id))
            .data.device_secret;
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id
+        && request.auth.token.gym_id
            == resource.data.gym_id;
       allow update, delete: if false;
     }
@@ -236,8 +236,8 @@ service cloud.firestore {
     // Recycle bin — owner and manager in same gym can read; all writes server-only
     match /deleted_members/{gymId}/bin/{memberId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id == gymId
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        && request.auth.token.gym_id == gymId
+        && request.auth.token.role
            in ['owner', 'manager'];
       allow write: if false;
     }
@@ -245,8 +245,8 @@ service cloud.firestore {
     // Audit log — owner and manager read only; completely server-side writes
     match /audit_logs/{gymId}/events/{eventId} {
       allow read: if request.auth != null
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.gym_id == gymId
-        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        && request.auth.token.gym_id == gymId
+        && request.auth.token.role
            in ['owner', 'manager'];
       allow write: if false;
     }

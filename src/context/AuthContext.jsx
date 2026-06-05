@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { db, auth } from '../firebase/config';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { auth } from '../firebase/config';
 import { getUser } from '../firebase/firestore';
 import { ROLE_PERMISSIONS } from '../utils/permissions';
 
@@ -24,7 +23,7 @@ export const AuthProvider = ({ children }) => {
       setUserDoc(doc);
       return doc;
     } catch (err) {
-      console.error('Error fetching user doc:', err);
+      if (import.meta.env.DEV) console.error('Error fetching user doc:', err);
       setUserDoc(null);
       return null;
     }
@@ -69,40 +68,19 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    let userDocUnsubscribe = null;
-
     const authUnsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
-      // Clean up previous user doc listener if any
-      if (userDocUnsubscribe) {
-        userDocUnsubscribe();
-        userDocUnsubscribe = null;
-      }
 
       if (firebaseUser) {
-        // Set up real-time listener for the user document
-        userDocUnsubscribe = onSnapshot(doc(db, 'users', firebaseUser.uid), (snapshot) => {
-          if (snapshot.exists()) {
-            setUserDoc({ id: snapshot.id, ...snapshot.data() });
-          } else {
-            setUserDoc(null);
-          }
-          setLoading(false);
-        }, (err) => {
-          console.error('Error listening to user doc:', err);
-          setLoading(false);
-        });
+        await firebaseUser.getIdToken(true); // force-refresh token to pick up custom claims
+        await refreshUserDoc(firebaseUser.uid);
       } else {
         setUserDoc(null);
-        setLoading(false);
       }
+      setLoading(false);
     });
 
-    return () => {
-      authUnsubscribe();
-      if (userDocUnsubscribe) userDocUnsubscribe();
-    };
+    return () => authUnsubscribe();
   }, []);
 
   const value = {
