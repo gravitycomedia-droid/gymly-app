@@ -341,11 +341,23 @@ export function previewEnrollmentNumber(template, gymCode) {
  * Get numbering settings for a gym.
  * Returns null if not yet initialized.
  */
+// Module-level cache — settings rarely change, safe to cache for 30 minutes
+const _settingsCache = {};
+const _settingsCacheTime = {};
+const SETTINGS_CACHE_TTL = 30 * 60 * 1000;
+
 export async function getNumberingSettings(gymId) {
   if (!db) return null;
+  const now = Date.now();
+  if (_settingsCache[gymId] && now - _settingsCacheTime[gymId] < SETTINGS_CACHE_TTL) {
+    return _settingsCache[gymId];
+  }
   const docRef = doc(db, 'numbering_settings', gymId);
   const snap = await getDoc(docRef);
-  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  const result = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  _settingsCache[gymId] = result;
+  _settingsCacheTime[gymId] = now;
+  return result;
 }
 
 /**
@@ -353,6 +365,7 @@ export async function getNumberingSettings(gymId) {
  */
 export async function saveNumberingSettings(gymId, data) {
   if (!db) throw new Error('Firestore not initialized');
+  delete _settingsCache[gymId]; // Invalidate cache on save
   const docRef = doc(db, 'numbering_settings', gymId);
   await setDoc(docRef, {
     gymId,

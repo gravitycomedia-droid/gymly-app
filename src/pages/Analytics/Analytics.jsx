@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
-import { getPaymentsRealtime, getAttendanceRange, formatDateKey } from '../../firebase/firestore-payments';
+import { getAttendanceRange, formatDateKey } from '../../firebase/firestore-payments';
+import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { db } from '../../firebase/config';
 import { sendWhatsApp } from '../../utils/whatsapp';
 import { formatDate, getDaysRemaining, getPlanName } from '../../utils/helpers';
 import { Chart, registerables } from 'chart.js';
@@ -30,16 +32,36 @@ const Analytics = () => {
   const retentionChartRef = useRef(null);
   const chartInstances = useRef({});
 
+  // Gym + members (realtime — needed for plan/retention/growth charts)
   useEffect(() => {
     if (!userDoc?.gym_id) return;
     getGym(userDoc.gym_id).then(setGym);
-    const unsub1 = getGymMembersRealtime(userDoc.gym_id, (list) => {
+    const unsub = getGymMembersRealtime(userDoc.gym_id, (list) => {
       setMembers(list);
       setLoading(false);
     });
-    const unsub2 = getPaymentsRealtime(userDoc.gym_id, setPayments);
-    return () => { unsub1(); unsub2(); };
+    return () => unsub();
   }, [userDoc?.gym_id]);
+
+  // Payments — range-filtered getDocs, re-fetches when range changes (O-5 pattern)
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    const now = new Date();
+    let rangeFrom = new Date(now.getFullYear(), 0, 1); // default: this year
+    if (range === 'This week') { rangeFrom = new Date(now); rangeFrom.setDate(now.getDate() - 7); }
+    else if (range === 'This month') { rangeFrom = new Date(now.getFullYear(), now.getMonth(), 1); }
+    else if (range === '3 months') { rangeFrom = new Date(now); rangeFrom.setMonth(now.getMonth() - 3); }
+
+    const q = query(
+      collection(db, 'payments'),
+      where('gym_id', '==', userDoc.gym_id),
+      where('payment_date', '>=', Timestamp.fromDate(rangeFrom)),
+      orderBy('payment_date', 'asc')
+    );
+    getDocs(q)
+      .then(snap => setPayments(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(console.error);
+  }, [userDoc?.gym_id, range]);
 
   // Fetch attendance data for heatmap
   useEffect(() => {
@@ -52,20 +74,8 @@ const Analytics = () => {
       .catch(console.error);
   }, [userDoc?.gym_id]);
 
-  // Range helpers
-  const getRangeStart = () => {
-    const now = new Date();
-    if (range === 'This week') { const d = new Date(now); d.setDate(d.getDate() - 7); return d; }
-    if (range === 'This month') { return new Date(now.getFullYear(), now.getMonth(), 1); }
-    if (range === '3 months') { const d = new Date(now); d.setMonth(d.getMonth() - 3); return d; }
-    return new Date(now.getFullYear(), 0, 1);
-  };
-
-  const rangeStart = getRangeStart();
-  const filteredPayments = payments.filter(p => {
-    const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
-    return d >= rangeStart;
-  });
+  // payments already server-filtered by selected range — use directly
+  const filteredPayments = payments;
 
   // ── CHART 1: Revenue ──
   useEffect(() => {
