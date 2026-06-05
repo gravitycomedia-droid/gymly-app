@@ -783,6 +783,13 @@ exports.addManualPayment = functions.https.onRequest(async (req, res) => {
 const { onUserWrite } = require("./src/userClaims");
 exports.onUserWrite = onUserWrite;
 
+// Pre-computed Stats Document — powers OwnerDashboard without full collection reads (O-3)
+const { statsOnUserWrite, statsOnPaymentWrite, statsOnAttendanceWrite, statsResetDaily } = require("./src/gymStats");
+exports.statsOnUserWrite      = statsOnUserWrite;
+exports.statsOnPaymentWrite   = statsOnPaymentWrite;
+exports.statsOnAttendanceWrite = statsOnAttendanceWrite;
+exports.statsResetDaily       = statsResetDaily;
+
 // ─── 4. Trial Expiry Check (Hourly Scheduled) ───
 exports.checkTrialExpiry = functions.pubsub
   .schedule("0 * * * *")

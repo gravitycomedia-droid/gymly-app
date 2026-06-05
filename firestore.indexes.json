@@ -248,7 +248,33 @@
         { "fieldPath": "gymId", "order": "ASCENDING" },
         { "fieldPath": "attemptTime", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" },
+        { "fieldPath": "is_deleted", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "payment_date", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "attendance_logs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "entry_time", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
 }
+

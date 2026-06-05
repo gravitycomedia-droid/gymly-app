@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
-import { getPaymentsRealtime } from '../../firebase/firestore-payments';
+import { getGym } from '../../firebase/firestore';
 import { logout } from '../../firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import {
+  collection, query, where, onSnapshot, getDocs,
+  orderBy, limit, doc
+} from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { getInitials, getAvatarColor, getExpiryStatus, getPlanName, formatDate } from '../../utils/helpers';
 import StatusBadge from '../../components/StatusBadge';
@@ -20,17 +22,20 @@ function getGreeting() {
 }
 
 const OwnerDashboard = () => {
-  const { user, userDoc } = useAuth();
+  const { userDoc } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
   const [gym, setGym] = useState(null);
-  const [members, setMembers] = useState([]);
-  const [payments, setPayments] = useState([]);
+  const [stats, setStats] = useState(null);
+  const [recentMembers, setRecentMembers] = useState([]);
+  const [expiringMembers, setExpiringMembers] = useState([]);
+  const [recentPayments, setRecentPayments] = useState([]);
   const [newLeadsCount, setNewLeadsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const { occupancy } = useLiveOccupancy(userDoc?.gym_id);
 
+  // Gym info
   useEffect(() => {
     const fetchGym = async () => {
       if (!userDoc?.gym_id) { setLoading(false); return; }
@@ -46,66 +51,81 @@ const OwnerDashboard = () => {
     fetchGym();
   }, [userDoc]);
 
+  // Stats doc — live listener on 1 document (replaces full members + payments fetch)
   useEffect(() => {
     if (!userDoc?.gym_id) return;
-    const unsubscribe = getGymMembersRealtime(userDoc.gym_id, (membersList) => {
-      setMembers(membersList);
+    const statsRef = doc(db, 'gyms', userDoc.gym_id, 'stats', 'summary');
+    const unsub = onSnapshot(statsRef, (snap) => {
+      if (snap.exists()) setStats(snap.data());
     });
-    return () => unsubscribe();
-  }, [userDoc?.gym_id]);
-
-  useEffect(() => {
-    if (!userDoc?.gym_id) return;
-    const unsub = getPaymentsRealtime(userDoc.gym_id, (list) => setPayments(list));
     return () => unsub();
   }, [userDoc?.gym_id]);
 
+  // Recent members — last 5 added (limited query, no full fetch)
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    const q = query(
+      collection(db, 'users'),
+      where('gym_id', '==', userDoc.gym_id),
+      where('role', '==', 'member'),
+      orderBy('created_at', 'desc'),
+      limit(5)
+    );
+    getDocs(q).then(snap => {
+      setRecentMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }).catch(() => {});
+  }, [userDoc?.gym_id]);
+
+  // Expiring members within 7 days (limited query for the expiring cards UI)
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    const now = new Date();
+    const in7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const q = query(
+      collection(db, 'users'),
+      where('gym_id', '==', userDoc.gym_id),
+      where('role', '==', 'member'),
+      where('subscription_expiry', '>', now),
+      where('subscription_expiry', '<=', in7d),
+      limit(10)
+    );
+    getDocs(q).then(snap => {
+      setExpiringMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }).catch(() => {});
+  }, [userDoc?.gym_id]);
+
+  // Recent payments — last 5 (limited query)
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    const q = query(
+      collection(db, 'payments'),
+      where('gym_id', '==', userDoc.gym_id),
+      orderBy('payment_date', 'desc'),
+      limit(5)
+    );
+    getDocs(q).then(snap => {
+      setRecentPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }).catch(() => {});
+  }, [userDoc?.gym_id]);
+
+  // New leads count
   useEffect(() => {
     if (!userDoc?.gym_id) return;
     if (localStorage.getItem('mockRole')) { setNewLeadsCount(1); return; }
     const q = query(collection(db, 'leads'), where('gym_id', '==', userDoc.gym_id), where('status', '==', 'new'));
-    const unsubscribe = onSnapshot(q, (snap) => { setNewLeadsCount(snap.docs.length); });
-    return () => unsubscribe();
+    const unsub = onSnapshot(q, (snap) => { setNewLeadsCount(snap.docs.length); });
+    return () => unsub();
   }, [userDoc?.gym_id]);
 
+  // Derived stats — from stats doc (falls back to 0 while doc is being created)
+  const totalCount          = stats?.total_members   ?? 0;
+  const activeCount         = stats?.active_members  ?? 0;
+  const expiringCount       = stats?.expiring_7d     ?? 0;
+  const expiredCount        = stats?.expired_members ?? 0;
+  const collectedThisMonth  = stats?.month_revenue   ?? 0;
+  const pendingDues         = stats?.pending_dues    ?? 0;
+
   const now = new Date();
-  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-  const totalCount = members.length;
-  const activeCount = members.filter((m) => {
-    const exp = m.subscription_expiry?.toDate ? m.subscription_expiry.toDate() : null;
-    return exp && exp > now;
-  }).length;
-  const expiringMembers = members.filter((m) => {
-    const exp = m.subscription_expiry?.toDate ? m.subscription_expiry.toDate() : null;
-    return exp && exp > now && exp <= sevenDaysFromNow;
-  });
-  const expiringCount = expiringMembers.length;
-  const expiredCount = members.filter((m) => {
-    const exp = m.subscription_expiry?.toDate ? m.subscription_expiry.toDate() : null;
-    return !exp || exp <= now;
-  }).length;
-
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
-  const collectedThisMonth = payments
-    .filter(p => {
-      const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
-      return p.status === 'paid' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-    })
-    .reduce((sum, p) => sum + (p.final_amount || 0), 0);
-  const pendingDues = payments
-    .filter(p => p.status === 'pending' || p.status === 'partial')
-    .reduce((sum, p) => sum + (p.pending_amount || 0), 0);
-  const recentPayments = payments.slice(0, 5);
-
-  const recentMembers = [...members]
-    .sort((a, b) => {
-      const aTime = a.created_at?.toDate ? a.created_at.toDate().getTime() : 0;
-      const bTime = b.created_at?.toDate ? b.created_at.toDate().getTime() : 0;
-      return bTime - aTime;
-    })
-    .slice(0, 5);
 
   const handleLogout = async () => {
     try {
