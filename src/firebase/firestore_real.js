@@ -1,6 +1,7 @@
-import { 
+import {
   doc,
   getDoc,
+  getDocFromServer,
   setDoc,
   updateDoc,
   deleteDoc,
@@ -15,7 +16,7 @@ import {
   onSnapshot,
   serverTimestamp,
   increment,
-  Timestamp 
+  Timestamp
 } from 'firebase/firestore';
 
 export { 
@@ -44,11 +45,17 @@ import { db } from './config';
 export const getUser = async (uid) => {
   if (!db) return null;
   const docRef = doc(db, 'users', uid);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() };
+  try {
+    // Always fetch from server to avoid stale cache on login
+    const docSnap = await getDocFromServer(docRef);
+    if (docSnap.exists()) return { id: docSnap.id, ...docSnap.data() };
+    return null;
+  } catch {
+    // Fallback to cache if server unreachable (offline)
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) return { id: docSnap.id, ...docSnap.data() };
+    return null;
   }
-  return null;
 };
 
 export const createUser = async (uid, data) => {

@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        await firebaseUser.getIdToken(true); // force-refresh token to pick up custom claims
+        try { await firebaseUser.getIdToken(true); } catch {} // pick up custom claims, non-blocking
         await refreshUserDoc(firebaseUser.uid);
       } else {
         setUserDoc(null);
