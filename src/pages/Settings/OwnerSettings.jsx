@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { getGym, updateGym } from '../../firebase/firestore';
 import { storage } from '../../firebase/config';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { compressImage } from '../../firebase/storage';
 import { logout } from '../../firebase/auth';
 import { getInitials } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
@@ -284,7 +285,8 @@ const OwnerSettings = () => {
     try {
       const ts = Date.now();
       const storageRef = ref(storage, `gyms/${userDoc.gym_id}/photos/${ts}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      const compressed = await compressImage(file, 800, 0.85);
+      await uploadBytes(storageRef, compressed, { contentType: 'image/webp', cacheControl: 'public,max-age=31536000' });
       const url = await getDownloadURL(storageRef);
       
       const newPhotos = [...photos, { id: ts.toString(), url }];
@@ -430,7 +432,8 @@ const OwnerSettings = () => {
     try {
       const ts = Date.now();
       const storageRef = ref(storage, `gyms/${userDoc.gym_id}/equipment/${ts}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      const compressedEquip = await compressImage(file, 800, 0.85);
+      await uploadBytes(storageRef, compressedEquip, { contentType: 'image/webp', cacheControl: 'public,max-age=31536000' });
       const url = await getDownloadURL(storageRef);
       setEditingEquipment(prev => ({ ...prev, photo: url }));
       showToast('Photo uploaded', 'success');

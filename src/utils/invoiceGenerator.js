@@ -146,7 +146,7 @@ export async function uploadInvoice(gymId, invoiceNumber, blob) {
   const { storage } = await import('../firebase/config');
 
   const storageRef = ref(storage, `gyms/${gymId}/invoices/${invoiceNumber}.pdf`);
-  await uploadBytes(storageRef, blob);
+  await uploadBytes(storageRef, blob, { contentType: 'application/pdf', cacheControl: 'public,max-age=31536000' });
   const url = await getDownloadURL(storageRef);
   return url;
 }

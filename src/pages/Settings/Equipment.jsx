@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { getGym, updateGym } from '../../firebase/firestore';
 import { storage } from '../../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { compressImage } from '../../firebase/storage';
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Legs', 'Core', 'Cardio', 'Full Body', 'Glutes'];
 
@@ -99,7 +100,8 @@ export default function Equipment() {
     try {
       const ts = Date.now();
       const storageRef = ref(storage, `gyms/${userDoc.gym_id}/equipment/${ts}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      const compressed = await compressImage(file, 800, 0.85);
+      await uploadBytes(storageRef, compressed, { contentType: 'image/webp', cacheControl: 'public,max-age=31536000' });
       const url = await getDownloadURL(storageRef);
       setEditingEquipment(prev => ({ ...prev, photo: url }));
       showToast('Photo uploaded', 'success');

@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { createStaffMember, getMemberByPhone } from '../../firebase/firestore';
 import { storage } from '../../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { compressImage } from '../../firebase/storage';
 import { ROLE_PERMISSIONS } from '../../utils/permissions';
 import './Staff.css';
 
@@ -65,7 +66,8 @@ const AddStaff = () => {
     try {
       const ts = Date.now();
       const storageRef = ref(storage, `gyms/${userDoc.gym_id}/certificates/${ts}_${file.name}`);
-      await uploadBytes(storageRef, file);
+      const compressed = await compressImage(file, 1200, 0.90);
+      await uploadBytes(storageRef, compressed, { contentType: 'image/webp', cacheControl: 'public,max-age=31536000' });
       const url = await getDownloadURL(storageRef);
       update('certificate_photo', url);
       showToast('Certificate uploaded', 'success');

@@ -150,7 +150,7 @@ const AddPayment = () => {
 
       if (method === 'upi' && upiScreenshot) {
         const storageRef = ref(storage, `payment_screenshots/${paymentId}`);
-        await uploadBytes(storageRef, upiScreenshot);
+        await uploadBytes(storageRef, upiScreenshot, { cacheControl: 'public,max-age=86400' });
         const finalScreenshotUrl = await getDownloadURL(storageRef);
         await updateDoc(doc(db, 'payments', paymentId), { screenshot_url: finalScreenshotUrl });
       }

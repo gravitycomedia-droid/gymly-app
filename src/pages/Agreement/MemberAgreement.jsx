@@ -212,7 +212,7 @@ const MemberAgreement = () => {
       // Upload to Firebase Storage
       const timestamp = Date.now();
       const storageRef = ref(storage, `agreements/${userDoc.gym_id}/${user.uid}_${timestamp}.pdf`);
-      await uploadBytes(storageRef, pdfBlob);
+      await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf', cacheControl: 'public,max-age=31536000' });
       const downloadUrl = await getDownloadURL(storageRef);
 
       // Update member doc

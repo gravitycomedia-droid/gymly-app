@@ -6,11 +6,13 @@ import {
 } from 'firebase/storage';
 import { storage } from './config';
 
+const IMG_CACHE = { cacheControl: 'public,max-age=31536000' };
+
 /**
- * Compress an image File/Blob using a canvas element, returning a Blob.
+ * Compress an image File/Blob using a canvas element, returning a WebP Blob.
  * Max dimension is 400px. Falls back to original if canvas is unavailable.
  */
-async function compressImage(file, maxDim = 400) {
+export async function compressImage(file, maxDim = 400, quality = 0.85) {
   return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
@@ -23,7 +25,11 @@ async function compressImage(file, maxDim = 400) {
       canvas.width = w;
       canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', 0.85);
+      canvas.toBlob(
+        (blob) => resolve(blob || file),
+        'image/webp',
+        quality
+      );
     };
     img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
     img.src = url;
@@ -37,22 +43,22 @@ async function compressImage(file, maxDim = 400) {
 export const uploadMemberPhoto = async (gymId, memberId, file) => {
   const compressed = await compressImage(file);
   const storageRef = ref(storage, `members/${gymId}/${memberId}/profile_photo`);
-  await uploadBytes(storageRef, compressed, { contentType: 'image/jpeg' });
+  await uploadBytes(storageRef, compressed, { contentType: 'image/webp', ...IMG_CACHE });
   return getDownloadURL(storageRef);
 };
 
 export const uploadLogo = async (gymId, file) => {
+  const compressed = await compressImage(file, 600);
   const storageRef = ref(storage, `gyms/${gymId}/logo`);
-  await uploadBytes(storageRef, file);
-  const url = await getDownloadURL(storageRef);
-  return url;
+  await uploadBytes(storageRef, compressed, { contentType: 'image/webp', ...IMG_CACHE });
+  return getDownloadURL(storageRef);
 };
 
 export const uploadPhoto = async (gymId, file, index) => {
+  const compressed = await compressImage(file, 800, 0.80);
   const storageRef = ref(storage, `gyms/${gymId}/photos/photo_${index}_${Date.now()}`);
-  await uploadBytes(storageRef, file);
-  const url = await getDownloadURL(storageRef);
-  return url;
+  await uploadBytes(storageRef, compressed, { contentType: 'image/webp', ...IMG_CACHE });
+  return getDownloadURL(storageRef);
 };
 
 export const deletePhoto = async (url) => {

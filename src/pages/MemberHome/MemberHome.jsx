@@ -249,7 +249,7 @@ const MemberHome = () => {
     try {
       const path = `payment_screenshots/${userDoc.gym_id}/${paymentId}/${Date.now()}_${file.name}`;
       const sRef = storageRef(storage, path);
-      await uploadBytes(sRef, file);
+      await uploadBytes(sRef, file, { cacheControl: 'public,max-age=86400' });
       const url = await getDownloadURL(sRef);
       await updatePayment(paymentId, { screenshot_url: url, screenshot_uploaded_at: new Date().toISOString() });
       showToast('Screenshot uploaded!', 'success');
