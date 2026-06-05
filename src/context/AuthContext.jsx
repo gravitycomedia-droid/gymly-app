@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
 import { getUser } from '../firebase/firestore';
@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userDoc, setUserDoc] = useState(null);
   const [loading, setLoading] = useState(true);
+  const tokenRefreshed = useRef(false);
 
   const refreshUserDoc = async (uid) => {
     try {
@@ -72,10 +73,16 @@ export const AuthProvider = ({ children }) => {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        firebaseUser.getIdToken(true).catch(() => {}); // background token refresh for custom claims
+        // Refresh token once per login to pick up custom claims.
+        // Guard prevents re-triggering onAuthStateChanged when token changes.
+        if (!tokenRefreshed.current) {
+          tokenRefreshed.current = true;
+          firebaseUser.getIdToken(true).catch(() => {});
+        }
         await refreshUserDoc(firebaseUser.uid);
       } else {
         setUserDoc(null);
+        tokenRefreshed.current = false;
       }
       setLoading(false);
     });

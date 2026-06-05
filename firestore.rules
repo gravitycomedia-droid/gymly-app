@@ -211,15 +211,15 @@ service cloud.firestore {
            in ['owner', 'manager'];
     }
 
-    // Attendance Sessions — kiosk creates via device_secret validation; owners read by gym (H-5)
+    // Attendance Sessions — authenticated kiosk writes (gymId camelCase in docs)
     match /attendance_sessions/{sessionId} {
-      allow create: if request.resource.data.device_secret
-        == get(/databases/$(database)/documents/kiosk_devices/$(request.resource.data.device_id))
-           .data.device_secret;
+      allow create: if request.auth != null
+        && request.resource.data.gymId == request.auth.token.gym_id;
+      allow update: if request.auth != null
+        && resource.data.gymId == request.auth.token.gym_id;
       allow read: if request.auth != null
-        && request.auth.token.gym_id
-           == resource.data.gym_id;
-      allow update, delete: if false;
+        && request.auth.token.gym_id == resource.data.gymId;
+      allow delete: if false;
     }
 
     // Access Denied Logs — kiosk writes, owners read
