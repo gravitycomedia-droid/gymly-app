@@ -779,6 +779,11 @@ exports.addManualPayment = functions.https.onRequest(async (req, res) => {
   }
 });
 
+// Cleanup scheduled jobs — log retention + workout archival (N-10, N-11)
+const { cleanOldWhatsappLogs, archiveOldWorkoutLogs } = require("./src/cleanup");
+exports.cleanOldWhatsappLogs  = cleanOldWhatsappLogs;
+exports.archiveOldWorkoutLogs = archiveOldWorkoutLogs;
+
 // Custom JWT Claims — embeds role + gym_id into Auth token (O-2)
 const { onUserWrite } = require("./src/userClaims");
 exports.onUserWrite = onUserWrite;

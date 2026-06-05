@@ -275,6 +275,19 @@
       ]
     }
   ],
-  "fieldOverrides": []
+  "fieldOverrides": [
+    { "collectionGroup": "users",          "fieldPath": "profile_photo",      "indexes": [] },
+    { "collectionGroup": "users",          "fieldPath": "address",            "indexes": [] },
+    { "collectionGroup": "users",          "fieldPath": "emergency_contact",  "indexes": [] },
+    { "collectionGroup": "users",          "fieldPath": "medical_notes",      "indexes": [] },
+    { "collectionGroup": "users",          "fieldPath": "lifestyle",          "indexes": [] },
+    { "collectionGroup": "users",          "fieldPath": "diet",               "indexes": [] },
+    { "collectionGroup": "payments",       "fieldPath": "notes",              "indexes": [] },
+    { "collectionGroup": "payments",       "fieldPath": "invoice_url",        "indexes": [] },
+    { "collectionGroup": "payments",       "fieldPath": "screenshot_url",     "indexes": [] },
+    { "collectionGroup": "whatsapp_logs",  "fieldPath": "message_preview",    "indexes": [] },
+    { "collectionGroup": "whatsapp_logs",  "fieldPath": "error_reason",       "indexes": [] },
+    { "collectionGroup": "invoices",       "fieldPath": "pdf_url",            "indexes": [] }
+  ]
 }
 
