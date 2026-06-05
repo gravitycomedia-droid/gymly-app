@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { getPaymentsRealtime, clearPaymentDue, updatePayment } from '../../firebase/firestore-payments';
+import { updatePayment } from '../../firebase/firestore-payments';
+import { collection, query, where, orderBy, onSnapshot, doc } from 'firebase/firestore';
+import { db } from '../../firebase/config';
+import { usePaginatedCollection } from '../../hooks/usePaginatedCollection';
 import { getInitials, getAvatarColor, formatDate } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
 
@@ -12,7 +15,7 @@ const PaymentList = () => {
   const navigate = useNavigate();
   const { userDoc } = useAuth();
   const { showToast } = useToast();
-  const [payments, setPayments] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('All');
   const [clearingId, setClearingId] = useState(null);
@@ -49,20 +52,38 @@ const PaymentList = () => {
     setClearAmount(payment.pending_amount || '');
   };
 
+  // Stats doc — live KPI summary (month revenue, pending dues)
   useEffect(() => {
     if (!userDoc?.gym_id) return;
-    const unsub = getPaymentsRealtime(userDoc.gym_id, (list) => {
-      setPayments(list);
-      setLoading(false);
-    });
+    const unsub = onSnapshot(
+      doc(db, 'gyms', userDoc.gym_id, 'stats', 'summary'),
+      (snap) => { if (snap.exists()) setStats(snap.data()); },
+      (err) => console.error('Stats error:', err)
+    );
     return () => unsub();
   }, [userDoc?.gym_id]);
+
+  // Paginated payments query (gym_id + payment_date DESC index exists)
+  const paymentsQuery = useMemo(() => {
+    if (!userDoc?.gym_id) return null;
+    return query(
+      collection(db, 'payments'),
+      where('gym_id', '==', userDoc.gym_id),
+      orderBy('payment_date', 'desc')
+    );
+  }, [userDoc?.gym_id]);
+
+  const { docs: payments, hasMore, loading: loadingMore, loadFirst, loadMore } = usePaginatedCollection(paymentsQuery);
+
+  useEffect(() => {
+    loadFirst().then(() => setLoading(false));
+  }, [loadFirst]);
 
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
 
-  // Summary calculations matching new KPI cards
+  // YTD computed from loaded payments (more accurate as user loads more pages)
   const totalRevenueYTD = payments
     .filter(p => {
       const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
@@ -70,14 +91,15 @@ const PaymentList = () => {
     })
     .reduce((sum, p) => sum + (p.final_amount || 0), 0);
 
-  const revenueThisMonth = payments
+  // Month revenue + pending from stats doc (pre-computed server-side — always accurate)
+  const revenueThisMonth = stats?.month_revenue ?? payments
     .filter(p => {
       const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
       return p.status === 'paid' && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
     })
     .reduce((sum, p) => sum + (p.final_amount || 0), 0);
 
-  const pendingAmount = payments
+  const pendingAmount = stats?.pending_dues ?? payments
     .filter(p => p.status === 'pending' || p.status === 'partial')
     .reduce((sum, p) => sum + (p.pending_amount || 0), 0);
 
@@ -322,6 +344,19 @@ const PaymentList = () => {
               })
             )}
           </div>
+
+          {/* Load More */}
+          {hasMore && (
+            <div className="p-4 border-t border-white/20 flex justify-center">
+              <button
+                onClick={loadMore}
+                disabled={loadingMore}
+                className="font-label-md text-sm px-6 py-2 rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+              >
+                {loadingMore ? 'Loading...' : 'Load more payments'}
+              </button>
+            </div>
+          )}
         </section>
       </main>
 
