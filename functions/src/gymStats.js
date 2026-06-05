@@ -13,17 +13,18 @@ async function recomputeStats(gymId) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const in7d       = new Date(todayStart.getTime() + 7 * 86400000);
 
-  // Member counts — exclude soft-deleted
+  // Member counts — query without is_deleted filter (!=  excludes docs without the field)
+  // Filter soft-deleted members client-side in the loop instead
   const membersSnap = await db.collection("users")
     .where("gym_id", "==", gymId)
     .where("role", "==", "member")
-    .where("is_deleted", "!=", true)
     .get();
 
   let totalMembers = 0, activeMembers = 0, expiredMembers = 0,
       expiringToday = 0, expiring7d = 0;
 
   membersSnap.forEach(d => {
+    if (d.data().is_deleted === true) return; // skip soft-deleted
     const expiry = d.data().subscription_expiry?.toDate?.() || null;
     totalMembers++;
     if (expiry && expiry > now) {
