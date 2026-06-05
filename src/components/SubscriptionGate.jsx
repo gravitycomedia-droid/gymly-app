@@ -1,10 +1,7 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { checkFeatureAccess, PLAN_PRICES, PLAN_HIERARCHY } from '../utils/featureCheck';
-import { getGym } from '../firebase/firestore';
-import { useEffect } from 'react';
 
 /**
  * Usage in App.jsx:
@@ -14,26 +11,19 @@ import { useEffect } from 'react';
  */
 export default function SubscriptionGate({ feature, children }) {
   const { plan, loading } = useSubscription();
-  const { userDoc } = useAuth();
+  const { gymDoc } = useAuth();
   const navigate = useNavigate();
-  const [dismissed, setDismissed] = useState(false);
-  const [couponActive, setCouponActive] = useState(false);
-  const [couponLoading, setCouponLoading] = useState(true);
 
-  useEffect(() => {
-    if (!userDoc?.gym_id) { setCouponLoading(false); return; }
-    getGym(userDoc.gym_id).then(g => {
-      if (g?.subscription_valid_until) {
-        const until = g.subscription_valid_until?.toDate
-          ? g.subscription_valid_until.toDate()
-          : new Date(g.subscription_valid_until);
-        if (until > new Date()) setCouponActive(true);
-      }
-      setCouponLoading(false);
-    }).catch(() => setCouponLoading(false));
-  }, [userDoc?.gym_id]);
+  // Check coupon subscription from context gym doc (loaded at login — no extra Firestore read)
+  const couponActive = (() => {
+    if (!gymDoc?.subscription_valid_until) return false;
+    const until = gymDoc.subscription_valid_until?.toDate
+      ? gymDoc.subscription_valid_until.toDate()
+      : new Date(gymDoc.subscription_valid_until);
+    return until > new Date();
+  })();
 
-  if (loading || couponLoading) {
+  if (loading) {
     return (
       <div className="screen" style={{ background: 'var(--grad-dashboard)' }}>
         <div className="screen-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

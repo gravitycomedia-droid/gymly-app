@@ -7,7 +7,6 @@ import { db, storage } from '../../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getGym } from '../../firebase/firestore';
 import { formatDate } from '../../utils/helpers';
-import { jsPDF } from 'jspdf';
 import './MemberAgreement.css';
 
 const MemberAgreement = () => {
@@ -92,6 +91,7 @@ const MemberAgreement = () => {
   };
 
   const generateAgreementPDF = async (signatureDataUrl) => {
+    const { jsPDF } = await import('jspdf');
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const pageWidth = pdf.internal.pageSize.getWidth();
 

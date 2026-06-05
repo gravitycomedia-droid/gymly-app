@@ -1,7 +1,6 @@
 import { useRef, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import html2canvas from 'html2canvas';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym } from '../../firebase/firestore';
@@ -54,6 +53,7 @@ const MemberCard = () => {
       await Promise.all(Array.from(images).map(img =>
         img.complete ? Promise.resolve() : new Promise(res => { img.onload = res; img.onerror = res; })
       ));
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(cardRef.current, {
         backgroundColor: null,
         scale: 3,

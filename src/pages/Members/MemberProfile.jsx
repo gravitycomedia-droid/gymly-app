@@ -13,7 +13,6 @@ import RenewModal from '../../components/RenewModal';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import BottomNav from '../../components/BottomNav';
 import { QRCodeSVG } from 'qrcode.react';
-import html2canvas from 'html2canvas';
 import { uploadMemberPhoto } from '../../firebase/storage';
 import '../MemberCard/MemberCard.css';
 
@@ -135,6 +134,7 @@ const MemberProfile = ({ readOnly = false }) => {
     if (!element) return;
     setDownloadingCard(true);
     try {
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(element, { scale: 3, backgroundColor: null, useCORS: true });
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
@@ -192,6 +192,7 @@ const MemberProfile = ({ readOnly = false }) => {
       const element = document.getElementById('membership-card-to-download');
       if (!element) { showToast('Card not ready', 'error'); return; }
 
+      const html2canvas = (await import('html2canvas')).default;
       const canvas = await html2canvas(element, { scale: 3, backgroundColor: null, useCORS: true });
       canvas.toBlob(async (blob) => {
         if (!blob) { showToast('Failed to generate card image', 'error'); return; }

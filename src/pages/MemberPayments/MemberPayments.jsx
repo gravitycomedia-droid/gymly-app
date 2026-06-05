@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getMemberPaymentsRealtime } from '../../firebase/firestore-payments';
 import { formatDate } from '../../utils/helpers';
-import { jsPDF } from 'jspdf';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useToast } from '../../context/ToastContext';
 import '../MemberProfile/MemberProfile.css';

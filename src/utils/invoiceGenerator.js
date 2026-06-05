@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf';
-
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function fmtDate(timestamp) {
@@ -14,6 +12,7 @@ function fmtDate(timestamp) {
  * Returns a Blob for Firebase Storage upload.
  */
 export async function generateInvoicePDF(payment, gym, member) {
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ format: 'a5', unit: 'mm' });
 
   // Background
