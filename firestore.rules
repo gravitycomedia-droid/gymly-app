@@ -20,8 +20,7 @@ service cloud.firestore {
                       request.auth.token.gym_id
                         == resource.data.gym_id
                     )
-                    && !('role' in request.resource.data)
-                    && !('gym_id' in request.resource.data);
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'gym_id']);
 
       allow delete: if false;
     }

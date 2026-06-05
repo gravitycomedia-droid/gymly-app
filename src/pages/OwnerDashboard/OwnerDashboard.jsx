@@ -73,7 +73,7 @@ const OwnerDashboard = () => {
     );
     getDocs(q).then(snap => {
       setRecentMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }).catch(() => {});
+    }).catch(err => { if (import.meta.env.DEV) console.error('Dashboard query error:', err); });
   }, [userDoc?.gym_id]);
 
   // Expiring members within 7 days (limited query for the expiring cards UI)
@@ -91,7 +91,7 @@ const OwnerDashboard = () => {
     );
     getDocs(q).then(snap => {
       setExpiringMembers(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }).catch(() => {});
+    }).catch(err => { if (import.meta.env.DEV) console.error('Dashboard query error:', err); });
   }, [userDoc?.gym_id]);
 
   // Recent payments — last 5 (limited query)
@@ -105,7 +105,7 @@ const OwnerDashboard = () => {
     );
     getDocs(q).then(snap => {
       setRecentPayments(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-    }).catch(() => {});
+    }).catch(err => { if (import.meta.env.DEV) console.error('Dashboard query error:', err); });
   }, [userDoc?.gym_id]);
 
   // New leads count

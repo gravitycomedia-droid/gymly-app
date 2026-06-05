@@ -1,30 +1,27 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Agreement PDFs — gym-scoped (H-7)
+    // Agreement PDFs — gym-scoped via JWT claim (H-7 + O-2)
     match /agreements/{gymId}/{allPaths=**} {
       allow read, write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.gym_id
-           == gymId;
+        && request.auth.token.gym_id == gymId;
     }
 
-    // Invoice PDFs — owner-only (H-7)
+    // Invoice PDFs — gym-scoped via JWT claim (H-7 + O-2)
     match /gyms/{gymId}/invoices/{allPaths=**} {
       allow read, write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/gyms/$(gymId)).data.owner_id
-           == request.auth.uid;
+        && request.auth.token.gym_id == gymId;
     }
 
-    // Payment screenshots — gym-scoped (H-7)
+    // Payment screenshots — any authenticated user
     match /payment_screenshots/{paymentId} {
       allow read, write: if request.auth != null;
     }
 
-    // Gym photos — gym-scoped (H-7)
+    // Gym photos — gym-scoped via JWT claim (H-7 + O-2)
     match /gyms/{gymId}/photos/{allPaths=**} {
       allow read, write: if request.auth != null
-        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.gym_id
-           == gymId;
+        && request.auth.token.gym_id == gymId;
     }
 
     // Profile photos — any auth user can read; write only by the uid owner (H-7)
@@ -35,7 +32,7 @@ service firebase.storage {
         && request.resource.size < 5 * 1024 * 1024;
     }
 
-    // Deny all other paths — remove open wildcard (H-7)
+    // Deny all other paths
     match /{allPaths=**} {
       allow read, write: if false;
     }

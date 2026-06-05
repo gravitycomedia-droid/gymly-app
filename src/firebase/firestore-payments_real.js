@@ -48,7 +48,7 @@ export const createPayment = async (data) => {
   // Automatically sync to member's native payment_history array
   if (data.member_id) {
     try {
-      const memberRef = doc(db, 'members', data.member_id);
+      const memberRef = doc(db, 'users', data.member_id);
       await updateDoc(memberRef, {
         payment_history: arrayUnion({
           payment_id: docRef.id,
