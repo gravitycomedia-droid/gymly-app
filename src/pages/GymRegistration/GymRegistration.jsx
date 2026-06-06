@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -29,8 +29,13 @@ const INITIAL_DATA = {
 
 const GymRegistration = () => {
   const navigate = useNavigate();
-  const { user, refreshUserDoc } = useAuth();
+  const { user, userDoc, refreshUserDoc } = useAuth();
   const { showToast } = useToast();
+
+  // Guard: existing owner who lands here by mistake → send to dashboard
+  useEffect(() => {
+    if (userDoc?.gym_id) navigate('/owner/dashboard', { replace: true });
+  }, [userDoc]);
 
   const [step, setStep] = useState(1);
   const [data, setData] = useState(INITIAL_DATA);

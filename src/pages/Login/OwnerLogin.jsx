@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
-import { getUser } from '../../firebase/firestore';
-import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import './Login.css';
 
@@ -21,7 +19,6 @@ const COUNTRY_CODES = [
 
 const OwnerLogin = () => {
   const navigate = useNavigate();
-  const { refreshUserDoc } = useAuth();
   const { showToast } = useToast();
 
   const [step, setStep] = useState('phone'); // 'phone' | 'otp'
@@ -124,26 +121,15 @@ const OwnerLogin = () => {
     setError('');
 
     try {
-      // Step 1: Verify OTP with Firebase Auth
-      const user = await verifyOTP(confirmationResult, code);
+      // Verify OTP — Firebase Auth signs the user in
+      await verifyOTP(confirmationResult, code);
 
-      // Step 2: Try to fetch user doc from Firestore
-      let userDoc = null;
-      try {
-        userDoc = await getUser(user.uid);
-      } catch (firestoreErr) {
-        console.warn('Firestore read failed (likely rules not set):', firestoreErr.code);
-        // If Firestore denies read, user is new — proceed to registration
-      }
-
-      // Navigate to root — AutoRedirect will route to the correct page
-      // once AuthContext's onSnapshot has synced the userDoc.
-      // This prevents the stale-data-on-first-load bug.
-      if (userDoc) {
-        navigate('/', { replace: true });
-      } else {
-        navigate('/owner/register', { replace: true });
-      }
+      // Navigate to root. AuthContext's onAuthStateChanged handler awaits
+      // getIdToken(true) before reading Firestore, so by the time loading
+      // becomes false the userDoc and gym_id claim are both ready.
+      // AutoRedirect then routes owners to /owner/dashboard (existing) or
+      // /owner/register (new — no userDoc found by AuthContext).
+      navigate('/', { replace: true });
     } catch (err) {
       console.error('OTP verify error:', err.code, err.message);
       if (err.code === 'auth/invalid-verification-code') {
