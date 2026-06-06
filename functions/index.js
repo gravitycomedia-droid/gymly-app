@@ -511,6 +511,7 @@ exports.generateInvoice = invoicing.generateInvoice;
 // Member Lifecycle (soft delete / restore / permanent purge)
 const lifecycle = require("./src/memberLifecycle");
 exports.softDeleteMember = lifecycle.softDeleteMember;
+exports.permanentlyDeleteMember = lifecycle.permanentlyDeleteMember;
 exports.restoreMember = lifecycle.restoreMember;
 exports.permanentlyDeleteExpired = lifecycle.permanentlyDeleteExpired;
 exports.redeemCoupon = lifecycle.redeemCoupon;

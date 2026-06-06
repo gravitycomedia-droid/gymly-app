@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
-import { getExpiryStatus } from '../../utils/helpers';
 import { backfillMemberNumbers, getNumberingSettings } from '../../utils/numberingService';
 import MemberCard from '../../components/MemberCard';
 import RenewModal from '../../components/RenewModal';
@@ -36,6 +35,7 @@ const MemberList = ({ role = 'owner' }) => {
   // ── Single delete state ────────────────────────────────────
   const [pendingDelete, setPendingDelete] = useState(null); // { id, name, gymId }
   const [deleting, setDeleting] = useState(false);
+  const [deletePayments, setDeletePayments] = useState(false);
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
@@ -103,17 +103,7 @@ const MemberList = ({ role = 'owner' }) => {
   const sevenDays = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  const counts = useMemo(() => {
-    let active = 0, expired = 0;
-    visibleMembers.forEach((m) => {
-      const exp = m.subscription_expiry?.toDate ? m.subscription_expiry.toDate() : null;
-      if (exp && exp > now) active++;
-      else expired++;
-    });
-    return { all: visibleMembers.length, active, expired };
-  }, [visibleMembers]);
-
-  const filteredMembers = useMemo(() => {
+const filteredMembers = useMemo(() => {
     let result = [...visibleMembers];
 
     if (tab === 'active') {
@@ -170,7 +160,10 @@ const MemberList = ({ role = 'owner' }) => {
   const handleRenew = (member) => setRenewMember(member);
 
   // ── Single delete ──────────────────────────────────────────
-  const handleDeleteClick = (member) => setPendingDelete({ id: member.id, name: member.name, gymId: member.gym_id });
+  const handleDeleteClick = (member) => {
+    setDeletePayments(false);
+    setPendingDelete({ id: member.id, name: member.name, gymId: member.gym_id });
+  };
 
   const confirmSingleDelete = async () => {
     if (!pendingDelete) return;
@@ -179,8 +172,8 @@ const MemberList = ({ role = 'owner' }) => {
       const { httpsCallable } = await import('firebase/functions');
       const { functions } = await import('../../firebase/config');
       const softDelete = httpsCallable(functions, 'softDeleteMember');
-      await softDelete({ memberId: pendingDelete.id, gymId: pendingDelete.gymId });
-      showToast(`${pendingDelete.name} moved to Recycle Bin`, 'success');
+      await softDelete({ memberId: pendingDelete.id, gymId: pendingDelete.gymId, deletePayments });
+      showToast(deletePayments ? `${pendingDelete.name} and payments deleted` : `${pendingDelete.name} moved to Recycle Bin`, 'success');
       setPendingDelete(null);
     } catch (e) {
       showToast('Failed to delete member', 'error');
@@ -256,6 +249,16 @@ const MemberList = ({ role = 'owner' }) => {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Recycle bin — owner only; route lives at /owner/recycle-bin */}
+            {role === 'owner' && (
+              <button
+                onClick={() => navigate('/owner/recycle-bin')}
+                className="w-9 h-9 rounded-full glass-panel border border-white/30 flex items-center justify-center text-on-surface-variant hover:text-error hover:border-error/30 transition-all"
+                title="Recycle Bin"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
+              </button>
+            )}
             {/* Multi-select toggle */}
             <button
               onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
@@ -436,9 +439,21 @@ const MemberList = ({ role = 'owner' }) => {
           <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="text-4xl mb-3 text-center">🗑️</div>
             <h3 className="text-lg font-bold text-center text-gray-900 mb-1">Delete Member?</h3>
-            <p className="text-sm text-center text-gray-500 mb-6">
-              Delete <strong>{pendingDelete.name}</strong>? They can be restored from Recycle Bin within 30 days.
+            <p className="text-sm text-center text-gray-500 mb-5">
+              <strong>{pendingDelete.name}</strong> will be moved to Recycle Bin and can be restored within 30 days.
             </p>
+            <label className={`flex items-start gap-3 p-3 rounded-xl border mb-5 cursor-pointer transition-colors ${deletePayments ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+              <input
+                type="checkbox"
+                checked={deletePayments}
+                onChange={e => setDeletePayments(e.target.checked)}
+                className="mt-0.5 accent-red-500 w-4 h-4 flex-shrink-0"
+              />
+              <span className="text-sm">
+                <strong className="block text-gray-800">Also delete all payments</strong>
+                <span className="text-gray-500">Permanently removes all payment records. Cannot be undone.</span>
+              </span>
+            </label>
             <div className="flex gap-3">
               <button onClick={() => setPendingDelete(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancel

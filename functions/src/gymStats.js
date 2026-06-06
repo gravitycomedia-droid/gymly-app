@@ -82,7 +82,7 @@ async function recomputeStats(gymId) {
 
 // ── Debounce map (in-memory — sufficient for Cloud Functions) ──────────────
 const debounceTimers = {};
-const DEBOUNCE_MS = 60000; // 60 seconds
+const DEBOUNCE_MS = 3000; // 3 seconds
 
 function debounceRecompute(gymId) {
   if (debounceTimers[gymId]) clearTimeout(debounceTimers[gymId]);

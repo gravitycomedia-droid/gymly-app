@@ -6,7 +6,7 @@ import { logout } from '../../firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import {
   collection, query, where, onSnapshot, getDocs,
-  orderBy, limit, doc
+  orderBy, limit, doc, getCountFromServer
 } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { getInitials, getAvatarColor, getExpiryStatus, getPlanName, formatDate } from '../../utils/helpers';
@@ -28,6 +28,7 @@ const OwnerDashboard = () => {
 
   const [gym, setGym] = useState(null);
   const [stats, setStats] = useState(null);
+  const [memberCounts, setMemberCounts] = useState(null);
   const [recentMembers, setRecentMembers] = useState([]);
   const [expiringMembers, setExpiringMembers] = useState([]);
   const [recentPayments, setRecentPayments] = useState([]);
@@ -110,6 +111,31 @@ const OwnerDashboard = () => {
     }).catch(err => console.error('Dashboard query error:', err));
   }, [userDoc?.gym_id]);
 
+  // Member counts — always fetched live so the cards are accurate regardless of
+  // whether the CF-managed stats/summary doc exists or is stale after a write.
+  useEffect(() => {
+    if (!userDoc?.gym_id) return;
+    const gymId = userDoc.gym_id;
+    const now = new Date();
+    const in7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const membersRef = collection(db, 'users');
+    const base = [where('gym_id', '==', gymId), where('role', '==', 'member')];
+
+    Promise.allSettled([
+      getCountFromServer(query(membersRef, ...base)),
+      getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '>', now))),
+      getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '>', now), where('subscription_expiry', '<=', in7d))),
+      getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '<=', now))),
+    ]).then(([totR, actR, expR, expdR]) => {
+      setMemberCounts({
+        total_members:   totR.status   === 'fulfilled' ? totR.value.data().count   : 0,
+        active_members:  actR.status   === 'fulfilled' ? actR.value.data().count   : 0,
+        expiring_7d:     expR.status   === 'fulfilled' ? expR.value.data().count   : 0,
+        expired_members: expdR.status  === 'fulfilled' ? expdR.value.data().count  : 0,
+      });
+    }).catch(() => {});
+  }, [userDoc?.gym_id]);
+
   // New leads count
   useEffect(() => {
     if (!userDoc?.gym_id) return;
@@ -119,11 +145,12 @@ const OwnerDashboard = () => {
     return () => unsub();
   }, [userDoc?.gym_id]);
 
-  // Derived stats — from stats doc (falls back to 0 while doc is being created)
-  const totalCount          = stats?.total_members   ?? 0;
-  const activeCount         = stats?.active_members  ?? 0;
-  const expiringCount       = stats?.expiring_7d     ?? 0;
-  const expiredCount        = stats?.expired_members ?? 0;
+  // Member counts: live getCountFromServer (always accurate, no CF latency)
+  // Revenue: CF-managed stats doc (updates after gymStats CF runs)
+  const totalCount          = memberCounts?.total_members   ?? stats?.total_members   ?? 0;
+  const activeCount         = memberCounts?.active_members  ?? stats?.active_members  ?? 0;
+  const expiringCount       = memberCounts?.expiring_7d     ?? stats?.expiring_7d     ?? 0;
+  const expiredCount        = memberCounts?.expired_members ?? stats?.expired_members ?? 0;
   const collectedThisMonth  = stats?.month_revenue   ?? 0;
   const pendingDues         = stats?.pending_dues    ?? 0;
 

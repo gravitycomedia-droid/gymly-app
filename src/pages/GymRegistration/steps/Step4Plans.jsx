@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect } from 'react';
 
 const DEFAULT_PLANS = [
   { id: 'plan_monthly', name: 'Monthly', price: '', duration: '30', isActive: true, isDefault: true },
@@ -9,9 +9,11 @@ const DEFAULT_PLANS = [
 const Step4Plans = ({ data, setData, errors }) => {
   const plans = data.plans.length > 0 ? data.plans : DEFAULT_PLANS;
 
-  if (data.plans.length === 0) {
-    setData({ ...data, plans: DEFAULT_PLANS });
-  }
+  useEffect(() => {
+    if (data.plans.length === 0) {
+      setData(prev => ({ ...prev, plans: DEFAULT_PLANS }));
+    }
+  }, []);
 
   const updatePlan = (index, field, value) => {
     const newPlans = [...plans];

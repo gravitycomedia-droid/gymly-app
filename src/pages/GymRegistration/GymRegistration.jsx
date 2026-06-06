@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { createGym, createUser } from '../../firebase/firestore';
+import { createGym, createUser, updateGym } from '../../firebase/firestore';
 import { uploadLogo, uploadPhoto } from '../../firebase/storage';
 import { createFreeSubscription } from '../../utils/subscriptionService';
 import Step1BasicInfo from './steps/Step1BasicInfo';
@@ -104,24 +104,7 @@ const GymRegistration = () => {
     setLoading(true);
 
     try {
-      // 1. Upload logo if exists
-      let logo_url = '';
-      const tempGymId = `gym_${Date.now()}`;
-
-      if (data.logoFile) {
-        logo_url = await uploadLogo(tempGymId, data.logoFile);
-      }
-
-      // 2. Upload photos
-      const photoUrls = [];
-      for (let i = 0; i < data.photos.length; i++) {
-        if (data.photos[i]?.file) {
-          const url = await uploadPhoto(tempGymId, data.photos[i].file, i);
-          photoUrls.push(url);
-        }
-      }
-
-      // 3. Prepare plans
+      // 1. Prepare plans
       const plans = data.plans
         .filter((p) => p.isActive && p.price && Number(p.price) > 0)
         .map((p) => ({
@@ -140,8 +123,8 @@ const GymRegistration = () => {
           is_active: true,
         }));
 
-      // 4. Create gym document
-      const gymData = {
+      // 2. Create gym document first (no photos yet — token lacks gym_id claim at this point)
+      const gymId = await createGym({
         name: data.gymName.trim(),
         owner_id: user.uid,
         owner_name: data.ownerName.trim(),
@@ -153,15 +136,13 @@ const GymRegistration = () => {
           open: data.openTime.trim(),
           close: data.closeTime.trim(),
         },
-        photos: photoUrls,
-        logo_url,
+        photos: [],
+        logo_url: '',
         no_of_branches: Number(data.branches) || 1,
         settings: { plans },
-      };
+      });
 
-      const gymId = await createGym(gymData);
-
-      // 5. Create user document
+      // 3. Create user document (triggers onUserWrite Cloud Function to set gym_id claim)
       await createUser(user.uid, {
         name: data.ownerName.trim(),
         phone: user.phoneNumber || '',
@@ -180,10 +161,49 @@ const GymRegistration = () => {
         medical_notes: null,
       });
 
-      // 6. Auto-create FREE subscription for the new gym
+      // 4. Auto-create FREE subscription for the new gym
       await createFreeSubscription(gymId);
 
-      // 7. Refresh auth context and navigate
+      // 5. Poll until the onUserWrite Cloud Function sets the gym_id claim, then
+      //    refresh the token so Storage rules pass. Gives the CF up to ~6 seconds.
+      let claimReady = false;
+      for (let attempt = 0; attempt < 4; attempt++) {
+        await user.getIdToken(true).catch(() => {});
+        const tokenResult = await user.getIdTokenResult().catch(() => null);
+        if (tokenResult?.claims.gym_id === gymId) { claimReady = true; break; }
+        if (attempt < 3) await new Promise(r => setTimeout(r, 1500));
+      }
+      if (!claimReady) {
+        // CF is slow but not fatal — photos will fail silently; gym doc is already created.
+        console.warn('gym_id claim not ready after polling — skipping photo upload');
+      }
+
+      // 6. Upload logo and photos (only if claim is confirmed; photos are optional)
+      if (claimReady) {
+        try {
+          let logo_url = '';
+          if (data.logoFile) {
+            logo_url = await uploadLogo(gymId, data.logoFile);
+          }
+
+          const photoUrls = [];
+          for (let i = 0; i < data.photos.length; i++) {
+            if (data.photos[i]?.file) {
+              const url = await uploadPhoto(gymId, data.photos[i].file, i);
+              photoUrls.push(url);
+            }
+          }
+
+          // 7. Update gym with photo URLs if any were uploaded
+          if (logo_url || photoUrls.length > 0) {
+            await updateGym(gymId, { logo_url, photos: photoUrls });
+          }
+        } catch (photoErr) {
+          console.warn('Photo upload failed (non-fatal):', photoErr);
+        }
+      }
+
+      // 8. Refresh auth context and navigate
       await refreshUserDoc(user.uid);
       navigate('/owner/setup', { replace: true });
     } catch (err) {

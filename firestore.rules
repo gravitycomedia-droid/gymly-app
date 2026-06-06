@@ -189,10 +189,12 @@ service cloud.firestore {
     }
 
     // Serial counters docId is {gymId}_{counterKey}; gymId field stored in doc (H-4)
+    // resource may be null on the first-ever read inside a transaction (doc doesn't exist yet),
+    // so we allow reads when resource is null but the caller has a valid gym_id claim.
     match /serial_counters/{docId} {
       allow read: if request.auth != null
-        && request.auth.token.gym_id
-           == resource.data.gymId;
+        && request.auth.token.gym_id != null
+        && (resource == null || resource.data.gymId == request.auth.token.gym_id);
       allow create: if request.auth != null
         && request.resource.data.gymId
            == request.auth.token.gym_id;

@@ -2,11 +2,12 @@ import { useState } from 'react';
 
 const DeleteConfirmModal = ({ memberName, onConfirm, onClose }) => {
   const [loading, setLoading] = useState(false);
+  const [deletePayments, setDeletePayments] = useState(false);
 
   const handleDelete = async () => {
     setLoading(true);
     try {
-      await onConfirm();
+      await onConfirm(deletePayments);
     } finally {
       setLoading(false);
     }
@@ -39,10 +40,36 @@ const DeleteConfirmModal = ({ memberName, onConfirm, onClose }) => {
 
           <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>Delete member?</h2>
           <p style={{ fontSize: 13, color: 'var(--text-muted)', lineHeight: 1.5 }}>
-            This will permanently remove <strong>{memberName}</strong> from your gym.
-            This cannot be undone.
+            <strong>{memberName}</strong> will be moved to Recycle Bin and can be restored within 30 days.
           </p>
         </div>
+
+        {/* Delete payments option */}
+        <label
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: 10,
+            padding: '12px 14px',
+            borderRadius: 10,
+            background: deletePayments ? 'rgba(186,26,26,0.07)' : 'rgba(0,0,0,0.03)',
+            border: `1px solid ${deletePayments ? 'rgba(186,26,26,0.25)' : 'rgba(0,0,0,0.08)'}`,
+            cursor: 'pointer',
+            marginBottom: 20,
+            transition: 'all 0.15s',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={deletePayments}
+            onChange={(e) => setDeletePayments(e.target.checked)}
+            style={{ marginTop: 2, accentColor: 'var(--error)', width: 16, height: 16, flexShrink: 0 }}
+          />
+          <span style={{ fontSize: 13, lineHeight: 1.5 }}>
+            <strong style={{ display: 'block', marginBottom: 2 }}>Also delete all payments</strong>
+            <span style={{ color: 'var(--text-muted)' }}>Permanently removes all payment records for this member. This cannot be undone.</span>
+          </span>
+        </label>
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button className="btn-ghost" onClick={onClose} style={{ flex: 1 }} id="cancel-delete-btn">

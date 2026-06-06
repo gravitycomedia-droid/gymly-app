@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../firebase/config';
-import { getUser, getGym } from '../firebase/firestore';
+import { getUser, getGym, updateUser } from '../firebase/firestore';
 import { ROLE_PERMISSIONS } from '../utils/permissions';
 
 const AuthContext = createContext();
@@ -86,13 +86,29 @@ export const AuthProvider = ({ children }) => {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        // Refresh token once per login to pick up custom claims.
-        // Guard prevents re-triggering onAuthStateChanged when token changes.
+        // Refresh token once per login to pick up custom claims (gym_id, role).
+        // Must be awaited so components never mount with a stale token.
         if (!tokenRefreshed.current) {
           tokenRefreshed.current = true;
-          firebaseUser.getIdToken(true).catch(() => {});
+          await firebaseUser.getIdToken(true).catch(() => {});
         }
-        await refreshUserDoc(firebaseUser.uid);
+        const fetchedDoc = await refreshUserDoc(firebaseUser.uid);
+
+        // Heal missing custom claims: if the user doc has gym_id but the JWT
+        // doesn't, the onUserWrite Cloud Function never ran for this account.
+        // Writing last_active to their own doc re-triggers it (allowed by
+        // "request.auth.uid == uid" in the update rule), then we get a fresh token.
+        if (fetchedDoc?.gym_id) {
+          try {
+            const tokenResult = await firebaseUser.getIdTokenResult();
+            if (!tokenResult.claims.gym_id) {
+              await updateUser(firebaseUser.uid, { last_active: new Date().toISOString() }).catch(() => {});
+              await new Promise(r => setTimeout(r, 2000));
+              await firebaseUser.getIdToken(true).catch(() => {});
+              await refreshUserDoc(firebaseUser.uid);
+            }
+          } catch { /* ignore — non-critical */ }
+        }
       } else {
         setUserDoc(null);
         setGymDoc(null);

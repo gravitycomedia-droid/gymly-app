@@ -115,13 +115,13 @@ const MemberProfile = ({ readOnly = false }) => {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = async (deletePayments = false) => {
     try {
       const { httpsCallable } = await import('firebase/functions');
       const { functions } = await import('../../firebase/config');
       const softDelete = httpsCallable(functions, 'softDeleteMember');
-      await softDelete({ memberId: member.id, gymId: member.gym_id });
-      showToast('Member moved to Recycle Bin', 'success');
+      await softDelete({ memberId: member.id, gymId: member.gym_id, deletePayments });
+      showToast(deletePayments ? 'Member and payments deleted' : 'Member moved to Recycle Bin', 'success');
       navigate(-1);
     } catch (err) {
       showToast('Failed to delete member', 'error');

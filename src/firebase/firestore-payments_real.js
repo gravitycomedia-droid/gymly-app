@@ -98,7 +98,8 @@ export const deletePayment = async (paymentId) => {
   try {
     const q = query(
       collection(db, 'payments'),
-      where('member_id', '==', memberId)
+      where('member_id', '==', memberId),
+      where('gym_id', '==', paymentData.gym_id)
     );
     const snapshot = await getDocs(q);
     

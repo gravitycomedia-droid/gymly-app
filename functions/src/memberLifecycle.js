@@ -11,7 +11,7 @@ exports.softDeleteMember = functions.https.onCall(async (data, context) => {
   if (!context.auth)
     throw new functions.https.HttpsError("unauthenticated", "Must be logged in.");
 
-  const { memberId, gymId } = data;
+  const { memberId, gymId, deletePayments = false } = data;
   if (!memberId || !gymId)
     throw new functions.https.HttpsError("invalid-argument", "memberId and gymId are required.");
 
@@ -64,6 +64,57 @@ exports.softDeleteMember = functions.https.onCall(async (data, context) => {
     snapshot: memberData,
   });
 
+  if (deletePayments) {
+    const paymentsSnap = await db.collection("payments")
+      .where("member_id", "==", memberId)
+      .where("gym_id", "==", gymId)
+      .get();
+    paymentsSnap.forEach(d => batch.delete(d.ref));
+  }
+
+  await batch.commit();
+  return { success: true };
+});
+
+// ─── Callable: permanentlyDeleteMember ───
+exports.permanentlyDeleteMember = functions.https.onCall(async (data, context) => {
+  if (!context.auth)
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in.");
+
+  const { memberId, gymId } = data;
+  if (!memberId || !gymId)
+    throw new functions.https.HttpsError("invalid-argument", "memberId and gymId are required.");
+
+  const callerSnap = await db.collection("users").doc(context.auth.uid).get();
+  if (!callerSnap.exists)
+    throw new functions.https.HttpsError("not-found", "Caller not found.");
+  const caller = callerSnap.data();
+  if (caller.gym_id !== gymId || !["owner", "manager"].includes(caller.role))
+    throw new functions.https.HttpsError("permission-denied", "Only owners or managers can permanently delete members.");
+
+  const binRef = db.collection("deleted_members").doc(gymId).collection("bin").doc(memberId);
+  const binSnap = await binRef.get();
+  if (!binSnap.exists)
+    throw new functions.https.HttpsError("not-found", "No deleted record found for this member.");
+
+  try {
+    await admin.auth().deleteUser(memberId);
+  } catch (authErr) {
+    if (authErr.code !== "auth/user-not-found")
+      console.warn(`Auth deletion failed for ${memberId}: ${authErr.message}`);
+  }
+
+  const batch = db.batch();
+  batch.delete(db.collection("users").doc(memberId));
+  batch.delete(binRef);
+  batch.set(db.collection("audit_logs").doc(gymId).collection("events").doc(), {
+    action: "member_permanently_deleted",
+    target_id: memberId,
+    target_name: binSnap.data().snapshot?.name || "",
+    performed_by: context.auth.uid,
+    performed_by_name: caller.name || "",
+    timestamp: admin.firestore.Timestamp.now(),
+  });
   await batch.commit();
   return { success: true };
 });

@@ -14,6 +14,8 @@ const RecycleBin = () => {
   const [binMembers, setBinMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [restoringId, setRestoringId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const [confirmPermanentId, setConfirmPermanentId] = useState(null);
 
   useEffect(() => {
     if (!userDoc?.gym_id) return;
@@ -43,6 +45,23 @@ const RecycleBin = () => {
       showToast('Failed to restore: ' + (err.message || 'Unknown error'), 'error');
     } finally {
       setRestoringId(null);
+    }
+  };
+
+  const handlePermanentDelete = async () => {
+    if (!confirmPermanentId) return;
+    setDeletingId(confirmPermanentId);
+    setConfirmPermanentId(null);
+    try {
+      const { httpsCallable } = await import('firebase/functions');
+      const { functions } = await import('../../firebase/config');
+      const permDelete = httpsCallable(functions, 'permanentlyDeleteMember');
+      await permDelete({ memberId: confirmPermanentId, gymId: userDoc.gym_id });
+      showToast('Member permanently deleted', 'success');
+    } catch (err) {
+      showToast('Failed to delete: ' + (err.message || 'Unknown error'), 'error');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -134,17 +153,30 @@ const RecycleBin = () => {
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleRestore(entry.id)}
-                      disabled={restoringId === entry.id}
-                      className="px-5 py-2.5 rounded-xl bg-primary/10 text-primary font-label-md font-semibold text-sm hover:bg-primary/20 transition-colors disabled:opacity-50 flex-shrink-0 flex items-center gap-2"
-                    >
-                      {restoringId === entry.id
-                        ? <div className="spinner" style={{ width: 16, height: 16 }} />
-                        : <span className="material-symbols-outlined text-base">restore</span>
-                      }
-                      {restoringId === entry.id ? 'Restoring...' : 'Restore'}
-                    </button>
+                    <div className="flex gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleRestore(entry.id)}
+                        disabled={restoringId === entry.id || deletingId === entry.id}
+                        className="px-4 py-2.5 rounded-xl bg-primary/10 text-primary font-label-md font-semibold text-sm hover:bg-primary/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {restoringId === entry.id
+                          ? <div className="spinner" style={{ width: 16, height: 16 }} />
+                          : <span className="material-symbols-outlined text-base">restore</span>
+                        }
+                        {restoringId === entry.id ? 'Restoring...' : 'Restore'}
+                      </button>
+                      <button
+                        onClick={() => setConfirmPermanentId(entry.id)}
+                        disabled={restoringId === entry.id || deletingId === entry.id}
+                        className="px-4 py-2.5 rounded-xl bg-red-500/10 text-red-500 font-label-md font-semibold text-sm hover:bg-red-500/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+                      >
+                        {deletingId === entry.id
+                          ? <div className="spinner" style={{ width: 16, height: 16 }} />
+                          : <span className="material-symbols-outlined text-base">delete_forever</span>
+                        }
+                        {deletingId === entry.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -152,6 +184,29 @@ const RecycleBin = () => {
           </>
         )}
       </main>
+
+      {confirmPermanentId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4" onClick={() => setConfirmPermanentId(null)}>
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="text-4xl mb-3 text-center">⚠️</div>
+            <h3 className="text-lg font-bold text-center text-gray-900 mb-1">Permanently Delete?</h3>
+            <p className="text-sm text-center text-gray-500 mb-6">
+              This will <strong>permanently remove</strong> the member and all their data. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmPermanentId(null)} className="flex-1 py-2.5 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handlePermanentDelete}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-colors"
+              >
+                Delete Forever
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomNav activeTab="members" role="owner" />
     </div>

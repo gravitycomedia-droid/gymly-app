@@ -18,8 +18,20 @@ service firebase.storage {
       allow read, write: if request.auth != null;
     }
 
+    // Gym logo — gym-scoped via JWT claim
+    match /gyms/{gymId}/logo {
+      allow read, write: if request.auth != null
+        && request.auth.token.gym_id == gymId;
+    }
+
     // Gym photos — gym-scoped via JWT claim (H-7 + O-2)
     match /gyms/{gymId}/photos/{allPaths=**} {
+      allow read, write: if request.auth != null
+        && request.auth.token.gym_id == gymId;
+    }
+
+    // Member photos — gym-scoped via JWT claim
+    match /members/{gymId}/{allPaths=**} {
       allow read, write: if request.auth != null
         && request.auth.token.gym_id == gymId;
     }

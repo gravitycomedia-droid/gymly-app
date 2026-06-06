@@ -99,12 +99,14 @@ const AddMember = ({ quickAddOnly = false }) => {
     const fetchData = async () => {
       if (!userDoc?.gym_id) return;
       try {
-        const [gymData, trainerList] = await Promise.all([
+        const [gymResult, trainersResult] = await Promise.allSettled([
           getGym(userDoc.gym_id),
           getTrainers(userDoc.gym_id),
         ]);
-        setGym(gymData);
-        setTrainers(trainerList);
+        if (gymResult.status === 'fulfilled') setGym(gymResult.value);
+        if (trainersResult.status === 'fulfilled') setTrainers(trainersResult.value);
+        if (gymResult.status === 'rejected') console.error('Error fetching gym:', gymResult.reason);
+        if (trainersResult.status === 'rejected') console.error('Error fetching trainers:', trainersResult.reason);
       } catch (err) {
         console.error('Error fetching data:', err);
       }
