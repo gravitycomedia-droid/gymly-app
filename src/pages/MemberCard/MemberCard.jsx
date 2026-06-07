@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym } from '../../firebase/firestore';
@@ -22,6 +22,7 @@ const MemberCard = () => {
   const [gym, setGym] = useState(null);
   const [downloading, setDownloading] = useState(false);
   const [cs, setCs] = useState(DEFAULT_SETTINGS);
+  const qrCanvasRef = useRef(null);
 
   useEffect(() => {
     if (userDoc?.gym_id) {
@@ -236,28 +237,23 @@ const MemberCard = () => {
       ctx.fillText(userDoc.phone, phoneX, sepY + 32);
     }
 
-    // ── Async: QR code + profile photo ───────────────────────
-    const tasks = [];
-    if (cs.show_qr) {
-      const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(publicUrl)}&bgcolor=ffffff&color=000000&margin=8`;
-      tasks.push(loadImg(qrApi).then(img => ({ type: 'qr', img })));
+    // QR: draw directly from hidden canvas ref (no HTTP, no CORS)
+    if (cs.show_qr && qrCanvasRef.current) {
+      const qrSize = 148, qrPad = 6;
+      rrect(qrBoxX, 104, qrSize, qrSize, 10);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.drawImage(qrCanvasRef.current, qrBoxX + qrPad, 104 + qrPad, qrSize - qrPad * 2, qrSize - qrPad * 2);
     }
+
+    // Async: profile photo only
+    const tasks = [];
     if (cs.show_photo && userDoc?.profile_photo) {
       tasks.push(loadImg(userDoc.profile_photo).then(img => ({ type: 'photo', img })));
     }
 
     const finish = (results = []) => {
-      const qrRes = results.find(r => r.type === 'qr');
       const photoRes = results.find(r => r.type === 'photo');
-
-      // QR code box
-      if (qrRes?.img && cs.show_qr) {
-        const qrSize = 148, qrPad = 6;
-        rrect(qrBoxX, 104, qrSize, qrSize, 10);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.drawImage(qrRes.img, qrBoxX + qrPad, 104 + qrPad, qrSize - qrPad * 2, qrSize - qrPad * 2);
-      }
 
       // Profile photo overwrites the initials
       if (photoRes?.img && cs.show_photo) {
@@ -481,6 +477,18 @@ const MemberCard = () => {
           </button>
           <button className="btn-ghost share-btn" onClick={handleShare}>Share Link</button>
         </div>
+      {/* Hidden QR canvas — used by drawCardToCanvas, no HTTP request, no CORS */}
+      {cs.show_qr && (
+        <QRCodeCanvas
+          ref={qrCanvasRef}
+          value={publicUrl}
+          size={148}
+          bgColor="#ffffff"
+          fgColor="#000000"
+          level="M"
+          style={{ position: 'absolute', left: -9999, top: -9999, pointerEvents: 'none' }}
+        />
+      )}
       </div>
     </div>
   );

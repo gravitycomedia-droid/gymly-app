@@ -12,7 +12,7 @@ import {
 import RenewModal from '../../components/RenewModal';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import BottomNav from '../../components/BottomNav';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { uploadMemberPhoto } from '../../firebase/storage';
 import '../MemberCard/MemberCard.css';
 
@@ -54,6 +54,7 @@ const MemberProfile = ({ readOnly = false }) => {
   const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const photoInputRef = useRef(null);
   const cameraInputRef = useRef(null);
+  const qrCanvasRef = useRef(null);
 
   const handlePhotoChange = async (e) => {
     const file = e.target.files[0];
@@ -322,29 +323,23 @@ const MemberProfile = ({ readOnly = false }) => {
       ctx.fillText(member.phone, phoneX, sepY + 32);
     }
 
-    // Async: load QR + profile photo
-    const tasks = [];
-    if (cs.show_qr) {
-      const publicUrl = `${window.location.origin}/public/member/${member.id}`;
-      const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(publicUrl)}&bgcolor=ffffff&color=000000&margin=8`;
-      tasks.push(loadImg(qrApi).then(img => ({ type: 'qr', img })));
+    // QR: draw directly from hidden canvas ref (no HTTP, no CORS)
+    if (cs.show_qr && qrCanvasRef.current) {
+      const qrSize = 148, qrPad = 6;
+      rrect(qrBoxX, 104, qrSize, qrSize, 10);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.drawImage(qrCanvasRef.current, qrBoxX + qrPad, 104 + qrPad, qrSize - qrPad * 2, qrSize - qrPad * 2);
     }
+
+    // Async: profile photo only
+    const tasks = [];
     if (cs.show_photo && member.profile_photo) {
       tasks.push(loadImg(member.profile_photo).then(img => ({ type: 'photo', img })));
     }
 
     const finish = (results = []) => {
-      const qrRes = results.find(r => r.type === 'qr');
       const photoRes = results.find(r => r.type === 'photo');
-
-      // QR code — drawn in the top-right area
-      if (qrRes?.img && cs.show_qr) {
-        const qrSize = 148, qrPad = 6;
-        rrect(qrBoxX, 104, qrSize, qrSize, 10);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-        ctx.drawImage(qrRes.img, qrBoxX + qrPad, 104 + qrPad, qrSize - qrPad * 2, qrSize - qrPad * 2);
-      }
 
       // Profile photo overwrites initials
       if (photoRes?.img && cs.show_photo) {
@@ -1044,6 +1039,19 @@ const MemberProfile = ({ readOnly = false }) => {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Hidden QR canvas — used by drawCardToCanvas, no HTTP request, no CORS */}
+      {cs.show_qr && (
+        <QRCodeCanvas
+          ref={qrCanvasRef}
+          value={publicUrl}
+          size={148}
+          bgColor="#ffffff"
+          fgColor="#000000"
+          level="M"
+          style={{ position: 'absolute', left: -9999, top: -9999, pointerEvents: 'none' }}
+        />
       )}
 
     </div>
