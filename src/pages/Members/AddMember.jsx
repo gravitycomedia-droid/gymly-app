@@ -114,7 +114,7 @@ const AddMember = ({ quickAddOnly = false }) => {
     fetchData();
   }, [userDoc?.gym_id]);
 
-  const plans = gym?.settings?.plans?.filter((p) => p.is_active) || [];
+  const plans = (gym?.settings?.plans?.filter((p) => p.is_active) || []).sort((a, b) => (a.duration_days || 0) - (b.duration_days || 0));
   const selectedPlan = plans.find((p) => p.id === form.planId);
   const calculatedExpiry = selectedPlan ? addDays(new Date(), selectedPlan.duration_days || 30) : null;
   const bmi = calculateBMI(Number(form.height), Number(form.weight));
