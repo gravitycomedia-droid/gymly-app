@@ -71,24 +71,22 @@ const MemberCard = () => {
 
     const loadImg = (src) => new Promise(res => {
       if (!src) { res(null); return; }
-      if (src.includes('firebasestorage.googleapis.com') || src.includes('storage.googleapis.com')) {
-        fetch(src)
-          .then(r => r.blob())
-          .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const img = new Image();
-            img.onload = () => { URL.revokeObjectURL(url); res(img); };
-            img.onerror = () => { URL.revokeObjectURL(url); res(null); };
-            img.src = url;
-          })
-          .catch(() => res(null));
-        return;
-      }
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => res(img);
-      img.onerror = () => res(null);
-      img.src = src;
+      fetch(src)
+        .then(r => r.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => { URL.revokeObjectURL(url); res(img); };
+          img.onerror = () => { URL.revokeObjectURL(url); res(null); };
+          img.src = url;
+        })
+        .catch(() => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => res(img);
+          img.onerror = () => res(null);
+          img.src = src;
+        });
     });
 
     // ── Background gradient (135deg = top-left → bottom-right) ──

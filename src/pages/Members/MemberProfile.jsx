@@ -157,24 +157,22 @@ const MemberProfile = ({ readOnly = false }) => {
 
     const loadImg = (src) => new Promise(res => {
       if (!src) { res(null); return; }
-      if (src.includes('firebasestorage.googleapis.com') || src.includes('storage.googleapis.com')) {
-        fetch(src)
-          .then(r => r.blob())
-          .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const img = new Image();
-            img.onload = () => { URL.revokeObjectURL(url); res(img); };
-            img.onerror = () => { URL.revokeObjectURL(url); res(null); };
-            img.src = url;
-          })
-          .catch(() => res(null));
-        return;
-      }
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => res(img);
-      img.onerror = () => res(null);
-      img.src = src;
+      fetch(src)
+        .then(r => r.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const img = new Image();
+          img.onload = () => { URL.revokeObjectURL(url); res(img); };
+          img.onerror = () => { URL.revokeObjectURL(url); res(null); };
+          img.src = url;
+        })
+        .catch(() => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => res(img);
+          img.onerror = () => res(null);
+          img.src = src;
+        });
     });
 
     // Background
@@ -985,7 +983,7 @@ const MemberProfile = ({ readOnly = false }) => {
                       </div>
                     )}
                     {cs.show_enrollment_id && member.latestEnrollmentNumber && (
-                      <div style={{ display: 'inline-block', marginTop: 4, fontSize: 10, fontWeight: 700, color: '#4ade80', background: 'rgba(74,222,128,0.15)', padding: '2px 8px', borderRadius: 6, fontFamily: 'monospace' }}>
+                      <div style={{ display: 'inline-block', marginTop: 6, fontSize: 15, fontWeight: 800, color: '#4ade80', background: 'rgba(74,222,128,0.15)', padding: '4px 12px', borderRadius: 8, fontFamily: 'monospace', letterSpacing: 0.5, border: '1px solid rgba(74,222,128,0.3)' }}>
                         {member.latestEnrollmentNumber}
                       </div>
                     )}
