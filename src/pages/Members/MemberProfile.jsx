@@ -19,6 +19,7 @@ import '../MemberCard/MemberCard.css';
 // ── Default card settings (mirrors CardEditor defaults) ─────────
 const DEFAULT_CS = {
   show_gym_name: true,
+  show_gymly_label: true,
   show_member_name: true,
   show_photo: true,
   show_member_id: true,
@@ -28,6 +29,7 @@ const DEFAULT_CS = {
   show_phone: false,
   show_qr: true,
   show_status: true,
+  card_enabled: true,
 };
 
 const MemberProfile = ({ readOnly = false }) => {
@@ -128,14 +130,271 @@ const MemberProfile = ({ readOnly = false }) => {
     }
   };
 
+  // ── Canvas-based card renderer (fixes all html2canvas bugs) ─────
+  const drawCardToCanvas = () => new Promise((resolve) => {
+    const W = 800, H = 504, R = 20, SCALE = 2;
+    const canvas = document.createElement('canvas');
+    canvas.width = W * SCALE;
+    canvas.height = H * SCALE;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    const rrect = (x, y, w, h, r) => {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.arcTo(x + w, y, x + w, y + r, r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+      ctx.lineTo(x + r, y + h);
+      ctx.arcTo(x, y + h, x, y + h - r, r);
+      ctx.lineTo(x, y + r);
+      ctx.arcTo(x, y, x + r, y, r);
+      ctx.closePath();
+    };
+
+    const loadImg = (src) => new Promise(res => {
+      if (!src) { res(null); return; }
+      if (src.includes('firebasestorage.googleapis.com') || src.includes('storage.googleapis.com')) {
+        fetch(src)
+          .then(r => r.blob())
+          .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const img = new Image();
+            img.onload = () => { URL.revokeObjectURL(url); res(img); };
+            img.onerror = () => { URL.revokeObjectURL(url); res(null); };
+            img.src = url;
+          })
+          .catch(() => res(null));
+        return;
+      }
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => res(img);
+      img.onerror = () => res(null);
+      img.src = src;
+    });
+
+    // Background
+    const grad = ctx.createLinearGradient(0, 0, W, H);
+    grad.addColorStop(0, '#1a1040');
+    grad.addColorStop(0.55, '#2d1b69');
+    grad.addColorStop(1, '#1a2980');
+    rrect(0, 0, W, H, R);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.save();
+    ctx.clip();
+
+    // Decorative blobs
+    ctx.globalAlpha = 0.2;
+    ctx.fillStyle = '#534ab7';
+    ctx.beginPath(); ctx.arc(W - 60, -20, 130, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#378add';
+    ctx.beginPath(); ctx.arc(-20, H + 10, 90, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Row 1: header
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    if (cs.show_gym_name) {
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.font = 'bold 26px system-ui, -apple-system, sans-serif';
+      ctx.fillText((gym?.name || 'My Gym').toUpperCase(), 44, 36);
+    }
+    if (cs.show_gymly_label !== false) {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '14px system-ui, -apple-system, sans-serif';
+      ctx.fillText('GYMLY MEMBER CARD', 44, cs.show_gym_name ? 66 : 44);
+    }
+
+    // Avatar circle
+    const avatarX = 86, avatarY = 178, avatarR = 52;
+    const infoX = cs.show_photo ? 158 : 44;
+
+    if (cs.show_photo) {
+      const avatarGrad = ctx.createLinearGradient(
+        avatarX - avatarR, avatarY - avatarR, avatarX + avatarR, avatarY + avatarR
+      );
+      avatarGrad.addColorStop(0, avatarColor.bg || '#EEEDFE');
+      avatarGrad.addColorStop(1, '#378add');
+      ctx.beginPath();
+      ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+      ctx.fillStyle = avatarGrad;
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Initials as fallback (overwritten by profile photo if loaded)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = avatarColor.text || '#534AB7';
+      ctx.font = 'bold 42px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle'; // fixes "letter too low" bug
+      ctx.fillText(getInitials(member.name), avatarX, avatarY);
+      ctx.restore();
+    }
+
+    // Info column
+    const qrBoxX = W - 196;
+    const maxNameW = (cs.show_qr ? qrBoxX : W - 44) - infoX - 16;
+    let infoY = 110;
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+
+    if (cs.show_member_name) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px system-ui, -apple-system, sans-serif';
+      const nameStr = member.name || 'Member';
+      let displayName = nameStr;
+      while (ctx.measureText(displayName).width > maxNameW && displayName.length > 1) {
+        displayName = displayName.slice(0, -1);
+      }
+      if (displayName !== nameStr) displayName += '…';
+      ctx.fillText(displayName, infoX, infoY);
+      infoY += 42;
+    }
+
+    if (cs.show_plan && planName) {
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = '20px system-ui, -apple-system, sans-serif';
+      ctx.fillText(planName, infoX, infoY);
+      infoY += 28;
+    }
+
+    if (cs.show_member_id) {
+      const memNum = `#${member.memberNumber || `MEM-${member.id.substring(0, 6)}`}`;
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.font = '16px monospace';
+      ctx.fillText(memNum, infoX, infoY);
+      infoY += 26;
+    }
+
+    if (cs.show_enrollment_id && member.latestEnrollmentNumber) {
+      const enrollText = member.latestEnrollmentNumber;
+      ctx.font = 'bold 16px monospace';
+      const ePadX = 14, eH = 28;
+      const eW = ctx.measureText(enrollText).width + ePadX * 2;
+      rrect(infoX, infoY, eW, eH, 6);
+      ctx.fillStyle = 'rgba(74,222,128,0.15)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(74,222,128,0.25)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#4ade80';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(enrollText, infoX + ePadX, infoY + eH / 2);
+      ctx.textBaseline = 'top';
+    }
+
+    // Separator
+    const sepY = H - 110;
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(44, sepY); ctx.lineTo(W - 44, sepY);
+    ctx.stroke();
+
+    // Footer
+    const expiryStr = member.subscription_expiry ? formatDate(member.subscription_expiry) : 'N/A';
+    if (cs.show_expiry) {
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      ctx.textBaseline = 'top';
+      ctx.fillText('VALID TILL', 44, sepY + 14);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+      ctx.fillText(expiryStr, 44, sepY + 32);
+    }
+
+    if (cs.show_phone && member.phone) {
+      const phoneX = cs.show_expiry ? 300 : 44;
+      ctx.fillStyle = 'rgba(255,255,255,0.4)';
+      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      ctx.fillText('PHONE', phoneX, sepY + 14);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+      ctx.fillText(member.phone, phoneX, sepY + 32);
+    }
+
+    // Async: load QR + profile photo
+    const tasks = [];
+    if (cs.show_qr) {
+      const publicUrl = `${window.location.origin}/public/member/${member.id}`;
+      const qrApi = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(publicUrl)}&bgcolor=ffffff&color=000000&margin=8`;
+      tasks.push(loadImg(qrApi).then(img => ({ type: 'qr', img })));
+    }
+    if (cs.show_photo && member.profile_photo) {
+      tasks.push(loadImg(member.profile_photo).then(img => ({ type: 'photo', img })));
+    }
+
+    const finish = (results = []) => {
+      const qrRes = results.find(r => r.type === 'qr');
+      const photoRes = results.find(r => r.type === 'photo');
+
+      // QR code — drawn in the top-right area
+      if (qrRes?.img && cs.show_qr) {
+        const qrSize = 148, qrPad = 6;
+        rrect(qrBoxX, 104, qrSize, qrSize, 10);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.drawImage(qrRes.img, qrBoxX + qrPad, 104 + qrPad, qrSize - qrPad * 2, qrSize - qrPad * 2);
+      }
+
+      // Profile photo overwrites initials
+      if (photoRes?.img && cs.show_photo) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(photoRes.img, avatarX - avatarR, avatarY - avatarR, avatarR * 2, avatarR * 2);
+        ctx.restore();
+      }
+
+      // Status badge — drawn LAST (fixes z-index bug)
+      if (cs.show_status) {
+        ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+        const textW = ctx.measureText(label).width;
+        const dotR = 5, dotGap = 8, padX = 14, badgeH = 34;
+        const badgeW = dotR * 2 + dotGap + textW + padX * 2;
+        const badgeX = W - 44 - badgeW;
+        const badgeY = 34;
+        rrect(badgeX, badgeY, badgeW, badgeH, badgeH / 2);
+        ctx.fillStyle = sc.bg;
+        ctx.fill();
+        ctx.strokeStyle = sc.dot + '30';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.fillStyle = sc.dot;
+        ctx.beginPath();
+        ctx.arc(badgeX + padX + dotR, badgeY + badgeH / 2, dotR, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = sc.color;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, badgeX + padX + dotR * 2 + dotGap, badgeY + badgeH / 2);
+      }
+
+      ctx.restore(); // end rounded-rect clip
+      resolve(canvas);
+    };
+
+    if (tasks.length === 0) finish();
+    else Promise.all(tasks).then(finish);
+  });
+
   // ── Download card as PNG ──────────────────────────────────────
   const downloadCard = async () => {
-    const element = document.getElementById('membership-card-to-download');
-    if (!element) return;
     setDownloadingCard(true);
     try {
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(element, { scale: 3, backgroundColor: null, useCORS: true });
+      const canvas = await drawCardToCanvas();
       const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `Gymly_Card_${member.name.replace(/\s+/g, '_')}.png`;
@@ -151,71 +410,40 @@ const MemberProfile = ({ readOnly = false }) => {
     }
   };
 
-  // ── WhatsApp share ───────────────────────────────────────────
-  const sendWhatsApp = async () => {
-    if (!member?.phone) { showToast('No phone number for this member', 'error'); return; }
-
-    const latestPayment = memberPayments
-      .filter(p => p.membership_end)
-      .sort((a, b) => {
-        const tA = a.membership_end?.toDate ? a.membership_end.toDate().getTime() : 0;
-        const tB = b.membership_end?.toDate ? b.membership_end.toDate().getTime() : 0;
-        return tB - tA;
-      })[0];
-
-    const planNameStr = getPlanName(gym, member.plan_id) || 'your membership plan';
-    const amountPaid = latestPayment?.paid_amount != null
-      ? `₹${latestPayment.paid_amount.toLocaleString('en-IN')}`
-      : null;
-    const pendingAmt = latestPayment?.pending_amount > 0
-      ? `₹${latestPayment.pending_amount.toLocaleString('en-IN')}`
-      : null;
-    const expiryStr = formatDate(member.subscription_expiry);
-    const gymName = gym?.name || 'our gym';
-
-    let msg = `Hi ${member.name}! 👋\n\nWelcome to *${gymName}*! 🏋️\n\n`;
-    msg += `📋 *Your Membership Details:*\n`;
-    msg += `• Plan: *${planNameStr}*\n`;
-    if (amountPaid) msg += `• Amount Paid: *${amountPaid}*\n`;
-    if (pendingAmt) msg += `• Due Amount: *${pendingAmt}* ⚠️\n`;
-    msg += `• Valid Till: *${expiryStr}*\n\n`;
-    msg += `We're excited to have you with us! 💪`;
-
-    const phone = String(member.phone).replace(/[^0-9]/g, '');
-    const encodedMsg = encodeURIComponent(msg);
-    window.open(`https://wa.me/${phone}?text=${encodedMsg}`, '_blank');
-  };
-
-  // ── WhatsApp share with card attached ───────────────────────
+  // ── Send card via WhatsApp (no billing details) ─────────────
   const shareCardOnWhatsApp = async () => {
+    if (!member?.phone) {
+      showToast('No phone number for this member', 'error');
+      return;
+    }
     try {
-      const element = document.getElementById('membership-card-to-download');
-      if (!element) { showToast('Card not ready', 'error'); return; }
-
-      const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(element, { scale: 3, backgroundColor: null, useCORS: true });
+      const canvas = await drawCardToCanvas();
       canvas.toBlob(async (blob) => {
-        if (!blob) { showToast('Failed to generate card image', 'error'); return; }
-        const file = new File([blob], `Gymly_Card_${member.name.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        if (!blob) return;
+        const fileName = `Gymly_Card_${member.name.replace(/\s+/g, '_')}.png`;
+        const file = new File([blob], fileName, { type: 'image/png' });
+        const cardMsg = `Hi ${member.name}! 🏋️ Here is your membership card from ${gym?.name || 'Gymly'}.`;
+
+        // Mobile: share card image directly via native share sheet
+        if (navigator.canShare?.({ files: [file] })) {
           try {
-            await navigator.share({
-              title: 'Gymly Membership Card',
-              text: `${member.name}'s membership card at ${gym?.name || 'Gymly'}`,
-              files: [file],
-            });
+            await navigator.share({ title: 'Gymly Membership Card', text: cardMsg, files: [file] });
+            return;
           } catch (e) {
-            // User cancelled or share failed — fallback to text-only
-            sendWhatsApp();
+            if (e.name === 'AbortError') return;
           }
-        } else {
-          // Browser doesn't support file sharing — just open WhatsApp with message
-          sendWhatsApp();
         }
+        // Desktop fallback: download card + open WhatsApp chat with simple message
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = fileName;
+        a.click();
+        const phone = String(member.phone).replace(/[^0-9]/g, '');
+        setTimeout(() => window.open(`https://wa.me/${phone}?text=${encodeURIComponent(cardMsg)}`, '_blank'), 600);
       }, 'image/png');
     } catch (err) {
       console.error(err);
-      sendWhatsApp();
+      showToast('Failed to send card', 'error');
     }
   };
 
@@ -442,10 +670,12 @@ const MemberProfile = ({ readOnly = false }) => {
                   <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">autorenew</span>
                   <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Renew</span>
                 </button>
-                <button onClick={() => setShowQRModal(true)} className="bg-white/30 backdrop-blur-md border border-white/60 hover:bg-white/50 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
-                  <span className="material-symbols-outlined text-tertiary group-hover:scale-110 transition-transform">qr_code_scanner</span>
-                  <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Access QR</span>
-                </button>
+                {cs.card_enabled !== false && (
+                  <button onClick={() => setShowQRModal(true)} className="bg-white/30 backdrop-blur-md border border-white/60 hover:bg-white/50 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
+                    <span className="material-symbols-outlined text-tertiary group-hover:scale-110 transition-transform">qr_code_scanner</span>
+                    <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Access QR</span>
+                  </button>
+                )}
                 <a href={member.phone ? `https://wa.me/${String(member.phone).replace(/[^0-9]/g, '')}` : '#'} target="_blank" rel="noreferrer" className="bg-white/30 backdrop-blur-md border border-white/60 hover:bg-white/50 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
                   <span className="material-symbols-outlined text-[#1D9E75] group-hover:scale-110 transition-transform">chat</span>
                   <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Message</span>
@@ -715,7 +945,7 @@ const MemberProfile = ({ readOnly = false }) => {
                         {gym?.name || 'My Gym'}
                       </div>
                     )}
-                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>
+                    {cs.show_gymly_label !== false && <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>}
                   </div>
                   {cs.show_status && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: sc.bg, padding: '4px 10px', borderRadius: 99 }}>
@@ -799,28 +1029,16 @@ const MemberProfile = ({ readOnly = false }) => {
               Download Card
             </button>
 
-            {/* WhatsApp — send message with details */}
+            {/* Send card via WhatsApp */}
             <button
-              onClick={sendWhatsApp}
+              onClick={shareCardOnWhatsApp}
               className="w-full mt-3 py-3 rounded-xl font-label-md flex items-center justify-center gap-2 transition-colors"
               style={{ background: '#25D366', color: '#fff' }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
               </svg>
-              Send Welcome Message
-            </button>
-
-            {/* WhatsApp — share card image */}
-            <button
-              onClick={shareCardOnWhatsApp}
-              className="w-full mt-3 py-3 rounded-xl font-label-md flex items-center justify-center gap-2 transition-colors border"
-              style={{ background: 'rgba(37,211,102,0.08)', color: '#128c7e', borderColor: 'rgba(37,211,102,0.3)' }}
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" style={{ color: '#25D366' }}>
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
-              </svg>
-              Share Card on WhatsApp
+              Send Card
             </button>
 
             <button onClick={() => setShowQRModal(false)} className="w-full mt-3 py-3 rounded-xl border border-black/20 text-on-surface-variant font-label-md hover:bg-black/5 transition-colors">

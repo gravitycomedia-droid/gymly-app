@@ -36,9 +36,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 // ── Default card settings ────────────────────────────────────
 const DEFAULT_CS = {
-  show_gym_name: true, show_member_name: true, show_photo: true,
+  show_gym_name: true, show_gymly_label: true, show_member_name: true, show_photo: true,
   show_member_id: true, show_enrollment_id: true, show_plan: true,
   show_expiry: true, show_phone: false, show_qr: true, show_status: true,
+  card_enabled: true,
 };
 
 const MemberHome = () => {
@@ -275,6 +276,7 @@ const MemberHome = () => {
   });
 
   const cs = { ...DEFAULT_CS, ...(gym?.card_settings || {}) };
+  const cardEnabled = cs.card_enabled !== false;
   const sc = { active: { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' }, expiring: { bg: 'rgba(239,159,39,0.15)', color: '#EF9F27', dot: '#EF9F27' }, expired: { bg: 'rgba(186,26,26,0.15)', color: '#ba1a1a', dot: '#ba1a1a' } }[statusType] || { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' };
   const publicUrl = `${window.location.origin}/public/member/${user?.uid}`;
 
@@ -397,8 +399,8 @@ const MemberHome = () => {
           </div>
         )}
 
-        {/* ── QR / Card Tab Strip ── */}
-        <div style={{
+        {/* ── QR / Card Tab Strip — hidden when card feature is disabled ── */}
+        {cardEnabled && <div style={{
           display: 'flex', background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(12px)',
           borderRadius: 14, padding: 4, marginBottom: 4, border: '1px solid rgba(255,255,255,0.5)',
           boxShadow: '0 2px 8px rgba(83,74,183,0.06)',
@@ -419,7 +421,7 @@ const MemberHome = () => {
               <span style={{ fontSize: 14 }}>{t.icon}</span> {t.label}
             </button>
           ))}
-        </div>
+        </div>}
 
         {/* ── Tab 0: QR Check-in ── */}
         {activeTab === 0 && (
@@ -471,8 +473,8 @@ const MemberHome = () => {
           </div>
         )}
 
-        {/* ── Tab 1: Digital Membership Card ── */}
-        {activeTab === 1 && (
+        {/* ── Tab 1: Digital Membership Card — only when card feature is enabled ── */}
+        {cardEnabled && activeTab === 1 && (
           <div>
             {/* Collapsed preview / expand button */}
             {!cardExpanded ? (
@@ -531,7 +533,7 @@ const MemberHome = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
                     <div>
                       {cs.show_gym_name && <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 }}>{gym?.name || 'My Gym'}</div>}
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>
+                      {cs.show_gymly_label !== false && <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>}
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                       {cs.show_status && (
@@ -597,12 +599,14 @@ const MemberHome = () => {
                 </div>
               </div>
             )}
-            <button
-              onClick={() => navigate('/member/card')}
-              style={{ width: '100%', marginTop: 8, marginBottom: 8, padding: '12px', borderRadius: 12, background: 'rgba(83,74,183,0.08)', border: '1px solid rgba(83,74,183,0.15)', color: '#534ab7', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
-            >
-              View Full Digital ID →
-            </button>
+            {cardEnabled && (
+              <button
+                onClick={() => navigate('/member/card')}
+                style={{ width: '100%', marginTop: 8, marginBottom: 8, padding: '12px', borderRadius: 12, background: 'rgba(83,74,183,0.08)', border: '1px solid rgba(83,74,183,0.15)', color: '#534ab7', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+              >
+                View Full Digital ID →
+              </button>
+            )}
             <div style={{ height: 8 }} />
           </div>
         )}

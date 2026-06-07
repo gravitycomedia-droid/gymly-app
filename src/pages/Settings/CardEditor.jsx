@@ -8,7 +8,9 @@ import { formatDate, getExpiryStatus } from '../../utils/helpers';
 
 // ── Default card settings ─────────────────────────────────────────
 const DEFAULT_CARD_SETTINGS = {
+  card_enabled: true,
   show_gym_name: true,
+  show_gymly_label: true,
   show_member_name: true,
   show_photo: true,
   show_member_id: true,
@@ -51,7 +53,7 @@ const ToggleRow = ({ label, icon, description, value, onChange }) => (
 );
 
 // ── Live Preview Card ─────────────────────────────────────────────
-const PreviewCard = ({ settings, gym, ownerDoc }) => {
+const PreviewCard = ({ settings, gym, ownerDoc, disabled }) => {
   const name = ownerDoc?.name || gym?.name || 'Sample Member';
   const planName = 'Premium Plan';
   const memberId = ownerDoc?.memberNumber || 'MEM-001';
@@ -80,6 +82,17 @@ const PreviewCard = ({ settings, gym, ownerDoc }) => {
       overflow: 'hidden',
       minHeight: 200,
     }}>
+      {disabled && (
+        <div style={{
+          position: 'absolute', inset: 0, borderRadius: 20, zIndex: 10,
+          background: 'rgba(10,5,30,0.78)', backdropFilter: 'blur(4px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8,
+        }}>
+          <div style={{ fontSize: 38 }}>🚫</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>Card Disabled</div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', textAlign: 'center', padding: '0 24px' }}>Members cannot view their Digital ID card</div>
+        </div>
+      )}
       {/* Decorative blobs */}
       <div style={{
         position: 'absolute', top: -40, right: -40, width: 140, height: 140,
@@ -99,7 +112,7 @@ const PreviewCard = ({ settings, gym, ownerDoc }) => {
                 {gym?.name || 'My Gym'}
               </div>
             )}
-            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>
+            {settings.show_gymly_label !== false && <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', letterSpacing: 0.5 }}>GYMLY MEMBER CARD</div>}
           </div>
           {settings.show_status && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: sc.bg, padding: '4px 10px', borderRadius: 99 }}>
@@ -206,7 +219,8 @@ const CardEditor = () => {
   };
 
   const TOGGLES = [
-    { key: 'show_gym_name',      label: 'Gym Name',       icon: '🏋️', description: 'Display your gym name on the card' },
+    { key: 'show_gym_name',      label: 'Gym Name',            icon: '🏋️', description: 'Display your gym name on the card' },
+    { key: 'show_gymly_label',   label: '"Gymly Member Card" Label', icon: '🏷️', description: 'Show "GYMLY MEMBER CARD" branding text below the gym name' },
     { key: 'show_member_name',   label: 'Member Name',    icon: '👤', description: 'Show the member\'s full name' },
     { key: 'show_photo',         label: 'Member Photo',   icon: '📷', description: 'Display profile picture or initials avatar' },
     { key: 'show_member_id',     label: 'Member ID',      icon: '🔢', description: 'Show member number (e.g. MEM-001)' },
@@ -255,10 +269,34 @@ const CardEditor = () => {
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>preview</span>
             Live Preview
           </div>
-          <PreviewCard settings={settings} gym={gym} ownerDoc={userDoc} />
+          <PreviewCard settings={settings} gym={gym} ownerDoc={userDoc} disabled={settings.card_enabled === false} />
           <div style={{ fontSize: 12, color: '#787584', textAlign: 'center', marginTop: 10 }}>
             Preview uses your gym name and profile. Members will see their own data.
           </div>
+        </div>
+
+        {/* Master Toggle: Enable / Disable Member Card */}
+        <div style={{
+          background: settings.card_enabled !== false ? 'rgba(83,74,183,0.06)' : 'rgba(186,26,26,0.06)',
+          border: `1px solid ${settings.card_enabled !== false ? 'rgba(83,74,183,0.18)' : 'rgba(186,26,26,0.22)'}`,
+          borderRadius: 20, padding: '4px 20px', marginBottom: 16,
+          boxShadow: '0 4px 16px rgba(83,74,183,0.05)',
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#474553', padding: '16px 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+            Feature
+          </div>
+          <ToggleRow
+            label="Member Card Enabled"
+            icon={settings.card_enabled !== false ? '💳' : '🚫'}
+            description={
+              settings.card_enabled !== false
+                ? 'Members can view their Digital ID card in the app'
+                : 'Card disabled — members will see a "Not Available" screen'
+            }
+            value={settings.card_enabled !== false}
+            onChange={(v) => handleToggle('card_enabled', v)}
+          />
+          <div style={{ height: 8 }} />
         </div>
 
         {/* Toggle Controls */}
@@ -266,6 +304,9 @@ const CardEditor = () => {
           background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.8)', borderRadius: 20,
           padding: '4px 20px', boxShadow: '0 4px 16px rgba(83,74,183,0.07)',
+          opacity: settings.card_enabled !== false ? 1 : 0.45,
+          pointerEvents: settings.card_enabled !== false ? 'auto' : 'none',
+          transition: 'opacity 0.2s',
         }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#474553', padding: '16px 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Card Fields
