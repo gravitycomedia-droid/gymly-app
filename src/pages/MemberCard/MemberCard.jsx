@@ -192,8 +192,8 @@ const MemberCard = () => {
 
     if (cs.show_enrollment_id && userDoc?.latestEnrollmentNumber) {
       const enrollText = userDoc.latestEnrollmentNumber;
-      ctx.font = 'bold 22px monospace';
-      const ePadX = 16, eH = 38;
+      ctx.font = 'bold 32px monospace';
+      const ePadX = 18, eH = 52;
       const eW = ctx.measureText(enrollText).width + ePadX * 2;
       rrect(infoX, infoY, eW, eH, 6);
       ctx.fillStyle = 'rgba(74,222,128,0.15)';
