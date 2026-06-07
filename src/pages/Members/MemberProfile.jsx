@@ -460,7 +460,7 @@ const MemberProfile = ({ readOnly = false }) => {
   const { label, type, daysText } = getExpiryStatus(member.subscription_expiry);
   const avatarColor = getAvatarColor(member.name);
   const planName = getPlanName(gym, member.plan_id);
-  const plans = gym?.settings?.plans?.filter((p) => p.is_active) || [];
+  const plans = (gym?.settings?.plans?.filter((p) => p.is_active) || []).sort((a, b) => (a.duration_days || 0) - (b.duration_days || 0));
   const currentPlan = plans.find((p) => p.id === member.plan_id);
   const bmi = calculateBMI(member.height, member.weight);
 
