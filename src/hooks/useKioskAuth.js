@@ -2,6 +2,7 @@
 // Manages kiosk device pairing state via localStorage.
 
 import { useState, useEffect } from 'react';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import { pairDeviceByCode, updateKioskDevice } from '../firebase/firestore-kiosk';
 import { serverTimestamp } from 'firebase/firestore';
 
@@ -17,6 +18,15 @@ const useKioskAuth = () => {
   const [pairingError, setPairingError] = useState(null);
 
   const isPaired = !!deviceId && !!gymId;
+
+  // Kiosk signs in anonymously so Firestore rules (request.auth != null) are satisfied
+  // without requiring a real user account on the device.
+  useEffect(() => {
+    const auth = getAuth();
+    if (!auth.currentUser) {
+      signInAnonymously(auth).catch(() => {});
+    }
+  }, []);
 
   // Update device lastSeen periodically (every 60 seconds)
   useEffect(() => {

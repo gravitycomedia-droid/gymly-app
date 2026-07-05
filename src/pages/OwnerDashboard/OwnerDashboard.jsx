@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import BroadcastBanner from '../../components/BroadcastBanner';
 import { getGym } from '../../firebase/firestore';
 import { logout } from '../../firebase/auth';
 import { useNavigate } from 'react-router-dom';
@@ -180,6 +181,9 @@ const OwnerDashboard = () => {
   return (
     <div className="screen dashboard-screen">
       <div className="screen-content">
+
+        {/* Platform announcements (additive, fail-safe) */}
+        <BroadcastBanner />
 
         {/* ══════ Greeting Header ══════ */}
         <div className="dashboard-greeting">

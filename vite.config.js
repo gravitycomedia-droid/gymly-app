@@ -45,6 +45,11 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        // Apply updates on the next reload instead of waiting for every tab to
+        // close — kills the stale-build / stale-CSP problem after one refresh.
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,

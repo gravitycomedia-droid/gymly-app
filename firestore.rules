@@ -1,6 +1,19 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Super Admin (Gravity Studios Co platform control plane) — claim set out-of-band by
+    // scripts/setSuperAdmin.js. Grants cross-tenant READ only in Phase 1.
+    function isSuperAdmin() {
+      return request.auth != null && request.auth.token.super_admin == true;
+    }
+
+    // Kiosk devices sign in anonymously — identified by sign_in_provider.
+    // Allows reading members and writing attendance sessions without gym_id claims.
+    function isKiosk() {
+      return request.auth != null
+        && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
     // Users — same-gym read/write; role and gym_id are server-managed fields
     match /users/{uid} {
       allow read: if request.auth != null
@@ -9,6 +22,14 @@ service cloud.firestore {
                     ||
                     request.auth.token.gym_id
                       == resource.data.gym_id
+                    ||
+                    isSuperAdmin()
+                    ||
+                    isKiosk()
+                    ||
+                    // Phone Auth linking: newly authenticated member can find their
+                    // owner-created doc by matching the phone number claim.
+                    request.auth.token.phone_number == resource.data.phone
                   );
 
       allow create: if request.auth != null;
@@ -22,14 +43,19 @@ service cloud.firestore {
                     )
                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'gym_id']);
 
-      allow delete: if false;
+      // Allow a newly-linked member to delete their old pre-created doc (random ID).
+      // Conditions: phone must match the auth token, and the doc must not already
+      // be linked to an auth account (auth_uid field absent = null).
+      allow delete: if request.auth != null
+                    && request.auth.token.phone_number == resource.data.phone
+                    && resource.data.auth_uid == null;
     }
 
     // Gyms — authenticated read; writes scoped to owner_id (H-3)
     // Stats subcollection — server-only writes; owner/manager read (O-3)
     match /gyms/{gymId}/stats/{document} {
       allow read: if request.auth != null
-        && request.auth.token.gym_id == gymId;
+        && (request.auth.token.gym_id == gymId || isSuperAdmin());
       allow write: if false;
     }
     match /gyms/{gymId} {
@@ -71,11 +97,12 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // Phase 4: Payments — gym-isolated (H-4)
+    // Phase 4: Payments — gym-isolated (H-4); super-admin read for the control plane
     match /payments/{paymentId} {
       allow read: if request.auth != null
-        && request.auth.token.gym_id
-           == resource.data.gym_id;
+        && (request.auth.token.gym_id
+           == resource.data.gym_id
+           || isSuperAdmin());
       allow create: if request.auth != null
         && request.resource.data.gym_id
            == request.auth.token.gym_id;
@@ -209,23 +236,28 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // Kiosk Devices — auth required to read; unauthenticated update only via device_secret (H-5)
+    // Kiosk Devices — kiosk signs in anonymously; pairing completes without gym_id claim.
     match /kiosk_devices/{deviceId} {
       allow read: if request.auth != null;
-      allow update: if request.resource.data.device_secret == resource.data.device_secret;
+      // Allow pairing transition (anonymous kiosk activating itself),
+      // device-secret-based updates (lastSeen from paired device),
+      // or owner/manager management updates.
+      allow update: if (resource.data.status == 'pairing')
+                    || request.resource.data.device_secret == resource.data.device_secret
+                    || (request.auth != null && request.auth.token.role in ['owner', 'manager']);
       allow create, delete: if request.auth != null
         && request.auth.token.role
            in ['owner', 'manager'];
     }
 
-    // Attendance Sessions — authenticated kiosk writes (gymId camelCase in docs)
+    // Attendance Sessions — anonymous kiosk writes are allowed (gymId validated in app).
     match /attendance_sessions/{sessionId} {
       allow create: if request.auth != null
-        && request.resource.data.gymId == request.auth.token.gym_id;
+        && (request.resource.data.gymId == request.auth.token.gym_id || isKiosk());
       allow update: if request.auth != null
-        && resource.data.gymId == request.auth.token.gym_id;
+        && (resource.data.gymId == request.auth.token.gym_id || isKiosk());
       allow read: if request.auth != null
-        && request.auth.token.gym_id == resource.data.gymId;
+        && (request.auth.token.gym_id == resource.data.gymId || isKiosk());
       allow delete: if false;
     }
 
@@ -255,6 +287,36 @@ service cloud.firestore {
         && request.auth.token.gym_id == gymId
         && request.auth.token.role
            in ['owner', 'manager'];
+      allow write: if false;
+    }
+
+    // Platform Stats — Super Admin KPI rollup; written only by Cloud Functions (SA-1)
+    match /platform_stats/{document} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    // Gym Summaries — denormalized per-gym plan/status/member counts for the
+    // control plane. Super-admin read only (keeps cross-gym data out of the
+    // publicly-readable gyms doc); written only by Cloud Functions (SA-3).
+    match /gym_summaries/{gymId} {
+      allow read: if isSuperAdmin();
+      allow write: if false;
+    }
+
+    // Plans — Gymly subscription tiers. Readable by any authed user (owners see
+    // their own plan); all writes server-side / Phase 2 admin only (SA-1)
+    match /plans/{planId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    // Broadcasts — platform announcements. Owners may read only ACTIVE ones (for
+    // the in-app banner); super-admin reads all for management. Writes go through
+    // the admin callables only (SA-4).
+    match /broadcasts/{id} {
+      allow read: if isSuperAdmin()
+        || (request.auth != null && resource.data.active == true);
       allow write: if false;
     }
   }

@@ -1,0 +1,122 @@
+/* src/pages/Admin/PlansPage.css */
+
+.pp-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .pp-grid { grid-template-columns: 1fr; }
+}
+
+/* Composer card */
+.pp-card {
+  padding: 20px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 20px;
+}
+
+.pp-id-note {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-left: 4px;
+}
+
+.pp-form-btns {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* Back button */
+.pp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 6px;
+}
+.pp-back:hover { opacity: 0.75; }
+
+/* Right column */
+.pp-list-col { min-width: 0; }
+
+.pp-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Individual plan card */
+.pp-plan-card {
+  padding: 16px 18px;
+  transition: opacity 0.15s;
+}
+.pp-plan-card.pp-inactive { opacity: 0.6; }
+
+.pp-plan-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.pp-plan-name {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.pp-plan-id {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  margin-top: 2px;
+}
+
+.pp-plan-badges {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pp-plan-meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.pp-plan-price {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+}
+
+.pp-plan-order {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.pp-plan-actions {
+  display: flex;
+  gap: 8px;
+  border-top: 1px solid rgba(0,0,0,0.05);
+  padding-top: 12px;
+}

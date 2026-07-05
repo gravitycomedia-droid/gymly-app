@@ -15,6 +15,7 @@ export default {
         "outline": "var(--text-muted, #717786)",
         "outline-variant": "var(--text-placeholder, #c1c6d7)",
         error: "var(--error, #ba1a1a)",
+        warning: "#EF9F27",
         tertiary: "var(--tertiary, #006762)",
         "surface-variant": "rgba(255, 255, 255, 0.4)",
         "error-container": "rgba(186, 26, 26, 0.1)",
