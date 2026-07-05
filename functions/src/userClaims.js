@@ -14,9 +14,20 @@ exports.onUserWrite = functions.firestore
   .onWrite(async (change, context) => {
     const uid = context.params.uid;
 
+    // Preserve platform-level claims (super_admin) across every rewrite.
+    // setCustomUserClaims REPLACES the whole claims object, so without this a
+    // super-admin who is also a gym owner would lose super_admin on any doc write.
+    let preserved = {};
+    try {
+      const existing = (await admin.auth().getUser(uid)).customClaims || {};
+      if (existing.super_admin) preserved.super_admin = existing.super_admin;
+    } catch (err) {
+      if (err.code !== "auth/user-not-found") throw err;
+    }
+
     if (!change.after.exists) {
       try {
-        await admin.auth().setCustomUserClaims(uid, {});
+        await admin.auth().setCustomUserClaims(uid, preserved);
       } catch (err) {
         if (err.code !== "auth/user-not-found") throw err;
       }
@@ -33,7 +44,7 @@ exports.onUserWrite = functions.firestore
     }
 
     try {
-      await admin.auth().setCustomUserClaims(uid, { role, gym_id });
+      await admin.auth().setCustomUserClaims(uid, { ...preserved, role, gym_id });
       console.log(`Claims set for ${uid}: role=${role}, gym_id=${gym_id}`);
     } catch (err) {
       if (err.code === "auth/user-not-found") {

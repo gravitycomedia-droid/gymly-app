@@ -11,11 +11,14 @@ const Spinner = () => (
 );
 
 const AutoRedirect = () => {
-  const { user, userDoc, loading } = useAuth();
+  const { user, userDoc, superAdmin, loading } = useAuth();
 
   if (loading) return <Spinner />;
 
   if (!user) return <Navigate to="/select-role" replace />;
+
+  // Platform super-admins go straight to the control plane, regardless of role.
+  if (superAdmin) return <Navigate to="/admin" replace />;
 
   if (userDoc?.role) {
     // Go directly to home — agreement is shown as non-blocking inline card on the home screen

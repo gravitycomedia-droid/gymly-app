@@ -77,6 +77,14 @@ async function recomputeStats(gymId) {
     last_updated:    admin.firestore.Timestamp.now(),
   });
 
+  // Denormalize member counts into the super-admin-only summary (SA-3 efficiency):
+  // lets the platform rollup + gym list read one collection instead of fanning out.
+  await db.collection("gym_summaries").doc(gymId).set({
+    member_count:  totalMembers,
+    active_count:  activeMembers,
+    updated_at:    admin.firestore.Timestamp.now(),
+  }, { merge: true });
+
   console.log(`Stats recomputed for ${gymId}: ${totalMembers} members, ₹${monthRevenue} month revenue`);
 }
 
@@ -121,16 +129,5 @@ exports.statsOnAttendanceWrite = functions.firestore
     const data = change.after.exists ? change.after.data() : change.before.data();
     if (!data?.gym_id) return null;
     debounceRecompute(data.gym_id);
-    return null;
-  });
-
-// ── Scheduled: recompute all gyms at midnight IST ─────────────────────────
-exports.statsResetDaily = functions.pubsub
-  .schedule("0 0 * * *")
-  .timeZone("Asia/Kolkata")
-  .onRun(async () => {
-    const gymsSnap = await db.collection("gyms").get();
-    await Promise.all(gymsSnap.docs.map(d => recomputeStats(d.id)));
-    console.log(`Daily stats reset for ${gymsSnap.size} gyms`);
     return null;
   });

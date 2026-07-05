@@ -37,3 +37,6 @@ screenshots/
 stitch_gymly_owner_dashboard_system/
 gymly_features.md
 
+
+# Super Admin bootstrap — never commit the service account key
+scripts/serviceAccount.json

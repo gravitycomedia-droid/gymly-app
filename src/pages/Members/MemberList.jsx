@@ -19,8 +19,15 @@ const MemberList = ({ role = 'owner' }) => {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tab, setTab] = useState('all');
-  const [activeFilter, setActiveFilter] = useState(searchParams.get('filter') || '');
+  // Map URL ?filter= param to tab/activeFilter on first render.
+  // active/expired → tab; expiring → activeFilter chip
+  const urlFilter = searchParams.get('filter') || '';
+  const [tab, setTab] = useState(() =>
+    urlFilter === 'active' ? 'active' : urlFilter === 'expired' ? 'expired' : 'all'
+  );
+  const [activeFilter, setActiveFilter] = useState(() =>
+    urlFilter === 'expiring' ? 'expiring' : ''
+  );
   const [renewMember, setRenewMember] = useState(null);
   const [showFab, setShowFab] = useState(true);
   const addCardRef = useRef(null);
@@ -326,7 +333,7 @@ const filteredMembers = useMemo(() => {
         )}
 
         {/* Filters & Search */}
-        <div className="flex flex-col gap-5 mb-8 w-full">
+        <div className="flex flex-col gap-3 mb-8 w-full">
           <div className="flex justify-start w-full">
             <div className="flex bg-white/40 backdrop-blur-md rounded-lg p-1.5 border border-white/50 w-full max-w-md overflow-x-auto hide-scrollbar flex-nowrap shrink-0 shadow-sm">
               {['all', 'active', 'expired'].map((t) => (
@@ -339,6 +346,33 @@ const filteredMembers = useMemo(() => {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Quick filter chips */}
+          <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={() => {
+                setActiveFilter(activeFilter === 'expiring' ? '' : 'expiring');
+                setTab('all');
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                activeFilter === 'expiring'
+                  ? 'bg-warning/15 border-warning/40 text-warning'
+                  : 'bg-white/40 border-white/50 text-on-surface-variant hover:border-warning/40 hover:text-warning'
+              }`}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: 14 }}>schedule</span>
+              Expiring Soon
+            </button>
+            {activeFilter === 'expiring' && (
+              <button
+                onClick={() => setActiveFilter('')}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/40 border border-white/50 text-on-surface-variant hover:text-error transition-all"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
+                Clear
+              </button>
+            )}
           </div>
 
           <div className="relative w-full max-w-md shrink-0">

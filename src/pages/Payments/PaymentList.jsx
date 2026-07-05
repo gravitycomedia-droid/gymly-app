@@ -73,7 +73,7 @@ const PaymentList = () => {
     );
   }, [userDoc?.gym_id]);
 
-  const { docs: payments, hasMore, loading: loadingMore, loadFirst, loadMore } = usePaginatedCollection(paymentsQuery);
+  const { docs: payments, hasMore, loading: loadingMore, loadFirst, loadMore } = usePaginatedCollection(paymentsQuery, 5);
 
   useEffect(() => {
     loadFirst().then(() => setLoading(false));
@@ -294,13 +294,13 @@ const PaymentList = () => {
                 const avatarColor = getAvatarColor(p.member_name);
                 
                 return (
-                  <div 
-                    key={p.id} 
+                  <div
+                    key={p.id}
                     onClick={() => navigate(`/owner/payments/${p.id}`)}
                     className="grid grid-cols-12 gap-2 px-4 py-4 border-b border-white/10 hover:bg-white/40 transition-colors items-center cursor-pointer"
                   >
-                    <div className="col-span-8 md:col-span-7 flex items-center gap-3">
-                      <div 
+                    <div className="col-span-7 md:col-span-6 flex items-center gap-3">
+                      <div
                         className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center font-label-md text-label-md shadow-inner"
                         style={{ background: avatarColor.bg, color: avatarColor.text }}
                       >
@@ -311,14 +311,14 @@ const PaymentList = () => {
                         <p className="font-label-sm text-[12px] text-on-surface-variant truncate">{p.plan_name}</p>
                       </div>
                     </div>
-                    
+
                     <div className="hidden md:block md:col-span-2 text-right">
                       <p className="font-label-md text-label-md text-on-surface">{displayDate}</p>
                     </div>
 
                     <div className="col-span-4 md:col-span-3 flex flex-col items-end gap-1">
                       <p className="font-label-md text-label-md text-on-surface font-bold">₹{(p.final_amount || 0).toLocaleString('en-IN')}</p>
-                      
+
                       <div className="flex gap-1 flex-wrap justify-end">
                         <span className={`font-label-sm text-[10px] px-2 py-[1px] rounded font-bold uppercase ${
                           p.status === 'paid' ? 'text-tertiary bg-tertiary/10' :
@@ -326,7 +326,7 @@ const PaymentList = () => {
                         }`}>
                           {p.status}
                         </span>
-                        
+
                         {(p.status === 'pending' || p.status === 'partial') && (
                           <button
                             onClick={(e) => handleClearDue(e, p)}
@@ -338,6 +338,17 @@ const PaymentList = () => {
                         )}
                       </div>
                       <p className="md:hidden font-label-sm text-[10px] text-on-surface-variant mt-1">{displayDate}</p>
+                    </div>
+
+                    {/* Chevron — navigate to member's full payment history */}
+                    <div className="col-span-1 flex justify-end">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/owner/payments/member/${p.member_id}`); }}
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-primary/10 transition-colors"
+                        title="View all payments for this member"
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 18 }}>chevron_right</span>
+                      </button>
                     </div>
                   </div>
                 );

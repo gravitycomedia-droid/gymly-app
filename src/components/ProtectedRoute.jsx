@@ -3,8 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { can } from '../utils/permissions';
 import AccessRestricted from './AccessRestricted';
 
-const ProtectedRoute = ({ children, requiredRole, allowedRoles, requiredPermission }) => {
-  const { user, userDoc, loading } = useAuth();
+const ProtectedRoute = ({ children, requiredRole, allowedRoles, requiredPermission, requireSuperAdmin }) => {
+  const { user, userDoc, superAdmin, loading } = useAuth();
 
   if (loading) {
     return (
@@ -17,6 +17,11 @@ const ProtectedRoute = ({ children, requiredRole, allowedRoles, requiredPermissi
   }
 
   if (!user) return <Navigate to="/select-role" replace />;
+
+  // Platform super-admin gate (claim-based; Firestore rules are the real enforcement)
+  if (requireSuperAdmin && !superAdmin) {
+    return <AccessRestricted message="This area is restricted to platform administrators." />;
+  }
 
   // Single role check
   if (requiredRole && userDoc?.role !== requiredRole) {

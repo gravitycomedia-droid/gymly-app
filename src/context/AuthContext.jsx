@@ -16,6 +16,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userDoc, setUserDoc] = useState(null);
   const [gymDoc, setGymDoc] = useState(null);
+  const [superAdmin, setSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const tokenRefreshed = useRef(false);
 
@@ -71,6 +72,7 @@ export const AuthProvider = ({ children }) => {
           profile_photo: '',
           permissions: ROLE_PERMISSIONS[mockRole] || []
         });
+        setSuperAdmin(mockRole === 'admin');
         setLoading(false);
         return;
       }
@@ -92,6 +94,13 @@ export const AuthProvider = ({ children }) => {
           tokenRefreshed.current = true;
           await firebaseUser.getIdToken(true).catch(() => {});
         }
+
+        // Read the super_admin platform claim from the (refreshed) token.
+        try {
+          const tr = await firebaseUser.getIdTokenResult();
+          setSuperAdmin(tr.claims.super_admin === true);
+        } catch { setSuperAdmin(false); }
+
         const fetchedDoc = await refreshUserDoc(firebaseUser.uid);
 
         // Heal missing custom claims: if the user doc has gym_id but the JWT
@@ -112,6 +121,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         setUserDoc(null);
         setGymDoc(null);
+        setSuperAdmin(false);
         tokenRefreshed.current = false;
       }
       setLoading(false);
@@ -124,6 +134,7 @@ export const AuthProvider = ({ children }) => {
     user,
     userDoc,
     gymDoc,
+    superAdmin,
     loading,
     refreshUserDoc,
     refreshGymDoc,

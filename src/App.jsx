@@ -40,6 +40,7 @@ const MemberPayments       = lazy(() => import('./pages/MemberPayments/MemberPay
 const PaymentList          = lazy(() => import('./pages/Payments/PaymentList'));
 const AddPayment           = lazy(() => import('./pages/Payments/AddPayment'));
 const PaymentDetail        = lazy(() => import('./pages/Payments/PaymentDetail'));
+const MemberPaymentHistory = lazy(() => import('./pages/Payments/MemberPaymentHistory'));
 const MembershipPlansList  = lazy(() => import('./pages/MembershipPlans/MembershipPlansList'));
 const AddMembershipPlan    = lazy(() => import('./pages/MembershipPlans/AddMembershipPlan'));
 const Analytics            = lazy(() => import('./pages/Analytics/Analytics'));
@@ -55,7 +56,9 @@ const GymLandingPage       = lazy(() => import('./pages/Subscription/GymLandingP
 const OwnerSubscriptionPage = lazy(() => import('./pages/Subscription/OwnerSubscriptionPage'));
 const LeadsDashboard       = lazy(() => import('./pages/OwnerDashboard/LeadsDashboard'));
 const MemberAgreement      = lazy(() => import('./pages/Agreement/MemberAgreement'));
-const AdminDashboard       = lazy(() => import('./pages/Admin/AdminDashboard'));
+const SuperAdminDashboard  = lazy(() => import('./pages/Admin/SuperAdminDashboard'));
+const BroadcastsPage       = lazy(() => import('./pages/Admin/BroadcastsPage'));
+const PlansPage            = lazy(() => import('./pages/Admin/PlansPage'));
 const SubscriptionGate     = lazy(() => import('./components/SubscriptionGate'));
 const NumberingSettings    = lazy(() => import('./pages/Settings/NumberingSettings'));
 const CardEditor           = lazy(() => import('./pages/Settings/CardEditor'));
@@ -229,6 +232,16 @@ function AnimatedRoutes() {
             }
           />
           <Route
+            path="/owner/payments/member/:memberId"
+            element={
+              <ProtectedRoute>
+                <OwnerLayout activeTab="payments">
+                  <SubscriptionGate feature="payments"><PageTransition><MemberPaymentHistory /></PageTransition></SubscriptionGate>
+                </OwnerLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/owner/payments/:id"
             element={
               <ProtectedRoute>
@@ -301,10 +314,18 @@ function AnimatedRoutes() {
             element={<ProtectedRoute allowedRoles={['owner']}><PageTransition><OwnerSubscriptionPage /></PageTransition></ProtectedRoute>}
           />
 
-          {/* Super-Admin Portal */}
+          {/* Super-Admin Portal — platform control plane (super_admin claim) */}
           <Route
             path="/admin"
-            element={<ProtectedRoute allowedRoles={['admin']}><PageTransition><AdminDashboard /></PageTransition></ProtectedRoute>}
+            element={<ProtectedRoute requireSuperAdmin><PageTransition><SuperAdminDashboard /></PageTransition></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/broadcasts"
+            element={<ProtectedRoute requireSuperAdmin><PageTransition><BroadcastsPage /></PageTransition></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/plans"
+            element={<ProtectedRoute requireSuperAdmin><PageTransition><PlansPage /></PageTransition></ProtectedRoute>}
           />
 
           {/* Settings */}

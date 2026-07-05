@@ -173,9 +173,10 @@ function formatDate(timestamp) {
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-// ─── Scheduled: Retry Failed Messages (Every 5 min) ───
+// ─── Scheduled: Retry Failed Messages (Every 30 min) ───
 exports.retryFailedMessages = functions.pubsub
-  .schedule("every 5 minutes")
+  .schedule("every 30 minutes")
+  .timeZone("Asia/Kolkata")
   .onRun(async () => {
     const now = admin.firestore.Timestamp.now();
 
@@ -288,54 +289,6 @@ exports.dailyExpiryReminders = functions.pubsub
     return null;
   });
 
-// ─── Scheduled: Daily Workout Reminder (10 AM IST = 4:30 AM UTC) ───
-exports.dailyWorkoutReminder = functions.pubsub
-  .schedule("30 4 * * *")
-  .timeZone("Asia/Kolkata")
-  .onRun(async () => {
-    try {
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-
-      const membersSnap = await db
-        .collection("users")
-        .where("role", "==", "member")
-        .where("subscription_expiry", ">", admin.firestore.Timestamp.now())
-        .get();
-
-      for (const memberDoc of membersSnap.docs) {
-        const member = memberDoc.data();
-        if (!member.workout_plan_id || !member.gym_id) continue;
-
-        const todayLogs = await db
-          .collection("workout_logs")
-          .where("member_id", "==", memberDoc.id)
-          .where("client_date", ">=", todayStr)
-          .limit(1)
-          .get();
-
-        if (!todayLogs.empty) continue;
-
-        const gymSnap = await db.collection("gyms").doc(member.gym_id).get();
-        const gym = gymSnap.exists ? gymSnap.data() : {};
-
-        await sendAndLog({
-          phone: member.phone,
-          template: "workout_reminder",
-          params: {
-            gymName: gym.name || "Gym",
-            memberName: member.name || "Member",
-          },
-          gymId: member.gym_id,
-          memberId: memberDoc.id,
-        });
-      }
-    } catch (error) {
-      console.error("Workout reminder error:", error);
-    }
-    return null;
-  });
-
 // ─── Scheduled: Pending Payment Reminder (Monday 10:30 AM IST = 5:00 AM UTC) ───
 exports.pendingPaymentReminder = functions.pubsub
   .schedule("0 5 * * 1")
@@ -436,69 +389,6 @@ exports.onPaymentUpdated = functions.firestore
       memberId: payment.member_id,
     });
 
-    return null;
-  });
-
-// ─── Scheduled: Daily Inactivity Check (11 AM IST = 5:30 AM UTC) ───
-exports.dailyInactivityCheck = functions.pubsub
-  .schedule("30 5 * * *")
-  .timeZone("Asia/Kolkata")
-  .onRun(async () => {
-    try {
-      const now = new Date();
-      const gymsSnap = await db.collection("gyms").get();
-      const gymsWithInactivity = [];
-      gymsSnap.forEach(doc => {
-        const gym = doc.data();
-        if (gym.messaging_config && gym.messaging_config.inactivity_alerts === true) {
-          gymsWithInactivity.push({ id: doc.id, ...gym });
-        }
-      });
-
-      if (gymsWithInactivity.length === 0) return null;
-
-      for (const gym of gymsWithInactivity) {
-        const membersSnap = await db.collection("users")
-          .where("gym_id", "==", gym.id)
-          .where("role", "==", "member")
-          .where("subscription_expiry", ">", admin.firestore.Timestamp.now())
-          .get();
-
-        for (const memberDoc of membersSnap.docs) {
-          const member = memberDoc.data();
-          if (!member.phone) continue;
-
-          const attSnap = await db.collection("attendance_logs")
-            .where("member_id", "==", memberDoc.id)
-            .orderBy("timestamp", "desc")
-            .limit(1)
-            .get();
-
-          let inactiveDays = 4;
-          if (!attSnap.empty) {
-            const lastLogTime = attSnap.docs[0].data().timestamp.toDate();
-            const diffTime = Math.abs(now - lastLogTime);
-            inactiveDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-          }
-
-          if (inactiveDays >= 3 && inactiveDays <= 4) {
-            await sendAndLog({
-              phone: member.phone,
-              template: "inactivity_alert",
-              params: {
-                gymName: gym.name || "Gym",
-                memberName: member.name || "Member",
-                gymPhone: gym.phone || "",
-              },
-              gymId: gym.id,
-              memberId: memberDoc.id,
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Inactivity check error:", error);
-    }
     return null;
   });
 
@@ -780,9 +670,9 @@ exports.addManualPayment = functions.https.onRequest(async (req, res) => {
   }
 });
 
-// Cleanup scheduled jobs — log retention + workout archival (N-10, N-11)
-const { cleanOldWhatsappLogs, archiveOldWorkoutLogs } = require("./src/cleanup");
-exports.cleanOldWhatsappLogs  = cleanOldWhatsappLogs;
+// Cleanup scheduled jobs — workout archival (N-11).
+// whatsapp_logs retention (N-10) is now a Firestore TTL policy on sent_at, not a cron job.
+const { archiveOldWorkoutLogs } = require("./src/cleanup");
 exports.archiveOldWorkoutLogs = archiveOldWorkoutLogs;
 
 // Custom JWT Claims — embeds role + gym_id into Auth token (O-2)
@@ -790,15 +680,37 @@ const { onUserWrite } = require("./src/userClaims");
 exports.onUserWrite = onUserWrite;
 
 // Pre-computed Stats Document — powers OwnerDashboard without full collection reads (O-3)
-const { statsOnUserWrite, statsOnPaymentWrite, statsOnAttendanceWrite, statsResetDaily } = require("./src/gymStats");
+// statsResetDaily (nightly full resync) was removed — the 3 onWrite triggers below
+// already keep stats fresh in real time; see PR description for the accepted staleness tradeoff.
+const { statsOnUserWrite, statsOnPaymentWrite, statsOnAttendanceWrite } = require("./src/gymStats");
 exports.statsOnUserWrite      = statsOnUserWrite;
 exports.statsOnPaymentWrite   = statsOnPaymentWrite;
 exports.statsOnAttendanceWrite = statsOnAttendanceWrite;
-exports.statsResetDaily       = statsResetDaily;
 
-// ─── 4. Trial Expiry Check (Hourly Scheduled) ───
+// Platform Stats — Super Admin KPI rollup (platform_stats/global), scheduled (SA-1)
+// + denormalized gym_summaries for cheap N-read aggregation (SA-3 efficiency)
+const { recomputePlatformStats, backfillPlatformStats, mirrorSubscriptionToGym } = require("./src/platformStats");
+exports.recomputePlatformStats = recomputePlatformStats;
+exports.backfillPlatformStats  = backfillPlatformStats;
+exports.mirrorSubscriptionToGym = mirrorSubscriptionToGym;
+
+// Super Admin Control — Phase 2 mutations (plan/trial/status/plans CRUD), audited (SA-2)
+const adminControl = require("./src/adminControl");
+exports.adminAssignPlan       = adminControl.adminAssignPlan;
+exports.adminSetTrial         = adminControl.adminSetTrial;
+exports.adminSetGymStatus     = adminControl.adminSetGymStatus;
+exports.adminUpsertPlan       = adminControl.adminUpsertPlan;
+exports.adminSetPlanActive    = adminControl.adminSetPlanActive;
+exports.adminSeedDefaultPlans = adminControl.adminSeedDefaultPlans;
+exports.adminMarkSubscriptionPaid = adminControl.adminMarkSubscriptionPaid;
+exports.adminUpdateGymSettings    = adminControl.adminUpdateGymSettings;
+exports.adminCreateBroadcast      = adminControl.adminCreateBroadcast;
+exports.adminSetBroadcastActive   = adminControl.adminSetBroadcastActive;
+exports.adminDeleteBroadcast      = adminControl.adminDeleteBroadcast;
+
+// ─── 4. Trial Expiry Check (Daily 6 AM IST) ───
 exports.checkTrialExpiry = functions.pubsub
-  .schedule("0 * * * *")
+  .schedule("0 6 * * *")
   .timeZone("Asia/Kolkata")
   .onRun(async () => {
     try {
