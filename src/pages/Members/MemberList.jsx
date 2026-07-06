@@ -9,6 +9,8 @@ import RenewModal from '../../components/RenewModal';
 import BottomNav from '../../components/BottomNav';
 import './MemberList.css';
 
+const PAGE_SIZE = 10; // render members in pages of 10 with a "Load more" button
+
 const MemberList = ({ role = 'owner' }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -32,6 +34,7 @@ const MemberList = ({ role = 'owner' }) => {
   const [showFab, setShowFab] = useState(true);
   const addCardRef = useRef(null);
   const [numberingSettings, setNumberingSettings] = useState(null);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   // ── Multi-select delete state ──────────────────────────────
   const [selectMode, setSelectMode] = useState(false);
@@ -159,8 +162,17 @@ const filteredMembers = useMemo(() => {
     return result;
   }, [visibleMembers, tab, activeFilter, search]);
 
+  // Reset to the first page whenever the filtered set changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [tab, activeFilter, search]);
+
   const plans = gym?.settings?.plans?.filter((p) => p.is_active) || [];
-  const basePath = role === 'manager' ? '/manager' : '/owner';
+  const basePath =
+    role === 'manager' ? '/manager'
+    : role === 'receptionist' ? '/receptionist'
+    : '/owner';
+  // Receptionists and managers can edit members but not delete them.
+  const canEdit = role === 'owner' || role === 'manager' || role === 'receptionist';
+  const canDelete = role === 'owner';
 
   const handleView = (id) => navigate(`${basePath}/members/${id}`);
   const handleEdit = (id) => navigate(`${basePath}/members/${id}/edit`);
@@ -251,7 +263,7 @@ const filteredMembers = useMemo(() => {
               G
             </div>
             <div>
-              <p className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">Owner Dashboard</p>
+              <p className="font-label-sm text-[10px] text-on-surface-variant uppercase tracking-wider">{role === 'receptionist' ? 'Front Desk' : role === 'manager' ? 'Manager' : role === 'trainer' ? 'Trainer' : 'Owner Dashboard'}</p>
               <h1 className="font-headline-sm text-lg font-bold text-on-surface">Member Directory</h1>
             </div>
           </div>
@@ -266,7 +278,8 @@ const filteredMembers = useMemo(() => {
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
               </button>
             )}
-            {/* Multi-select toggle */}
+            {/* Multi-select toggle — bulk delete is owner-only */}
+            {canDelete && (
             <button
               onClick={() => selectMode ? exitSelectMode() : setSelectMode(true)}
               className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
@@ -283,6 +296,7 @@ const filteredMembers = useMemo(() => {
                 }
               </svg>
             </button>
+            )}
             <button
               onClick={() => navigate(`${basePath}/members/add`)}
               className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-primary hover:backdrop-blur-xl hover:bg-white/10 transition-all duration-300 active:scale-95 hidden md:flex"
@@ -394,15 +408,15 @@ const filteredMembers = useMemo(() => {
         {/* Member Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredMembers.length > 0 ? (
-            filteredMembers.map((member) => (
+            filteredMembers.slice(0, visibleCount).map((member) => (
               <MemberCard
                 key={member.id}
                 member={member}
                 gym={gym}
                 onView={handleView}
                 onRenew={handleRenew}
-                onEdit={role === 'owner' ? handleEdit : undefined}
-                onDelete={role === 'owner' ? handleDeleteClick : undefined}
+                onEdit={canEdit ? handleEdit : undefined}
+                onDelete={canDelete ? handleDeleteClick : undefined}
                 isSelected={selectedIds.has(member.id)}
                 onSelect={selectMode ? toggleSelect : null}
                 useEnrollmentIdForAdmin={numberingSettings?.useEnrollmentIdForAdmin || false}
@@ -443,6 +457,21 @@ const filteredMembers = useMemo(() => {
             </div>
           )}
         </div>
+
+        {/* Load more */}
+        {filteredMembers.length > visibleCount && (
+          <div className="flex flex-col items-center gap-2 mt-8">
+            <button
+              onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+              className="px-6 py-2.5 rounded-full glass-panel border border-primary/30 text-primary font-label-md text-sm font-semibold hover:bg-primary/10 transition-all active:scale-95"
+            >
+              Load {Math.min(PAGE_SIZE, filteredMembers.length - visibleCount)} more
+            </button>
+            <span className="text-xs text-on-surface-variant">
+              Showing {Math.min(visibleCount, filteredMembers.length)} of {filteredMembers.length}
+            </span>
+          </div>
+        )}
       </main>
 
       {/* Floating Action Button */}

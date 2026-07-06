@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:#f4f2f7;font-family:'Inter',system-ui,sans-serif;color:#1b1b1d;-webkit-font-smoothing:antialiased}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:rgba(27,27,29,.16);border-radius:8px}
+  input{font-family:inherit}
+  @keyframes fdScan{0%{transform:translateY(-2px);opacity:0}12%{opacity:1}88%{opacity:1}100%{transform:translateY(220px);opacity:0}}
+  @keyframes fdPulse{0%{box-shadow:0 0 0 0 rgba(53,210,154,.55)}70%{box-shadow:0 0 0 9px rgba(53,210,154,0)}100%{box-shadow:0 0 0 0 rgba(53,210,154,0)}}
+  @keyframes fdPop{0%{transform:scale(.82);opacity:0}55%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+  @keyframes fdRing{0%{transform:scale(.4);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes fdUp{0%{transform:translateY(10px);opacity:0}100%{transform:translateY(0);opacity:1}}
+  @keyframes fdShimmer{0%{background-position:-360px 0}100%{background-position:360px 0}}
+  @keyframes fdCount{0%{transform:translateY(6px) scale(1.14);opacity:.3}100%{transform:translateY(0) scale(1);opacity:1}}
+  @keyframes fdToast{0%{transform:translateY(14px);opacity:0}100%{transform:translateY(0);opacity:1}}
+  @keyframes fdSpin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(at 12% 8%,rgba(0,88,188,.10) 0,transparent 46%),radial-gradient(at 88% 4%,rgba(109,54,212,.10) 0,transparent 44%),radial-gradient(at 50% 100%,rgba(29,158,117,.08) 0,transparent 52%),#f4f2f7;padding:22px 22px 96px">
+<div style="max-width:1480px;margin:0 auto">
+
+  <!-- OFFLINE BANNER -->
+  <sc-if value="{{ offline }}" hint-placeholder-val="{{ false }}">
+    <div role="status" style="display:flex;align-items:center;gap:12px;padding:12px 16px;margin-bottom:14px;border-radius:14px;background:rgba(239,159,39,.12);border:1px solid rgba(239,159,39,.34)">
+      <span style="width:9px;height:9px;border-radius:50%;background:#EF9F27;flex:none;animation:fdPulse 1.8s infinite"></span>
+      <span style="font-family:'Material Symbols Outlined';font-size:20px;color:#a86a10;flex:none">wifi_off</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13.5px;font-weight:700;color:#8a5a0c">You're offline — showing last synced data</div>
+        <div style="font-size:12px;color:#a86a10">Check-ins are paused until the connection returns. Reconnecting…</div>
+      </div>
+      <span style="width:16px;height:16px;border:2px solid rgba(168,106,16,.35);border-top-color:#a86a10;border-radius:50%;animation:fdSpin .8s linear infinite;flex:none"></span>
+    </div>
+  </sc-if>
+
+  <!-- HEADER -->
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px">
+    <div style="width:44px;height:44px;border-radius:13px;background:linear-gradient(135deg,#0058bc,#6d36d4);display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 6px 16px rgba(0,88,188,.28)">
+      <span style="font-family:'Material Symbols Outlined';font-size:24px;color:#fff;font-variation-settings:'FILL' 1">fitness_center</span>
+    </div>
+    <div style="flex:1;min-width:0">
+      <div style="font-family:'Geist',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#717786;font-weight:600">Front Desk</div>
+      <div style="font-family:'Hanken Grotesk',sans-serif;font-size:21px;font-weight:700;line-height:1.1">Iron Republic — Andheri</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;padding:7px 13px;border-radius:12px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(20px)">
+      <span style="width:8px;height:8px;border-radius:50%;background:{{ connDot }}"></span>
+      <span style="font-family:'Geist',monospace;font-size:12px;font-weight:600;color:{{ connText }}">{{ connLabel }}</span>
+    </div>
+    <div style="text-align:right;padding:0 4px">
+      <div style="font-family:'Geist',monospace;font-size:19px;font-weight:600;letter-spacing:.02em;line-height:1">{{ clock }}</div>
+      <div style="font-size:11px;color:#717786;margin-top:2px">Sat · 6 Jul</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px;padding:6px 12px 6px 6px;border-radius:40px;background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.85)">
+      <span style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0058bc,#6d36d4);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex:none">PN</span>
+      <div style="line-height:1.15">
+        <div style="font-size:12.5px;font-weight:700">Priya N.</div>
+        <div style="font-size:10.5px;color:#717786">Receptionist</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE STATUS STRIP -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px">
+
+    <!-- Total (quiet, reference) -->
+    <div style="position:relative;padding:16px 17px;border-radius:18px;background:rgba(255,255,255,.55);border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(20px)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-family:'Material Symbols Outlined';font-size:19px;color:#8b90a0">groups</span>
+        <span style="font-family:'Geist',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#717786;font-weight:600">Total members</span>
+      </div>
+      <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}"><div style="width:64px;height:38px;border-radius:8px;background:linear-gradient(90deg,#eee 25%,#f6f6f8 50%,#eee 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite"></div></sc-if>
+      <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}"><div style="font-family:'Hanken Grotesk',sans-serif;font-size:38px;font-weight:800;line-height:1;color:#414755;letter-spacing:-.02em">{{ sTotal }}</div></sc-if>
+      <div style="font-size:11.5px;color:#8b90a0;margin-top:6px">On the roster</div>
+    </div>
+
+    <!-- Active (calm green) -->
+    <button onClick="{{ onFilterActive }}" style="position:relative;text-align:left;cursor:pointer;padding:16px 17px;border-radius:18px;background:rgba(231,248,241,.7);border:1px solid {{ activeBorder }};backdrop-filter:blur(20px);overflow:hidden">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:#1D9E75"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-family:'Material Symbols Outlined';font-size:19px;color:#0f7a56;font-variation-settings:'FILL' 1">check_circle</span>
+        <span style="font-family:'Geist',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#0f7a56;font-weight:700">Active</span>
+      </div>
+      <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}"><div style="width:52px;height:38px;border-radius:8px;background:linear-gradient(90deg,#dcefe6 25%,#eef8f3 50%,#dcefe6 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite"></div></sc-if>
+      <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}"><div style="font-family:'Hanken Grotesk',sans-serif;font-size:38px;font-weight:800;line-height:1;color:#0d5e42;letter-spacing:-.02em">{{ sActive }}</div></sc-if>
+      <div style="font-size:11.5px;color:#0f7a56;margin-top:6px">Memberships valid</div>
+    </button>
+
+    <!-- Expiring (amber, routine attention) -->
+    <button onClick="{{ onFilterExpiring }}" style="position:relative;text-align:left;cursor:pointer;padding:16px 17px;border-radius:18px;background:rgba(255,241,220,.75);border:1px solid {{ expiringBorder }};backdrop-filter:blur(20px);overflow:hidden">
+      <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:#EF9F27"></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-family:'Material Symbols Outlined';font-size:19px;color:#a86a10">schedule</span>
+        <span style="font-family:'Geist',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#a86a10;font-weight:700">Expiring soon</span>
+      </div>
+      <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}"><div style="width:40px;height:38px;border-radius:8px;background:linear-gradient(90deg,#f3e6cf 25%,#fbf1e0 50%,#f3e6cf 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite"></div></sc-if>
+      <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}"><div style="font-family:'Hanken Grotesk',sans-serif;font-size:38px;font-weight:800;line-height:1;color:#8a5a0c;letter-spacing:-.02em">{{ sExpiring }}</div></sc-if>
+      <div style="display:flex;align-items:center;gap:5px;margin-top:6px"><span style="font-size:11.5px;color:#a86a10">Within {{ windowLabel }} days · tap to follow up</span></div>
+    </button>
+
+    <!-- Expired (red, solid-shape distinct) -->
+    <button onClick="{{ onFilterExpired }}" style="position:relative;text-align:left;cursor:pointer;padding:16px 17px;border-radius:18px;background:rgba(226,75,74,.11);border:1px solid {{ expiredBorder }};border-left:4px solid #E24B4A;backdrop-filter:blur(20px)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-family:'Material Symbols Outlined';font-size:19px;color:#c22f28;font-variation-settings:'FILL' 1">cancel</span>
+        <span style="font-family:'Geist',monospace;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#c22f28;font-weight:700">Expired</span>
+      </div>
+      <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}"><div style="width:40px;height:38px;border-radius:8px;background:linear-gradient(90deg,#f2d8d6 25%,#fbe9e8 50%,#f2d8d6 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite"></div></sc-if>
+      <sc-if value="{{ notLoading }}" hint-placeholder-val="{{ true }}"><div style="font-family:'Hanken Grotesk',sans-serif;font-size:38px;font-weight:800;line-height:1;color:#b3261e;letter-spacing:-.02em">{{ sExpired }}</div></sc-if>
+      <div style="font-size:11.5px;color:#c22f28;margin-top:6px;font-weight:600">Need renewal · tap to view</div>
+    </button>
+
+  </div>
+
+  <!-- MAIN -->
+  <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+
+    <!-- LEFT: CHECK-IN -->
+    <div style="flex:1 1 380px;min-width:340px;padding:18px;border-radius:22px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(24px);box-shadow:0 8px 30px -8px rgba(20,20,45,.10)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <div style="font-family:'Geist',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#717786;font-weight:600">Check-in</div>
+          <div style="font-family:'Hanken Grotesk',sans-serif;font-size:18px;font-weight:700">Scan a member in</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#717786"><span style="font-family:'Material Symbols Outlined';font-size:16px">photo_camera</span>Camera ready</div>
+      </div>
+
+      <!-- Viewport -->
+      <div style="position:relative;height:300px;border-radius:18px;overflow:hidden;background:radial-gradient(circle at 50% 42%,#1b2028,#0c0e12);border:1px solid #23282f">
+
+        <!-- IDLE -->
+        <sc-if value="{{ isIdle }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+            <div style="position:relative;width:150px;height:150px">
+              <div style="position:absolute;left:0;top:0;width:30px;height:30px;border-top:3px solid #4a5563;border-left:3px solid #4a5563;border-radius:8px 0 0 0"></div>
+              <div style="position:absolute;right:0;top:0;width:30px;height:30px;border-top:3px solid #4a5563;border-right:3px solid #4a5563;border-radius:0 8px 0 0"></div>
+              <div style="position:absolute;left:0;bottom:0;width:30px;height:30px;border-bottom:3px solid #4a5563;border-left:3px solid #4a5563;border-radius:0 0 0 8px"></div>
+              <div style="position:absolute;right:0;bottom:0;width:30px;height:30px;border-bottom:3px solid #4a5563;border-right:3px solid #4a5563;border-radius:0 0 8px 0"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:56px;color:#3a424e">qr_code_2</span></div>
+            </div>
+            <div style="text-align:center">
+              <div style="color:#c7ccd4;font-size:14px;font-weight:600">Ready to scan</div>
+              <div style="color:#6f7681;font-size:12px;margin-top:3px">Point the member's QR at the camera</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <!-- SCANNING -->
+        <sc-if value="{{ isScanning }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+            <div style="position:relative;width:150px;height:150px">
+              <div style="position:absolute;left:0;top:0;width:30px;height:30px;border-top:3px solid #35d29a;border-left:3px solid #35d29a;border-radius:8px 0 0 0"></div>
+              <div style="position:absolute;right:0;top:0;width:30px;height:30px;border-top:3px solid #35d29a;border-right:3px solid #35d29a;border-radius:0 8px 0 0"></div>
+              <div style="position:absolute;left:0;bottom:0;width:30px;height:30px;border-bottom:3px solid #35d29a;border-left:3px solid #35d29a;border-radius:0 0 0 8px"></div>
+              <div style="position:absolute;right:0;bottom:0;width:30px;height:30px;border-bottom:3px solid #35d29a;border-right:3px solid #35d29a;border-radius:0 0 8px 0"></div>
+              <div style="position:absolute;left:6px;right:6px;top:0;height:2px;background:linear-gradient(90deg,transparent,#35d29a,transparent);box-shadow:0 0 12px #35d29a;animation:fdScan 1.3s ease-in-out infinite"></div>
+            </div>
+            <div style="color:#35d29a;font-size:14px;font-weight:600;font-family:'Geist',monospace;letter-spacing:.04em">Scanning…</div>
+          </div>
+        </sc-if>
+
+        <!-- RESULT -->
+        <sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;inset:0;background:{{ resBg }};display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px;text-align:center;animation:{{ resAnim }}" aria-live="assertive">
+            <div style="position:relative;margin-bottom:14px">
+              <div style="position:absolute;inset:-9px;border-radius:50%;border:3px solid {{ resAccent }};opacity:.55;animation:{{ resRingAnim }}"></div>
+              <sc-if value="{{ resHasMember }}" hint-placeholder-val="{{ true }}">
+                <div style="width:76px;height:76px;border-radius:50%;background:{{ resAvBg }};color:{{ resAvText }};display:flex;align-items:center;justify-content:center;font-family:'Hanken Grotesk',sans-serif;font-size:26px;font-weight:700;box-shadow:0 8px 22px rgba(0,0,0,.22)">{{ resInitials }}</div>
+              </sc-if>
+              <sc-if value="{{ resNoMember }}" hint-placeholder-val="{{ false }}">
+                <div style="width:76px;height:76px;border-radius:50%;background:{{ resAccentSoft }};display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:40px;color:{{ resAccent }};font-variation-settings:'FILL' 1">{{ resIcon }}</span></div>
+              </sc-if>
+              <sc-if value="{{ resHasMember }}" hint-placeholder-val="{{ true }}">
+                <div style="position:absolute;right:-6px;bottom:-6px;width:30px;height:30px;border-radius:50%;background:{{ resAccent }};display:flex;align-items:center;justify-content:center;border:3px solid #fff"><span style="font-family:'Material Symbols Outlined';font-size:18px;color:#fff;font-variation-settings:'FILL' 1">{{ resIcon }}</span></div>
+              </sc-if>
+            </div>
+            <div style="font-family:'Hanken Grotesk',sans-serif;font-size:22px;font-weight:800;color:#fff;line-height:1.15">{{ resName }}</div>
+            <div style="font-size:14px;font-weight:700;color:{{ resAccent }};margin-top:4px">{{ resStatus }}</div>
+            <div style="font-size:12.5px;color:rgba(255,255,255,.72);margin-top:5px;max-width:250px">{{ resDetail }}</div>
+            <sc-if value="{{ resShowStreak }}" hint-placeholder-val="{{ false }}">
+              <div style="display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:6px 12px;border-radius:20px;background:rgba(255,255,255,.14)">
+                <span style="font-family:'Material Symbols Outlined';font-size:16px;color:#ffb454;font-variation-settings:'FILL' 1">local_fire_department</span>
+                <span style="font-size:12px;font-weight:700;color:#fff">{{ resStreak }}</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{ resShowCta }}" hint-placeholder-val="{{ false }}">
+              <button onClick="{{ resOnCta }}" style="margin-top:14px;padding:9px 18px;border-radius:11px;border:1.5px solid rgba(255,255,255,.5);background:rgba(255,255,255,.14);color:#fff;font-weight:700;font-size:13px;cursor:pointer">{{ resCtaLabel }}</button>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+
+      <!-- Primary + secondary actions -->
+      <button onClick="{{ onPrimaryScan }}" style="width:100%;margin-top:16px;height:58px;border:none;border-radius:15px;background:linear-gradient(90deg,#0058bc,#6d36d4);color:#fff;font-family:'Inter',sans-serif;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 8px 22px -4px rgba(0,88,188,.42)">
+        <span style="font-family:'Material Symbols Outlined';font-size:24px">qr_code_scanner</span>Scan Member QR
+      </button>
+
+      <div style="display:flex;gap:10px;margin-top:11px">
+        <button onClick="{{ onOpenAdd }}" style="flex:1;height:46px;border-radius:13px;border:1.5px solid rgba(0,88,188,.28);background:rgba(0,88,188,.07);color:#0058bc;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          <span style="font-family:'Material Symbols Outlined';font-size:20px">person_add</span>Add Member
+        </button>
+        <button onClick="{{ onManual }}" style="flex:none;height:46px;padding:0 16px;border-radius:13px;border:1.5px solid rgba(27,27,29,.12);background:transparent;color:#414755;font-weight:600;font-size:13.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px" title="For a lost phone or guest pass">
+          <span style="font-family:'Material Symbols Outlined';font-size:19px">badge</span>Manual
+        </button>
+      </div>
+
+      <!-- Demo strip -->
+      <div style="margin-top:14px;padding:11px 12px;border-radius:13px;border:1px dashed rgba(27,27,29,.16);background:rgba(27,27,29,.02)">
+        <div style="font-family:'Geist',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#8b90a0;font-weight:600;margin-bottom:9px">Demo · simulate a scan outcome</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          <button onClick="{{ simSuccess }}" style="padding:7px 11px;border-radius:9px;border:1px solid rgba(29,158,117,.3);background:rgba(29,158,117,.09);color:#0f7a56;font-size:12px;font-weight:600;cursor:pointer">✓ Success</button>
+          <button onClick="{{ simExpired }}" style="padding:7px 11px;border-radius:9px;border:1px solid rgba(226,75,74,.3);background:rgba(226,75,74,.08);color:#c22f28;font-size:12px;font-weight:600;cursor:pointer">Expired member</button>
+          <button onClick="{{ simDuplicate }}" style="padding:7px 11px;border-radius:9px;border:1px solid rgba(239,159,39,.34);background:rgba(239,159,39,.1);color:#a86a10;font-size:12px;font-weight:600;cursor:pointer">Already in</button>
+          <button onClick="{{ simWrongGym }}" style="padding:7px 11px;border-radius:9px;border:1px solid rgba(27,27,29,.14);background:transparent;color:#414755;font-size:12px;font-weight:600;cursor:pointer">Wrong gym</button>
+          <button onClick="{{ simInvalid }}" style="padding:7px 11px;border-radius:9px;border:1px solid rgba(27,27,29,.14);background:transparent;color:#414755;font-size:12px;font-weight:600;cursor:pointer">Bad QR</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: DIRECTORY -->
+    <div style="flex:2 1 560px;min-width:340px;display:flex;flex-direction:column;gap:14px">
+
+      <div style="padding:18px;border-radius:22px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(24px);box-shadow:0 8px 30px -8px rgba(20,20,45,.10)">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+          <div style="display:flex;align-items:center;gap:9px">
+            <span style="font-family:'Hanken Grotesk',sans-serif;font-size:18px;font-weight:700">Members</span>
+            <span style="font-family:'Geist',monospace;font-size:12px;font-weight:600;color:#717786;padding:2px 9px;border-radius:20px;background:rgba(27,27,29,.05)">{{ listCount }}</span>
+          </div>
+          <div style="flex:1;min-width:180px;position:relative">
+            <span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-family:'Material Symbols Outlined';font-size:19px;color:#8b90a0;pointer-events:none">search</span>
+            <input type="text" value="{{ searchVal }}" onInput="{{ onSearch }}" placeholder="Search name or phone…" aria-label="Search members" style="width:100%;height:42px;padding:0 14px 0 38px;border-radius:12px;border:1px solid rgba(27,27,29,.1);background:rgba(255,255,255,.7);font-size:14px;color:#1b1b1d;outline:none">
+          </div>
+        </div>
+
+        <!-- Filter tabs -->
+        <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">
+          <button onClick="{{ onFilterAll }}" style="padding:8px 14px;border-radius:11px;border:1px solid {{ tabAllBorder }};background:{{ tabAllBg }};color:{{ tabAllColor }};font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px">All <span style="opacity:.65;font-family:'Geist',monospace;font-size:11px">{{ sTotal }}</span></button>
+          <button onClick="{{ onFilterActive }}" style="padding:8px 14px;border-radius:11px;border:1px solid {{ tabActiveBorder }};background:{{ tabActiveBg }};color:{{ tabActiveColor }};font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px"><span style="font-family:'Material Symbols Outlined';font-size:16px">check_circle</span>Active <span style="opacity:.65;font-family:'Geist',monospace;font-size:11px">{{ sActive }}</span></button>
+          <button onClick="{{ onFilterExpiring }}" style="padding:8px 14px;border-radius:11px;border:1px solid {{ tabExpiringBorder }};background:{{ tabExpiringBg }};color:{{ tabExpiringColor }};font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px"><span style="font-family:'Material Symbols Outlined';font-size:16px">schedule</span>Expiring <span style="opacity:.65;font-family:'Geist',monospace;font-size:11px">{{ sExpiring }}</span></button>
+          <button onClick="{{ onFilterExpired }}" style="padding:8px 14px;border-radius:11px;border:1px solid {{ tabExpiredBorder }};background:{{ tabExpiredBg }};color:{{ tabExpiredColor }};font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px"><span style="font-family:'Material Symbols Outlined';font-size:16px">cancel</span>Expired <span style="opacity:.65;font-family:'Geist',monospace;font-size:11px">{{ sExpired }}</span></button>
+          <div style="width:1px;align-self:stretch;background:rgba(27,27,29,.1);margin:2px 3px"></div>
+          <button onClick="{{ onFilterInGym }}" style="padding:8px 14px;border-radius:11px;border:1px solid {{ tabInGymBorder }};background:{{ tabInGymBg }};color:{{ tabInGymColor }};font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px"><span style="width:7px;height:7px;border-radius:50%;background:{{ liveDot }};animation:{{ livePulseAnim }}"></span>In gym <span style="opacity:.7;font-family:'Geist',monospace;font-size:11px">{{ live }}</span></button>
+        </div>
+
+        <!-- List -->
+        <div style="max-height:{{ listMaxH }};overflow-y:auto;margin:0 -4px;padding:0 4px">
+          <sc-if value="{{ isInGym }}" hint-placeholder-val="{{ false }}">
+            <div aria-live="polite" style="display:flex;align-items:center;gap:14px;padding:15px 17px;margin-bottom:12px;border-radius:16px;background:linear-gradient(155deg,#181b20,#101216);border:1px solid #262a31">
+              <span style="font-family:'Material Symbols Outlined';font-size:26px;color:#35d29a;flex:none">sensors</span>
+              <div style="display:flex;flex-direction:column">
+                <div style="display:flex;align-items:baseline;gap:7px"><span style="font-family:'Hanken Grotesk',sans-serif;font-size:32px;font-weight:800;line-height:1;color:#fff;animation:{{ liveNumAnim }}">{{ live }}</span><span style="font-size:12px;color:#6f7681">members inside</span></div>
+                <span style="font-size:11px;color:#6f7681;font-family:'Geist',monospace;margin-top:4px">updated {{ liveAgoLabel }} · showing recent arrivals below</span>
+              </div>
+              <div style="flex:1"></div>
+              <div style="display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;background:rgba(53,210,154,.14);flex:none"><span style="width:7px;height:7px;border-radius:50%;background:{{ liveDot }};animation:{{ livePulseAnim }}"></span><span style="font-family:'Geist',monospace;font-size:10px;font-weight:700;letter-spacing:.12em;color:{{ liveTagColor }}">{{ liveTag }}</span></div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ loading }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ skeletons }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:12px;padding:12px 6px">
+                <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(90deg,#eee 25%,#f6f6f8 50%,#eee 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite;flex:none"></div>
+                <div style="flex:1"><div style="width:40%;height:13px;border-radius:6px;background:linear-gradient(90deg,#eee 25%,#f6f6f8 50%,#eee 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite;margin-bottom:8px"></div><div style="width:26%;height:11px;border-radius:6px;background:linear-gradient(90deg,#eee 25%,#f6f6f8 50%,#eee 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite"></div></div>
+                <div style="width:70px;height:24px;border-radius:20px;background:linear-gradient(90deg,#eee 25%,#f6f6f8 50%,#eee 75%);background-size:720px 100%;animation:fdShimmer 1.3s infinite"></div>
+              </div>
+            </sc-for>
+          </sc-if>
+
+          <sc-if value="{{ showList }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ list }}" as="m" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:12px;padding:{{ rowPad }};border-radius:14px;transition:background .15s" style-hover="background:rgba(0,88,188,.05)">
+                <div style="width:{{ avSize }};height:{{ avSize }};border-radius:50%;background:{{ m.avBg }};color:{{ m.avText }};display:flex;align-items:center;justify-content:center;font-family:'Hanken Grotesk',sans-serif;font-size:15px;font-weight:700;flex:none">{{ m.initials }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:14.5px;font-weight:600;color:#1b1b1d;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ m.name }}</span>
+                    <sc-if value="{{ m.inNow }}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:20px;background:rgba(29,158,117,.12);flex:none"><span style="width:5px;height:5px;border-radius:50%;background:#1D9E75"></span><span style="font-size:9.5px;font-weight:700;color:#0f7a56;font-family:'Geist',monospace">IN</span></span></sc-if>
+                  </div>
+                  <div style="font-size:12px;color:#717786;margin-top:1px">{{ m.plan }} · {{ m.phone }}</div>
+                </div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none">
+                  <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;background:{{ m.chipBg }}"><span style="font-family:'Material Symbols Outlined';font-size:14px;color:{{ m.chipText }};font-variation-settings:'FILL' 1">{{ m.chipIcon }}</span><span style="font-size:11px;font-weight:700;color:{{ m.chipText }}">{{ m.chipLabel }}</span></span>
+                  <span style="font-size:11px;color:{{ m.chipText }};font-family:'Geist',monospace">{{ m.chipSub }}</span>
+                </div>
+                <div style="display:flex;gap:5px;flex:none">
+                  <button onClick="{{ m.onCheckin }}" title="Check in" aria-label="Check in member" style="width:40px;height:40px;border-radius:11px;border:none;background:rgba(0,88,188,.09);color:#0058bc;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:20px">how_to_reg</span></button>
+                  <button onClick="{{ m.onProfile }}" title="Open profile" aria-label="Open member profile" style="width:40px;height:40px;border-radius:11px;border:none;background:rgba(27,27,29,.05);color:#717786;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:20px">chevron_right</span></button>
+                </div>
+              </div>
+            </sc-for>
+
+            <!-- Empty states -->
+            <sc-if value="{{ emptyExpired }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 20px;text-align:center">
+                <span style="font-family:'Material Symbols Outlined';font-size:38px;color:#1D9E75;font-variation-settings:'FILL' 1">task_alt</span>
+                <div style="font-family:'Hanken Grotesk',sans-serif;font-size:16px;font-weight:700;margin-top:8px;color:#0f7a56">Nothing expired right now</div>
+                <div style="font-size:12.5px;color:#717786;margin-top:3px">Every membership is current. Nice.</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ emptyExpiring }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 20px;text-align:center">
+                <span style="font-family:'Material Symbols Outlined';font-size:38px;color:#1D9E75;font-variation-settings:'FILL' 1">verified</span>
+                <div style="font-family:'Hanken Grotesk',sans-serif;font-size:16px;font-weight:700;margin-top:8px;color:#0f7a56">No renewals due this week</div>
+                <div style="font-size:12.5px;color:#717786;margin-top:3px">Nobody expires within {{ windowLabel }} days.</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ emptyInGym }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 20px;text-align:center">
+                <span style="font-family:'Material Symbols Outlined';font-size:36px;color:#8b90a0">nights_stay</span>
+                <div style="font-family:'Hanken Grotesk',sans-serif;font-size:16px;font-weight:700;margin-top:8px">Nobody's checked in yet</div>
+                <div style="font-size:12.5px;color:#717786;margin-top:3px">Members appear here as they scan in.</div>
+              </div>
+            </sc-if>
+            <sc-if value="{{ emptySearch }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:34px 20px;text-align:center">
+                <span style="font-family:'Material Symbols Outlined';font-size:36px;color:#8b90a0">search_off</span>
+                <div style="font-family:'Hanken Grotesk',sans-serif;font-size:16px;font-weight:700;margin-top:8px">No members match "{{ searchVal }}"</div>
+                <button onClick="{{ onClearSearch }}" style="margin-top:8px;background:none;border:none;color:#0058bc;font-weight:600;font-size:13px;cursor:pointer">Clear search</button>
+              </div>
+            </sc-if>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- Pending payments strip -->
+      <sc-if value="{{ showPending }}" hint-placeholder-val="{{ true }}">
+        <div style="padding:16px 18px;border-radius:22px;background:rgba(255,255,255,.62);border:1px solid rgba(255,255,255,.85);backdrop-filter:blur(24px);box-shadow:0 8px 30px -8px rgba(20,20,45,.10)">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+            <span style="font-family:'Material Symbols Outlined';font-size:19px;color:#a86a10">account_balance_wallet</span>
+            <span style="font-family:'Hanken Grotesk',sans-serif;font-size:15px;font-weight:700">Pending dues</span>
+            <span style="font-family:'Geist',monospace;font-size:11px;font-weight:700;color:#a86a10;padding:2px 8px;border-radius:20px;background:rgba(239,159,39,.14)">{{ pendingCount }}</span>
+          </div>
+          <sc-if value="{{ hasPending }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <sc-for list="{{ pending }}" as="p" hint-placeholder-count="3">
+                <div style="flex:1 1 200px;min-width:190px;display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:14px;border:1px solid rgba(239,159,39,.22);background:rgba(239,159,39,.05)">
+                  <div style="width:38px;height:38px;border-radius:50%;background:{{ p.avBg }};color:{{ p.avText }};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex:none;font-family:'Hanken Grotesk',sans-serif">{{ p.initials }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ p.name }}</div>
+                    <div style="font-size:11px;color:#717786">{{ p.note }} · <span style="color:#c22f28;font-weight:700">₹{{ p.due }}</span></div>
+                  </div>
+                  <button onClick="{{ p.onClear }}" style="flex:none;padding:7px 11px;border-radius:10px;border:1px solid rgba(29,158,117,.32);background:rgba(29,158,117,.09);color:#0f7a56;font-size:12px;font-weight:700;cursor:pointer">Clear</button>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noPending }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;align-items:center;gap:9px;padding:8px 2px;color:#0f7a56;font-size:13px;font-weight:600"><span style="font-family:'Material Symbols Outlined';font-size:20px;font-variation-settings:'FILL' 1">check_circle</span>All dues cleared — nothing pending.</div>
+          </sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+  <div role="status" aria-live="polite" style="position:fixed;left:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:11px;padding:12px 16px;border-radius:14px;background:rgba(24,27,32,.94);backdrop-filter:blur(12px);box-shadow:0 12px 34px rgba(0,0,0,.28);animation:fdToast .25s ease-out;max-width:320px">
+    <span style="width:9px;height:9px;border-radius:50%;background:{{ toastDot }};flex:none"></span>
+    <span style="font-size:13px;font-weight:500;color:#fff">{{ toastMsg }}</span>
+  </div>
+</sc-if>
+
+<!-- DEMO DOCK -->
+<div style="position:fixed;right:22px;bottom:22px;z-index:60;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:40px;background:rgba(24,27,32,.9);backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(0,0,0,.26)">
+  <span style="font-family:'Geist',monospace;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#8b93a0;padding-left:6px">Demo</span>
+  <button onClick="{{ onToggleOffline }}" style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:30px;border:none;background:{{ offlineBtnBg }};color:{{ offlineBtnColor }};font-size:12px;font-weight:600;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:17px">{{ offlineBtnIcon }}</span>{{ offlineBtnLabel }}</button>
+  <button onClick="{{ onReplayLoad }}" style="display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:30px;border:none;background:rgba(255,255,255,.1);color:#e6e8ec;font-size:12px;font-weight:600;cursor:pointer"><span style="font-family:'Material Symbols Outlined';font-size:17px">refresh</span>Reload</button>
+</div>
+
+<!-- ADD MEMBER SHEET -->
+<sc-if value="{{ addOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ onCloseAdd }}" style="position:fixed;inset:0;z-index:80;background:rgba(15,15,25,.42);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px;animation:fdToast .2s ease-out">
+    <div onClick="{{ stop }}" style="width:100%;max-width:420px;background:#fff;border-radius:22px;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:5px">
+        <div style="width:40px;height:40px;border-radius:12px;background:rgba(0,88,188,.1);display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:22px;color:#0058bc">person_add</span></div>
+        <div><div style="font-family:'Hanken Grotesk',sans-serif;font-size:18px;font-weight:700">Add Member</div><div style="font-size:12px;color:#717786">Quick capture — full onboarding opens next</div></div>
+        <button onClick="{{ onCloseAdd }}" aria-label="Close" style="margin-left:auto;width:34px;height:34px;border-radius:10px;border:none;background:rgba(27,27,29,.05);color:#717786;cursor:pointer;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:20px">close</span></button>
+      </div>
+      <div style="margin-top:16px">
+        <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:#717786;margin-bottom:6px">Full name</label>
+        <input type="text" placeholder="e.g. Aditya Kumar" style="width:100%;height:46px;padding:0 14px;border-radius:12px;border:1px solid rgba(27,27,29,.12);background:#fafafc;font-size:14px;outline:none">
+      </div>
+      <div style="display:flex;gap:11px;margin-top:13px">
+        <div style="flex:1"><label style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:#717786;margin-bottom:6px">Phone</label><input type="tel" placeholder="+91 90000 00000" style="width:100%;height:46px;padding:0 14px;border-radius:12px;border:1px solid rgba(27,27,29,.12);background:#fafafc;font-size:14px;outline:none"></div>
+        <div style="flex:1"><label style="display:block;font-size:11px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:#717786;margin-bottom:6px">Plan</label><select style="width:100%;height:46px;padding:0 12px;border-radius:12px;border:1px solid rgba(27,27,29,.12);background:#fafafc;font-size:14px;outline:none"><option>Monthly</option><option>Quarterly</option><option>Annual</option><option>Premium</option></select></div>
+      </div>
+      <button onClick="{{ onSubmitAdd }}" style="width:100%;height:52px;margin-top:20px;border:none;border-radius:14px;background:linear-gradient(90deg,#0058bc,#6d36d4);color:#fff;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">Continue to onboarding<span style="font-family:'Material Symbols Outlined';font-size:20px">arrow_forward</span></button>
+    </div>
+  </div>
+</sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:940},&quot;expiringWindowDays&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:7,&quot;tsType&quot;:&quot;number&quot;,&quot;min&quot;:3,&quot;max&quot;:30,&quot;unit&quot;:&quot;d&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;listDensity&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;Comfortable&quot;,&quot;options&quot;:[&quot;Comfortable&quot;,&quot;Compact&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showPendingStrip&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+class Component extends DCLogic {
+  state = {
+    loading: true, offline: false,
+    scanPhase: 'idle', scanOutcome: null, scanMember: null, scanTime: '',
+    liveCount: 34, liveAgo: 0, livePulse: false,
+    filter: 'all', search: '',
+    toast: null, clock: '', addOpen: false, reduced: false,
+    pending: [
+      { id:'p1', name:'Rohan Mehta', note:'Monthly renewal', due:'1,200', initials:'RM', avBg:'#FDE9E7', avText:'#c22f28' },
+      { id:'p2', name:'Karan Patel', note:'Monthly renewal', due:'1,500', initials:'KP', avBg:'#FDE9E7', avText:'#c22f28' },
+      { id:'p3', name:'Sneha Iyer', note:'PT add-on', due:'2,000', initials:'SI', avBg:'#FFF1DC', avText:'#8a5a0c' }
+    ]
+  };
+
+  members = [
+    { id:1, name:'Aarav Sharma', plan:'Premium · Annual', phone:'+91 98200 11234', days:210, initials:'AS', avBg:'#E3ECFF', avText:'#0058bc', inNow:true },
+    { id:2, name:'Ananya Rao', plan:'Quarterly', phone:'+91 99870 55621', days:88, initials:'AR', avBg:'#E7F8F1', avText:'#0f7a56', inNow:true },
+    { id:3, name:'Rohan Mehta', plan:'Monthly', phone:'+91 91760 44890', days:-12, initials:'RM', avBg:'#FDE9E7', avText:'#c22f28', inNow:false },
+    { id:4, name:'Sneha Iyer', plan:'Annual', phone:'+91 90040 22110', days:5, initials:'SI', avBg:'#FFF1DC', avText:'#8a5a0c', inNow:true },
+    { id:5, name:'Vikram Singh', plan:'Monthly', phone:'+91 98330 78654', days:2, initials:'VS', avBg:'#EFE7FF', avText:'#6d36d4', inNow:false },
+    { id:6, name:'Diya Kapoor', plan:'Premium · Annual', phone:'+91 99001 33445', days:320, initials:'DK', avBg:'#E3ECFF', avText:'#0058bc', inNow:false },
+    { id:7, name:'Karan Patel', plan:'Monthly', phone:'+91 90090 99881', days:-3, initials:'KP', avBg:'#FDE9E7', avText:'#c22f28', inNow:false },
+    { id:8, name:'Arjun Reddy', plan:'Monthly', phone:'+91 98450 11223', days:7, initials:'AR', avBg:'#FFF1DC', avText:'#8a5a0c', inNow:false },
+    { id:9, name:'Meera Joshi', plan:'Quarterly', phone:'+91 99870 66120', days:30, initials:'MJ', avBg:'#EFE7FF', avText:'#6d36d4', inNow:true },
+    { id:10, name:'Rahul Verma', plan:'Monthly', phone:'+91 91230 45677', days:-28, initials:'RV', avBg:'#FDE9E7', avText:'#c22f28', inNow:false },
+    { id:11, name:'Isha Gupta', plan:'Annual', phone:'+91 98200 90011', days:120, initials:'IG', avBg:'#E7F8F1', avText:'#0f7a56', inNow:false },
+    { id:12, name:'Nikhil Rao', plan:'Monthly', phone:'+91 90112 33447', days:1, initials:'NR', avBg:'#FFF1DC', avText:'#8a5a0c', inNow:false },
+    { id:13, name:'Tara Menon', plan:'Quarterly', phone:'+91 99456 78123', days:60, initials:'TM', avBg:'#E3ECFF', avText:'#0058bc', inNow:true },
+    { id:14, name:'Kabir Anand', plan:'Premium · Annual', phone:'+91 98988 21200', days:145, initials:'KA', avBg:'#E7F8F1', avText:'#0f7a56', inNow:false }
+  ];
+
+  scanNames = ['Aarav Sharma','Diya Kapoor','Tara Menon','Ananya Rao','Isha Gupta','Meera Joshi'];
+
+  componentDidMount() {
+    this._m = true;
+    this.tickClock();
+    this._ci = setInterval(() => this.tickClock(), 1000);
+    this._ai = setInterval(() => { if (this._m && !this.state.offline) this.setState(s => ({ liveAgo: s.liveAgo + 1 })); }, 1000);
+    this._lt = setTimeout(() => this._m && this.setState({ loading: false }), 1300);
+    this._li = setInterval(() => this.autoLive(), 6500);
+    try { this.setState({ reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches }); } catch (e) {}
+  }
+  componentWillUnmount() {
+    this._m = false;
+    [this._ci, this._ai, this._li].forEach(clearInterval);
+    [this._lt, this._st1, this._st2, this._tt, this._pt].forEach(clearTimeout);
+  }
+
+  tickClock() {
+    const d = new Date();
+    const h = d.getHours() % 12 || 12;
+    const m = String(d.getMinutes()).padStart(2, '0');
+    this.setState({ clock: h + ':' + m + ' ' + (d.getHours() < 12 ? 'AM' : 'PM') });
+  }
+
+  autoLive() {
+    if (!this._m || this.state.offline || this.state.loading || this.state.scanPhase !== 'idle') return;
+    const up = Math.random() < 0.55;
+    this.bumpLive(up ? 1 : -1, up ? this.scanNames[Math.floor(Math.random() * this.scanNames.length)] : null);
+  }
+
+  bumpLive(delta, name) {
+    this.setState(s => ({ liveCount: Math.max(0, s.liveCount + delta), liveAgo: 0, livePulse: true }));
+    if (name) this.showToast(name + ' just checked in', 'in');
+    clearTimeout(this._pt);
+    this._pt = setTimeout(() => this._m && this.setState({ livePulse: false }), 900);
+  }
+
+  showToast(msg, kind) {
+    this.setState({ toast: { msg, kind } });
+    clearTimeout(this._tt);
+    this._tt = setTimeout(() => this._m && this.setState({ toast: null }), 3200);
+  }
+
+  startScan(outcome, memberOverride) {
+    if (this.state.offline) { this.showToast('Reconnect to the internet to scan', 'warn'); return; }
+    if (this.state.scanPhase !== 'idle') return;
+    this._override = memberOverride || null;
+    this.setState({ scanPhase: 'scanning', scanOutcome: outcome });
+    clearTimeout(this._st1);
+    this._st1 = setTimeout(() => this.resolveScan(outcome), 1350);
+  }
+
+  resolveScan(outcome) {
+    if (!this._m) return;
+    const member = this._override || this.scanMemberFor(outcome);
+    this.setState({ scanPhase: 'result', scanMember: member, scanTime: this.state.clock });
+    if (outcome === 'success') { this.bumpLive(1, null); try { navigator.vibrate && navigator.vibrate(30); } catch (e) {} }
+    clearTimeout(this._st2);
+    this._st2 = setTimeout(() => this._m && this.setState({ scanPhase: 'idle', scanOutcome: null, scanMember: null }), outcome === 'success' ? 3200 : 4400);
+  }
+
+  resetScan() { clearTimeout(this._st2); this.setState({ scanPhase: 'idle', scanOutcome: null, scanMember: null }); }
+
+  scanMemberFor(o) {
+    if (o === 'success') return { name:'Aarav Sharma', initials:'AS', avBg:'#0058bc', avText:'#fff', plan:'Premium · Annual', streak:12 };
+    if (o === 'expiredMember') return { name:'Rohan Mehta', initials:'RM', avBg:'#c22f28', avText:'#fff', plan:'Monthly', daysAgo:12 };
+    if (o === 'duplicate') return { name:'Sneha Iyer', initials:'SI', avBg:'#8a5a0c', avText:'#fff', plan:'Annual', first:'8:15 AM' };
+    return null;
+  }
+
+  clearPending(id) {
+    const p = this.state.pending.find(x => x.id === id);
+    this.setState(s => ({ pending: s.pending.filter(x => x.id !== id) }));
+    if (p) this.showToast('₹' + p.due + ' collected from ' + p.name, 'in');
+  }
+
+  renderVals() {
+    const s = this.state;
+    const win = this.props.expiringWindowDays ?? 7;
+    const compact = (this.props.listDensity ?? 'Comfortable') === 'Compact';
+    const showPending = this.props.showPendingStrip ?? true;
+
+    const total = this.members.length;
+    const active = this.members.filter(m => m.days >= 0).length;
+    const expiring = this.members.filter(m => m.days >= 0 && m.days <= win).length;
+    const expired = this.members.filter(m => m.days < 0).length;
+
+    // filtered list
+    let list = this.members.slice();
+    if (s.filter === 'active') list = list.filter(m => m.days >= 0);
+    else if (s.filter === 'expiring') list = list.filter(m => m.days >= 0 && m.days <= win);
+    else if (s.filter === 'expired') list = list.filter(m => m.days < 0);
+    else if (s.filter === 'ingym') list = list.filter(m => m.inNow);
+    const q = s.search.trim().toLowerCase();
+    if (q) list = list.filter(m => m.name.toLowerCase().includes(q) || m.phone.replace(/\s/g,'').includes(q.replace(/\s/g,'')));
+
+    const chip = (m) => {
+      if (m.days < 0) return { chipBg:'rgba(226,75,74,.12)', chipText:'#c22f28', chipIcon:'cancel', chipLabel:'Expired', chipSub:(-m.days)+'d ago' };
+      if (m.days <= win) return { chipBg:'rgba(239,159,39,.14)', chipText:'#a86a10', chipIcon:'schedule', chipLabel:'Expiring', chipSub:m.days+'d left' };
+      return { chipBg:'rgba(29,158,117,.12)', chipText:'#0f7a56', chipIcon:'check_circle', chipLabel:'Active', chipSub:'in '+m.days+'d' };
+    };
+    const listVM = list.map(m => Object.assign({}, m, chip(m), {
+      onCheckin: () => this.startScan('success', { name:m.name, initials:m.initials, avBg:m.avText==='#fff'?m.avBg:'#0058bc', avText:'#fff', plan:m.plan, streak: (m.id*3)%20+3 }),
+      onProfile: () => this.showToast('Opening ' + m.name + "'s profile", 'in')
+    }));
+
+    const emptyExpired = list.length === 0 && s.filter === 'expired' && !q;
+    const emptyExpiring = list.length === 0 && s.filter === 'expiring' && !q;
+    const emptyInGym = list.length === 0 && s.filter === 'ingym' && !q;
+    const emptySearch = list.length === 0 && !!q;
+    const isInGym = s.filter === 'ingym';
+
+    // scan result view model
+    const o = s.scanOutcome, mem = s.scanMember;
+    let res = {};
+    if (o === 'success') res = { bg:'linear-gradient(160deg,#0f6b4c,#0a4d37)', accent:'#35d29a', accentSoft:'rgba(53,210,154,.18)', icon:'check', name:mem&&mem.name, status:'Checked in · '+s.scanTime, detail:mem&&mem.plan, hasMember:true, showStreak:true, streak:(mem&&mem.streak)+'-day streak', showCta:false };
+    else if (o === 'expiredMember') res = { bg:'linear-gradient(160deg,#8f221c,#5f1712)', accent:'#ff7a72', accentSoft:'rgba(255,122,114,.2)', icon:'block', name:mem&&mem.name, status:'Membership expired', detail:'Ended '+(mem&&mem.daysAgo)+' days ago — renew before entry', hasMember:true, showStreak:false, showCta:true, ctaLabel:'Renew membership →', onCta:()=>{this.showToast('Opening renewal for '+(mem&&mem.name),'in');this.resetScan();} };
+    else if (o === 'duplicate') res = { bg:'linear-gradient(160deg,#9a6410,#6b440a)', accent:'#ffc266', accentSoft:'rgba(255,194,102,.2)', icon:'event_available', name:mem&&mem.name, status:'Already checked in today', detail:'First scan was at '+(mem&&mem.first), hasMember:true, showStreak:false, showCta:true, ctaLabel:'View profile', onCta:()=>{this.showToast('Opening '+(mem&&mem.name)+"'s profile",'in');this.resetScan();} };
+    else if (o === 'wrongGym') res = { bg:'linear-gradient(160deg,#8f221c,#5f1712)', accent:'#ff7a72', accentSoft:'rgba(255,122,114,.2)', icon:'wrong_location', name:'Wrong gym', status:'This QR is for another branch', detail:'Code belongs to a different Iron Republic location', hasMember:false, showStreak:false, showCta:true, ctaLabel:'Dismiss', onCta:()=>this.resetScan() };
+    else res = { bg:'linear-gradient(160deg,#34404f,#1c2530)', accent:'#9fb2c9', accentSoft:'rgba(159,178,201,.2)', icon:'error', name:'Code expired', status:'QR could not be read', detail:'Ask the member to reopen the app to refresh their QR', hasMember:false, showStreak:false, showCta:true, ctaLabel:'Dismiss', onCta:()=>this.resetScan() };
+
+    const ramp = (sel, base, tint, border) => ({ bg: sel ? tint : 'transparent', border: sel ? border : 'rgba(27,27,29,.1)', color: sel ? base : '#717786' });
+    const tA = ramp(s.filter==='all', '#0058bc', 'rgba(0,88,188,.1)', 'rgba(0,88,188,.3)');
+    const tAc = ramp(s.filter==='active', '#0f7a56', 'rgba(29,158,117,.12)', 'rgba(29,158,117,.35)');
+    const tEg = ramp(s.filter==='expiring', '#a86a10', 'rgba(239,159,39,.14)', 'rgba(239,159,39,.4)');
+    const tEx = ramp(s.filter==='expired', '#c22f28', 'rgba(226,75,74,.12)', 'rgba(226,75,74,.35)');
+    const tIn = ramp(s.filter==='ingym', '#0f7a56', 'rgba(29,158,117,.14)', 'rgba(29,158,117,.4)');
+
+    return {
+      loading: s.loading, notLoading: !s.loading, offline: s.offline,
+      showList: !s.loading, skeletons: [1,2,3,4,5],
+      clock: s.clock,
+      connLabel: s.offline ? 'Offline' : 'Live', connDot: s.offline ? '#EF9F27' : '#1D9E75', connText: s.offline ? '#a86a10' : '#0f7a56',
+
+      sTotal: total, sActive: active, sExpiring: expiring, sExpired: expired,
+      windowLabel: win,
+      live: s.liveCount,
+      liveAgoLabel: s.offline ? 'paused (offline)' : (s.liveAgo < 2 ? 'just now' : s.liveAgo + 's ago'),
+      liveDot: s.offline ? '#6f7681' : '#35d29a',
+      liveTag: s.offline ? 'STALE' : 'LIVE',
+      liveTagColor: s.offline ? '#9aa1ad' : '#35d29a',
+      livePulseAnim: (s.reduced || s.offline) ? 'none' : 'fdPulse 2s infinite',
+      liveNumAnim: (s.reduced || !s.livePulse) ? 'none' : 'fdCount .6s ease',
+
+      activeBorder: s.filter==='active' ? '#1D9E75' : 'rgba(29,158,117,.28)',
+      expiringBorder: s.filter==='expiring' ? '#EF9F27' : 'rgba(239,159,39,.3)',
+      expiredBorder: s.filter==='expired' ? '#E24B4A' : 'rgba(226,75,74,.28)',
+
+      onFilterAll: () => this.setState({ filter:'all' }),
+      onFilterActive: () => this.setState({ filter:'active' }),
+      onFilterExpiring: () => this.setState({ filter:'expiring' }),
+      onFilterExpired: () => this.setState({ filter:'expired' }),
+      onFilterInGym: () => this.setState({ filter:'ingym' }),
+      onClearSearch: () => this.setState({ search:'' }),
+
+      tabAllBg:tA.bg, tabAllBorder:tA.border, tabAllColor:tA.color,
+      tabActiveBg:tAc.bg, tabActiveBorder:tAc.border, tabActiveColor:tAc.color,
+      tabExpiringBg:tEg.bg, tabExpiringBorder:tEg.border, tabExpiringColor:tEg.color,
+      tabExpiredBg:tEx.bg, tabExpiredBorder:tEx.border, tabExpiredColor:tEx.color,
+      tabInGymBg:tIn.bg, tabInGymBorder:tIn.border, tabInGymColor:tIn.color,
+
+      list: listVM, listCount: list.length,
+      emptyExpired, emptyExpiring, emptyInGym, emptySearch, isInGym,
+      searchVal: s.search,
+      onSearch: (e) => this.setState({ search: e.target.value }),
+      rowPad: compact ? '8px 6px' : '11px 6px',
+      avSize: compact ? '38px' : '44px',
+      listMaxH: compact ? '380px' : '440px',
+
+      isIdle: s.scanPhase==='idle', isScanning: s.scanPhase==='scanning', isResult: s.scanPhase==='result',
+      resBg: res.bg, resAccent: res.accent, resAccentSoft: res.accentSoft, resIcon: res.icon,
+      resName: res.name, resStatus: res.status, resDetail: res.detail,
+      resHasMember: !!res.hasMember, resNoMember: !res.hasMember,
+      resInitials: mem && mem.initials, resAvBg: mem && mem.avBg, resAvText: mem && mem.avText,
+      resShowStreak: !!res.showStreak, resStreak: res.streak,
+      resShowCta: !!res.showCta, resCtaLabel: res.ctaLabel, resOnCta: res.onCta || (()=>this.resetScan()),
+      resAnim: s.reduced ? 'none' : 'fdPop .42s cubic-bezier(.2,.9,.3,1.1)',
+      resRingAnim: s.reduced ? 'none' : 'fdRing .5s ease-out',
+
+      onPrimaryScan: () => this.startScan('success'),
+      simSuccess: () => this.startScan('success'),
+      simExpired: () => this.startScan('expiredMember'),
+      simDuplicate: () => this.startScan('duplicate'),
+      simWrongGym: () => this.startScan('wrongGym'),
+      simInvalid: () => this.startScan('invalidQr'),
+
+      onOpenAdd: () => this.setState({ addOpen:true }),
+      onCloseAdd: () => this.setState({ addOpen:false }),
+      onSubmitAdd: () => { this.setState({ addOpen:false }); this.showToast('Continuing to full onboarding…', 'in'); },
+      onManual: () => this.showToast('Manual check-in — search the member below', 'warn'),
+      addOpen: s.addOpen,
+      stop: (e) => e.stopPropagation(),
+
+      showPending, pending: s.pending.map(p => Object.assign({}, p, { onClear: () => this.clearPending(p.id) })),
+      pendingCount: s.pending.length, hasPending: s.pending.length > 0, noPending: s.pending.length === 0,
+
+      toast: s.toast, toastMsg: s.toast && s.toast.msg, toastDot: s.toast && s.toast.kind==='warn' ? '#EF9F27' : '#35d29a',
+
+      onToggleOffline: () => { const nx = !s.offline; this.setState({ offline: nx }); this.showToast(nx ? "You're offline (demo)" : 'Back online', nx ? 'warn' : 'in'); },
+      onReplayLoad: () => { this.setState({ loading:true }); clearTimeout(this._lt); this._lt = setTimeout(() => this._m && this.setState({ loading:false }), 1300); },
+      offlineBtnBg: s.offline ? '#EF9F27' : 'rgba(255,255,255,.1)',
+      offlineBtnColor: s.offline ? '#1b1b1d' : '#e6e8ec',
+      offlineBtnIcon: s.offline ? 'wifi_off' : 'wifi',
+      offlineBtnLabel: s.offline ? 'Offline' : 'Online'
+    };
+  }
+}
+</script>
+</body>
+</html>

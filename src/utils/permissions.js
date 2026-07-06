@@ -15,7 +15,7 @@ export const ROLE_PERMISSIONS = {
     'view_assigned_members', 'assign_workout',
   ],
   receptionist: [
-    'add_member', 'view_members', 'mark_attendance',
+    'add_member', 'edit_member', 'view_members', 'mark_attendance',
   ],
   member: [
     'view_own_profile', 'view_own_workout',
@@ -27,9 +27,15 @@ export const ROLE_PERMISSIONS = {
  * Owner with 'all' permission bypasses all checks.
  */
 export function can(userDoc, action) {
-  if (!userDoc || !userDoc.permissions) return false;
-  if (userDoc.permissions.includes('all')) return true;
-  return userDoc.permissions.includes(action);
+  if (!userDoc) return false;
+  const stored = userDoc.permissions || [];
+  if (stored.includes('all')) return true;
+  if (stored.includes(action)) return true;
+  // Fall back to role defaults so permission-model changes apply to staff docs
+  // that were created before the change, without needing a data migration.
+  const roleDefaults = ROLE_PERMISSIONS[userDoc.role] || [];
+  if (roleDefaults.includes('all')) return true;
+  return roleDefaults.includes(action);
 }
 
 /**
@@ -48,8 +54,22 @@ export function getHomeRoute(role) {
     case 'owner': return '/owner/dashboard';
     case 'manager': return '/manager/members';
     case 'trainer': return '/trainer/members';
-    case 'receptionist': return '/receptionist/members';
+    case 'receptionist': return '/receptionist';
     case 'member': return '/member/home';
     default: return '/select-role';
+  }
+}
+
+/**
+ * Get the URL base path for member/add/edit/profile routes for a given role.
+ * Shared member pages (list, add, edit, profile) use this so staff stay
+ * inside their own route namespace instead of hitting owner-only routes.
+ */
+export function getBasePath(role) {
+  switch (role) {
+    case 'manager': return '/manager';
+    case 'receptionist': return '/receptionist';
+    case 'trainer': return '/trainer';
+    default: return '/owner';
   }
 }

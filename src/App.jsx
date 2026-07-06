@@ -108,11 +108,11 @@ function AnimatedRoutes() {
           {/* Owner dashboard */}
           <Route
             path="/owner/dashboard"
-            element={<ProtectedRoute><OwnerLayout activeTab="home"><PageTransition><OwnerDashboard /></PageTransition></OwnerLayout></ProtectedRoute>}
+            element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="home"><PageTransition><OwnerDashboard /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
           <Route
             path="/owner/leads"
-            element={<ProtectedRoute><OwnerLayout activeTab="members"><PageTransition><LeadsDashboard /></PageTransition></OwnerLayout></ProtectedRoute>}
+            element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="members"><PageTransition><LeadsDashboard /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
 
           {/* Owner — Members */}
@@ -194,11 +194,19 @@ function AnimatedRoutes() {
           />
           <Route
             path="/receptionist/members"
-            element={<ProtectedRoute requiredPermission="view_members"><PageTransition><MemberList /></PageTransition></ProtectedRoute>}
+            element={<ProtectedRoute requiredPermission="view_members"><PageTransition><MemberList role="receptionist" /></PageTransition></ProtectedRoute>}
           />
           <Route
             path="/receptionist/members/add"
-            element={<ProtectedRoute requiredPermission="add_member"><PageTransition><AddMember quickAddOnly /></PageTransition></ProtectedRoute>}
+            element={<ProtectedRoute requiredPermission="add_member"><PageTransition><AddMember /></PageTransition></ProtectedRoute>}
+          />
+          <Route
+            path="/receptionist/members/:id"
+            element={<ProtectedRoute requiredPermission="view_members"><PageTransition><MemberProfile /></PageTransition></ProtectedRoute>}
+          />
+          <Route
+            path="/receptionist/members/:id/edit"
+            element={<ProtectedRoute requiredPermission="edit_member"><PageTransition><EditMember /></PageTransition></ProtectedRoute>}
           />
 
           {/* Member routes */}
@@ -216,7 +224,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/payments"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="view_payments">
                 <OwnerLayout activeTab="payments">
                   <SubscriptionGate feature="payments"><PageTransition><PaymentList /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -226,7 +234,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/payments/add"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="view_payments">
                 <OwnerLayout activeTab="payments">
                   <SubscriptionGate feature="payments"><PageTransition><AddPayment /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -236,7 +244,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/payments/member/:memberId"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="view_payments">
                 <OwnerLayout activeTab="payments">
                   <SubscriptionGate feature="payments"><PageTransition><MemberPaymentHistory /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -246,7 +254,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/payments/:id"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="view_payments">
                 <OwnerLayout activeTab="payments">
                   <SubscriptionGate feature="payments"><PageTransition><PaymentDetail /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -258,7 +266,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/analytics"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="view_analytics">
                 <OwnerLayout activeTab="analytics">
                   <SubscriptionGate feature="analytics"><PageTransition><Analytics /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -270,7 +278,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/whatsapp"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['owner']}>
                 <OwnerLayout activeTab="settings">
                   <SubscriptionGate feature="whatsapp_automation"><PageTransition><WhatsAppLogs /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -282,7 +290,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/attendance"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredPermission="view_analytics">
                 <OwnerLayout activeTab="analytics">
                   <SubscriptionGate feature="attendance_heatmap"><PageTransition><AttendanceLogs /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -302,7 +310,7 @@ function AnimatedRoutes() {
           <Route
             path="/owner/kiosk-devices"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={['owner']}>
                 <OwnerLayout activeTab="settings">
                   <SubscriptionGate feature="kiosk_attendance"><PageTransition><KioskDevices /></PageTransition></SubscriptionGate>
                 </OwnerLayout>
@@ -333,7 +341,7 @@ function AnimatedRoutes() {
           {/* Settings */}
           <Route
             path="/owner/settings"
-            element={<ProtectedRoute><OwnerLayout activeTab="settings"><PageTransition><OwnerSettings /></PageTransition></OwnerLayout></ProtectedRoute>}
+            element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="settings"><PageTransition><OwnerSettings /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
           <Route
             path="/owner/settings/quick-links"

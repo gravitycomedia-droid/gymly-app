@@ -9,6 +9,7 @@ import {
 import { db } from '../../firebase/config';
 import { createPayment, getNextInvoiceNumber } from '../../firebase/firestore-payments';
 import { addDays, formatDate, calculateBMI, capPhoneDigits } from '../../utils/helpers';
+import { getBasePath } from '../../utils/permissions';
 import { getRecommendedPlanName } from '../../data/exerciseLibrary';
 import { generateInvoicePDF, uploadInvoice } from '../../utils/invoiceGenerator';
 import {
@@ -31,6 +32,7 @@ const AddMember = ({ quickAddOnly = false }) => {
   const { user, userDoc } = useAuth();
   const { showToast } = useToast();
 
+  const base = getBasePath(userDoc?.role);
   const leadData = location.state?.leadData || null;
 
   const [mode, setMode] = useState('quick');
@@ -389,7 +391,7 @@ const AddMember = ({ quickAddOnly = false }) => {
             <button onClick={resetForm} className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md hover:opacity-90 transition-opacity">
               Add Another Member
             </button>
-            <button onClick={() => navigate(`/owner/members/${newMemberId}`)} className="w-full py-3 rounded-xl glass-input text-primary font-label-md hover:bg-white/60 transition-colors">
+            <button onClick={() => navigate(`${base}/members/${newMemberId}`)} className="w-full py-3 rounded-xl glass-input text-primary font-label-md hover:bg-white/60 transition-colors">
               View Profile
             </button>
           </div>
@@ -549,7 +551,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                     <span className="font-body-md text-sm text-on-surface-variant">This phone number is already registered.</span>
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => navigate(`/owner/members/${duplicate.id}`)} className="px-4 py-2 bg-error text-white rounded-lg font-label-md text-sm hover:opacity-90">View Profile</button>
+                    <button onClick={() => navigate(`${base}/members/${duplicate.id}`)} className="px-4 py-2 bg-error text-white rounded-lg font-label-md text-sm hover:opacity-90">View Profile</button>
                     <button onClick={() => setDuplicate(null)} className="px-4 py-2 glass-input text-on-surface rounded-lg font-label-md text-sm hover:bg-white/50">Use Anyway</button>
                   </div>
                 </div>
@@ -825,7 +827,7 @@ const AddMember = ({ quickAddOnly = false }) => {
         <div style={{ height: 100 }} />
       </main>
 
-      <BottomNav activeTab="home" role="owner" />
+      <BottomNav activeTab="home" role={userDoc?.role || 'owner'} />
 
       {/* Photo Picker Modal */}
       {showPhotoPicker && (

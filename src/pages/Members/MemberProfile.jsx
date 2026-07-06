@@ -12,6 +12,7 @@ import {
 import RenewModal from '../../components/RenewModal';
 import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import BottomNav from '../../components/BottomNav';
+import { can, getBasePath } from '../../utils/permissions';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { uploadMemberPhoto } from '../../firebase/storage';
 import '../MemberCard/MemberCard.css';
@@ -37,6 +38,11 @@ const MemberProfile = ({ readOnly = false }) => {
   const navigate = useNavigate();
   const { userDoc } = useAuth();
   const { showToast } = useToast();
+
+  const role = userDoc?.role;
+  const base = getBasePath(role);
+  const canDeleteMember = can(userDoc, 'delete_member');
+  const canViewPayments = can(userDoc, 'view_payments');
 
   const [member, setMember] = useState(null);
   const [gym, setGym] = useState(null);
@@ -680,12 +686,14 @@ const MemberProfile = ({ readOnly = false }) => {
                   </button>
                   {showMoreActions && (
                     <div className="absolute top-full right-0 mt-2 w-36 glass-panel rounded-xl shadow-lg flex flex-col overflow-hidden z-20 border border-black/10">
-                      <button onClick={() => { navigate(`/owner/members/${id}/edit`); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-white/50 font-label-md flex items-center gap-2">
+                      <button onClick={() => { navigate(`${base}/members/${id}/edit`); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-white/50 font-label-md flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm text-secondary">edit</span> Edit Member
                       </button>
-                      <button onClick={() => { setShowDelete(true); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-error-container/50 font-label-md text-error flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm">delete</span> Delete
-                      </button>
+                      {canDeleteMember && (
+                        <button onClick={() => { setShowDelete(true); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-error-container/50 font-label-md text-error flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm">delete</span> Delete
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -774,7 +782,7 @@ const MemberProfile = ({ readOnly = false }) => {
             <h3 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
               <span className="material-symbols-outlined text-primary">receipt_long</span> Payment History
             </h3>
-            {!readOnly && (
+            {!readOnly && canViewPayments && (
               <button onClick={() => navigate(`/owner/payments/add`)} className="px-4 py-2 rounded-lg bg-primary/10 text-primary font-label-sm hover:bg-primary/20 transition-colors">
                 + Record
               </button>
@@ -817,7 +825,7 @@ const MemberProfile = ({ readOnly = false }) => {
                             {clearingId === p.id ? '...' : '✓ Clear Due'}
                           </button>
                         )}
-                        {!isPendingOrPartial && (
+                        {!isPendingOrPartial && canViewPayments && (
                           <button onClick={() => navigate(`/owner/payments/${p.id}`)} className="text-primary text-xs hover:underline">View</button>
                         )}
                       </div>
@@ -855,7 +863,7 @@ const MemberProfile = ({ readOnly = false }) => {
         </div>
 
       </main>
-      <BottomNav activeTab="members" role="owner" />
+      <BottomNav activeTab="members" role={role || 'owner'} />
 
       {/* Photo Picker Modal */}
       {showPhotoPicker && (
