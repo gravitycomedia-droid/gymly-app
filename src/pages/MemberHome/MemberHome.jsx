@@ -14,7 +14,8 @@ import {
 } from '../../firebase/firestore';
 import { getMemberPaymentsRealtime, updatePayment, formatDateKey } from '../../firebase/firestore-payments';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { storage } from '../../firebase/config';
+import { storage, functions } from '../../firebase/config';
+import { httpsCallable } from 'firebase/functions';
 import { 
   getInitials, 
   getAvatarColor, 
@@ -61,6 +62,7 @@ const MemberHome = () => {
 
   const [activeTab, setActiveTab] = useState(0);
   const [cardExpanded, setCardExpanded] = useState(false);
+  const [checkinPayload, setCheckinPayload] = useState(null);
 
   const prevAttendanceCount = useRef(null);
   const [kioskMessage, setKioskMessage] = useState(null);
@@ -263,6 +265,30 @@ const MemberHome = () => {
 
   const { label: statusLabel, type: statusType } = getExpiryStatus(userDoc?.subscription_expiry);
   const daysRemaining = getDaysRemaining(userDoc?.subscription_expiry);
+
+  // Signed check-in token for the QR. Fetched on mount and refreshed hourly
+  // (one cheap callable per session + one per hour while this tab stays open).
+  // processScan verifies this server-side, so the QR can't be replayed forever.
+  useEffect(() => {
+    if (!user?.uid || daysRemaining <= 0) {
+      setCheckinPayload(null);
+      return;
+    }
+    let cancelled = false;
+    const refreshCheckinToken = httpsCallable(functions, 'refreshCheckinClaim');
+    const fetchToken = async () => {
+      try {
+        const { data } = await refreshCheckinToken();
+        if (!cancelled) setCheckinPayload(data);
+      } catch {
+        if (!cancelled) setCheckinPayload(null);
+      }
+    };
+    fetchToken();
+    const interval = setInterval(fetchToken, 55 * 60 * 1000); // just under an hour
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [user?.uid, daysRemaining]);
+
   const bmi = calculateBMI(userDoc?.height, userDoc?.weight);
   const avatarColor = getAvatarColor(userDoc?.name);
   const streak = userDoc?.streak || 0;
@@ -447,14 +473,20 @@ const MemberHome = () => {
                 </div>
               ) : (
                 <>
-                  <div style={{ background: '#fff', padding: 14, borderRadius: 18, display: 'inline-block', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-                    <QRCodeSVG
-                      value={`gymly://checkin/${user?.uid}/${userDoc?.gym_id}`}
-                      size={160}
-                      bgColor="transparent"
-                      fgColor="#1A1A1A"
-                      level="M"
-                    />
+                  <div style={{ background: '#fff', padding: 14, borderRadius: 18, display: 'inline-block', marginBottom: 16, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', position: 'relative', minWidth: 188, minHeight: 188 }}>
+                    {checkinPayload ? (
+                      <QRCodeSVG
+                        value={`gymly://checkin/${checkinPayload.uid || user?.uid}/${checkinPayload.gymId}/${checkinPayload.windowStart}/${checkinPayload.token}`}
+                        size={160}
+                        bgColor="transparent"
+                        fgColor="#1A1A1A"
+                        level="M"
+                      />
+                    ) : (
+                      <div style={{ width: 160, height: 160, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999', fontSize: 12 }}>
+                        Loading check-in code…
+                      </div>
+                    )}
                   </div>
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, marginBottom: 10 }}>
                     Show this QR at reception to log your attendance

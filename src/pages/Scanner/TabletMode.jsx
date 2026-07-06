@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getGym } from '../../firebase/firestore';
 import jsQR from 'jsqr';
-import { db } from '../../firebase/config';
-import { getDoc, doc, updateDoc, addDoc, collection, query, where, getDocs, serverTimestamp, increment, onSnapshot } from 'firebase/firestore';
-import { formatDateKey, createAttendanceLog, getTodayActiveMembers } from '../../firebase/firestore-payments';
+import { functions } from '../../firebase/config';
+import { httpsCallable } from 'firebase/functions';
+import { getTodayActiveMembers } from '../../firebase/firestore-payments';
 import { getInitials, getAvatarColor, playHapticSound } from '../../utils/helpers';
 import './Scanner.css';
 
@@ -75,81 +75,49 @@ const TabletMode = () => {
     }
   };
 
-  const handleCheckin = useCallback(async (memberId, gymId) => {
+  // Check-in logic runs server-side in processScan (expiry / duplicate /
+  // gym-match / signed-token). The tablet just forwards the raw QR payload.
+  const handleCheckin = useCallback(async (qrPayload) => {
     if (!scanningRef.current) return;
     scanningRef.current = false;
 
     try {
-      const memberSnap = await getDoc(doc(db, 'users', memberId));
-      if (!memberSnap.exists()) {
-        playHapticSound('error');
-        setResult({ type: 'error', message: 'Member not found' });
-        setTimeout(resetScan, 5000);
-        return;
-      }
-      const member = { id: memberSnap.id, ...memberSnap.data() };
-      const expectedGym = userDoc?.gym_id || gymId;
+      const processScan = httpsCallable(functions, 'processScan');
+      const { data } = await processScan({ qrPayload });
+      const member = {
+        id: data.memberId,
+        name: data.memberName,
+        profile_photo: data.memberPhoto,
+        plan_name: data.planName,
+      };
 
-      if (member.gym_id !== expectedGym) {
-        playHapticSound('error');
-        setResult({ type: 'error', message: 'Wrong gym QR code' });
-        setTimeout(resetScan, 5000);
-        return;
-      }
-
-      const now = new Date();
-      const expiry = member.subscription_expiry?.toDate ? member.subscription_expiry.toDate() : null;
-      const isExpired = !expiry || expiry < now;
-
-      if (isExpired) {
-        await createAttendanceLog({
-          gym_id: expectedGym, member_id: memberId, member_name: member.name,
-          member_photo: member.profile_photo || null, plan_name: member.plan_name || '',
-          subscription_expiry: member.subscription_expiry, exit_time: null,
-          date: formatDateKey(now), scanned_by: 'qr_self', scan_mode: 'tablet', is_expired: true,
-        });
+      if (data.status === 'success') {
+        playHapticSound('success');
+        setResult({ type: 'success', member, streak: data.currentStreak, isNewRecord: data.isNewRecord });
+        setTimeout(resetScan, 3000);
+      } else if (data.status === 'expired') {
         playHapticSound('error');
         setResult({ type: 'expired', member });
         setTimeout(resetScan, 5000);
-        return;
-      }
-
-      // Duplicate check
-      const todayQ = query(collection(db, 'attendance_logs'),
-        where('member_id', '==', memberId), where('date', '==', formatDateKey(now)),
-        where('is_expired', '==', false));
-      const todaySnap = await getDocs(todayQ);
-      if (!todaySnap.empty) {
+      } else if (data.status === 'duplicate') {
         playHapticSound('error');
         setResult({ type: 'already', member });
         setTimeout(resetScan, 3000);
-        return;
+      } else {
+        playHapticSound('error');
+        setResult({ type: 'error', message: data.message || 'Check-in failed' });
+        setTimeout(resetScan, 5000);
       }
-
-      await createAttendanceLog({
-        gym_id: expectedGym, member_id: memberId, member_name: member.name,
-        member_photo: member.profile_photo || null, plan_name: member.plan_name || '',
-        subscription_expiry: member.subscription_expiry, exit_time: null,
-        date: formatDateKey(now), scanned_by: 'qr_self', scan_mode: 'tablet', is_expired: false,
-      });
-
-      const _lsKey = `last_seen_write_${memberId}`;
-      const _lastWrite = parseInt(sessionStorage.getItem(_lsKey) || '0', 10);
-      if (Date.now() - _lastWrite >= 30 * 60 * 1000) {
-        await updateDoc(doc(db, 'users', memberId), { last_seen: serverTimestamp() });
-        sessionStorage.setItem(_lsKey, String(Date.now()));
-      }
-
-      playHapticSound('success');
-      setResult({ type: 'success', member });
-      setTimeout(resetScan, 3000);
     } catch (err) {
       console.error('Check-in error:', err);
       playHapticSound('error');
-      setResult({ type: 'error', message: 'Check-in failed' });
+      const msg = (err?.message?.includes('Expired or invalid') || err?.message?.includes('Outdated'))
+        ? 'Expired code — reopen the app'
+        : err?.message?.includes('different gym') ? 'Wrong gym QR code' : 'Check-in failed';
+      setResult({ type: 'error', message: msg });
       setTimeout(resetScan, 5000);
     }
-  }, [userDoc]);
+  }, []);
 
   const resetScan = () => { setResult(null); scanningRef.current = true; };
 
@@ -170,14 +138,10 @@ const TabletMode = () => {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const code = jsQR(imageData.data, imageData.width, imageData.height);
         if (code && code.data.startsWith('gymly://')) {
-          const actionData = code.data.replace('gymly://', '');
-          const parts = actionData.split('/');
-          const action = parts[0];
-          const memberId = parts[1];
-          const gymId = parts[2];
-          
+          const action = code.data.replace('gymly://', '').split('/')[0];
+
           if (action === 'checkin') {
-            handleCheckin(memberId, gymId);
+            handleCheckin(code.data);
           }
           return;
         }
@@ -207,6 +171,11 @@ const TabletMode = () => {
           {result.type === 'expired' && `${result.member?.name}'s membership has expired`}
           {result.type === 'already' && 'Already checked in today'}
         </div>
+        {result.type === 'success' && result.streak > 1 && (
+          <div className="tablet-result-subtitle" style={{ marginTop: 14, fontWeight: 700 }}>
+            🔥 {result.streak}-day streak{result.isNewRecord ? ' · new personal record!' : ''}
+          </div>
+        )}
         {result.type === 'expired' && (
           <div className="tablet-result-subtitle" style={{ marginTop: 12, opacity: 0.7 }}>
             Please renew at reception

@@ -1,15 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from '../../firebase/config';
-import { getDoc, doc } from 'firebase/firestore';
+import { functions } from '../../firebase/config';
+import { httpsCallable } from 'firebase/functions';
+import { serverTimestamp } from 'firebase/firestore';
 import useKioskCamera from '../../hooks/useKioskCamera';
 import useKioskAuth from '../../hooks/useKioskAuth';
 import useLiveOccupancy from '../../hooks/useLiveOccupancy';
-import {
-  findActiveSession,
-  completeAttendanceSession,
-  createAccessDeniedLog,
-  updateKioskDevice,
-} from '../../firebase/firestore-kiosk';
+import { updateKioskDevice } from '../../firebase/firestore-kiosk';
 import { playKioskSound, resumeAudioContext } from '../../utils/kioskSounds';
 import './Kiosk.css';
 
@@ -131,6 +127,9 @@ const ExitKiosk = () => {
 
   useEffect(() => () => { if (countdownRef.current) clearInterval(countdownRef.current); }, []);
 
+  // Exit logic runs server-side in processScan. The kiosk forwards the raw QR +
+  // its deviceId; the server resolves gym/mode from kiosk_devices/{deviceId} and
+  // completes the active session (or reports no-session).
   const handleQR = useCallback(async (qrData) => {
     resumeAudioContext();
     setScanning(false);
@@ -142,60 +141,23 @@ const ExitKiosk = () => {
       return;
     }
 
-    const parts = qrData.replace('gymly://', '').split('/');
-    const action = parts[0];
-    const memberId = parts[1];
-    const qrGymId = parts[2];
-
-    if ((action !== 'checkin' && action !== 'member') || !memberId) {
-      setResult({ type: 'error' });
-      playKioskSound('alert');
-      autoReturn(3);
-      return;
-    }
-
     try {
-      const memberSnap = await getDoc(doc(db, 'users', memberId));
-      if (!memberSnap.exists()) {
-        setResult({ type: 'error' });
-        playKioskSound('alert');
-        autoReturn(3);
-        return;
-      }
+      const processScan = httpsCallable(functions, 'processScan');
+      const { data } = await processScan({ qrPayload: qrData, deviceId, intent: 'exit' });
+      const member = { name: data.memberName, profile_photo: data.memberPhoto };
 
-      const member = { id: memberId, ...memberSnap.data() };
-      const expectedGym = gymId || qrGymId;
-
-      if (member.gym_id !== expectedGym) {
-        setResult({ type: 'error' });
-        playKioskSound('alert');
-        autoReturn(3);
-        return;
-      }
-
-      // Find active session
-      const session = await findActiveSession(memberId, expectedGym);
-      if (!session) {
+      if (data.status === 'exit-success') {
+        setResult({ type: 'exit-success', member, durationMinutes: data.durationMinutes });
+        playKioskSound('exit');
+      } else if (data.status === 'no-session') {
         setResult({ type: 'no-session', member });
         playKioskSound('alert');
-        autoReturn(3);
-        return;
+      } else {
+        setResult({ type: 'error' });
+        playKioskSound('alert');
       }
 
-      // Calculate duration
-      const entryTime = session.entryTime?.toDate ? session.entryTime.toDate() : new Date();
-      const exitTime = new Date();
-      const durationMinutes = Math.max(1, Math.round((exitTime - entryTime) / 60000));
-
-      await completeAttendanceSession(session.id, {
-        exitDeviceId: deviceId || 'manual',
-        durationMinutes,
-      });
-
-      if (deviceId) updateKioskDevice(deviceId, { lastSeen: new Date() }).catch(() => {});
-
-      setResult({ type: 'exit-success', member, durationMinutes });
-      playKioskSound('exit');
+      if (deviceId) updateKioskDevice(deviceId, { lastSeen: serverTimestamp() }).catch(() => {});
       autoReturn(3);
     } catch (err) {
       console.error('Exit kiosk error:', err);
@@ -203,7 +165,7 @@ const ExitKiosk = () => {
       playKioskSound('alert');
       autoReturn(3);
     }
-  }, [gymId, deviceId, autoReturn]);
+  }, [deviceId, autoReturn]);
 
   const { videoRef, canvasRef, cameraState, startCamera, stopCamera, toggleCamera, facingMode } = useKioskCamera(handleQR);
 

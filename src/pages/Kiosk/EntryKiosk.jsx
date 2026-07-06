@@ -1,16 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { db } from '../../firebase/config';
-import { getDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { serverTimestamp } from 'firebase/firestore';
+import { functions } from '../../firebase/config';
+import { httpsCallable } from 'firebase/functions';
 import useKioskCamera from '../../hooks/useKioskCamera';
 import useKioskAuth from '../../hooks/useKioskAuth';
 import useLiveOccupancy from '../../hooks/useLiveOccupancy';
-import {
-  createAttendanceSession,
-  completeAttendanceSession,
-  findActiveSession,
-  createAccessDeniedLog,
-  updateKioskDevice,
-} from '../../firebase/firestore-kiosk';
+import { updateKioskDevice } from '../../firebase/firestore-kiosk';
 import { playKioskSound, resumeAudioContext } from '../../utils/kioskSounds';
 import './Kiosk.css';
 
@@ -109,6 +104,15 @@ const ResultOverlay = ({ result, countdown }) => {
       {result.member?.plan_name && (
         <div className="kiosk-result-badge">{result.member.plan_name}</div>
       )}
+      {(result.type === 'success' || result.type === 'expiring') && result.streak > 1 && (
+        <div className="kiosk-streak">
+          <div className="kiosk-streak-flame">🔥</div>
+          <div className="kiosk-streak-count">{result.streak}</div>
+          <div className="kiosk-streak-label">
+            day streak{result.isNewRecord ? ' · new personal record!' : ' — keep it going!'}
+          </div>
+        </div>
+      )}
       <div className="kiosk-result-timer">
         Returning to idle in <span>{countdown}</span>...
       </div>
@@ -182,7 +186,6 @@ const EntryKiosk = () => {
     resumeAudioContext();
     setScanning(false);
 
-    // Parse: gymly://checkin/{memberId}/{gymId}
     if (!qrData.startsWith('gymly://')) {
       setResult({ type: 'error' });
       playKioskSound('alert');
@@ -190,115 +193,40 @@ const EntryKiosk = () => {
       return;
     }
 
-    const parts = qrData.replace('gymly://', '').split('/');
-    const action = parts[0];
-    const memberId = parts[1];
-    const qrGymId = parts[2];
-
-    if (action !== 'checkin' || !memberId) {
-      setResult({ type: 'error' });
-      playKioskSound('alert');
-      autoReturn(3);
-      return;
-    }
-
     try {
-      const memberSnap = await getDoc(doc(db, 'users', memberId));
-      if (!memberSnap.exists()) {
-        setResult({ type: 'error' });
-        playKioskSound('alert');
-        autoReturn(3);
-        return;
-      }
+      const processScan = httpsCallable(functions, 'processScan');
+      const { data } = await processScan({ qrPayload: qrData, deviceId });
+      const member = { name: data.memberName, profile_photo: data.memberPhoto, plan_name: data.planName };
 
-      const member = { id: memberId, ...memberSnap.data() };
-      const expectedGym = gymId || qrGymId;
-
-      if (member.gym_id !== expectedGym) {
-        setResult({ type: 'error' });
-        playKioskSound('alert');
-        autoReturn(3);
-        return;
-      }
-
-      const now = new Date();
-      const expiry = member.subscription_expiry?.toDate ? member.subscription_expiry.toDate() : null;
-      const isExpired = !expiry || expiry <= now;
-
-      if (isExpired) {
-        await createAccessDeniedLog({
-          memberId,
-          gymId: expectedGym,
-          deviceId: deviceId || 'unknown',
-          reason: 'expired',
-          memberName: member.name,
-          memberPhone: member.phone || '',
-        });
-        setResult({ type: 'expired', member });
-        playKioskSound('alert');
-        autoReturn(4);
-        return;
-      }
-
-      const daysLeft = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
-
-      // Check if user is already inside
-      const activeSession = await findActiveSession(memberId, expectedGym);
-
-      // Determine action based on mode and session state
-      let actionType = 'entry';
-      if (mode === 'exit') actionType = 'exit';
-      else if (mode === 'both') {
-        actionType = activeSession ? 'exit' : 'entry';
-      }
-
-      if (actionType === 'exit') {
-        if (!activeSession) {
-          // Trying to exit but not inside? We'll just show success or create a 0 min session?
-          // For now, let's just create a quick entry and immediate exit so it logs.
-          const sid = await createAttendanceSession({ memberId, gymId: expectedGym, entryDeviceId: 'manual' });
-          await completeAttendanceSession(sid, { exitDeviceId: deviceId, durationMinutes: 1 });
-          setResult({ type: 'exit-success', member, durationMinutes: 1 });
-        } else {
-          const entryMs = activeSession.entryTime?.toDate ? activeSession.entryTime.toDate().getTime() : Date.now();
-          const durationMinutes = Math.max(1, Math.round((Date.now() - entryMs) / 60000));
-          await completeAttendanceSession(activeSession.id, { exitDeviceId: deviceId, durationMinutes });
-          setResult({ type: 'exit-success', member, durationMinutes });
-        }
-        playKioskSound('exit');
-        autoReturn(4);
-      } else {
-        // Entry
-        if (daysLeft <= 15) {
-          setResult({ type: 'expiring', member, daysLeft });
-          playKioskSound('warning');
-        } else {
-          setResult({ type: 'success', member, daysLeft });
+      switch (data.status) {
+        case 'success':
+          setResult({ type: 'success', member, daysLeft: data.daysLeft, streak: data.currentStreak, isNewRecord: data.isNewRecord });
           playKioskSound('success');
-        }
-        
-        await createAttendanceSession({
-          memberId,
-          gymId: expectedGym,
-          entryDeviceId: deviceId || 'manual',
-          memberName: member.name || '',
-        });
-        
-        autoReturn(4);
+          autoReturn(5);
+          break;
+        case 'expiring':
+          setResult({ type: 'expiring', member, daysLeft: data.daysLeft, streak: data.currentStreak, isNewRecord: data.isNewRecord });
+          playKioskSound('warning');
+          autoReturn(5);
+          break;
+        case 'exit-success':
+          setResult({ type: 'exit-success', member, durationMinutes: data.durationMinutes });
+          playKioskSound('exit');
+          autoReturn(4);
+          break;
+        case 'expired':
+          setResult({ type: 'expired', member });
+          playKioskSound('alert');
+          autoReturn(4);
+          break;
+        default:
+          setResult({ type: 'error' });
+          playKioskSound('alert');
+          autoReturn(3);
       }
 
-      // Update device lastSeen & member last_seen
       if (deviceId) {
         updateKioskDevice(deviceId, { lastSeen: serverTimestamp() }).catch(() => {});
-      }
-      if (actionType === 'entry') {
-        const _lsKey = `last_seen_write_${memberId}`;
-        const _lastWrite = parseInt(sessionStorage.getItem(_lsKey) || '0', 10);
-        if (Date.now() - _lastWrite >= 30 * 60 * 1000) {
-          updateDoc(doc(db, 'users', memberId), { last_seen: serverTimestamp() })
-            .then(() => sessionStorage.setItem(_lsKey, String(Date.now())))
-            .catch(() => {});
-        }
       }
     } catch (err) {
       console.error('Kiosk scan error:', err);
@@ -306,7 +234,7 @@ const EntryKiosk = () => {
       playKioskSound('alert');
       autoReturn(3);
     }
-  }, [gymId, deviceId, autoReturn]);
+  }, [deviceId, autoReturn]);
 
   const { videoRef, canvasRef, cameraState, startCamera, stopCamera, toggleCamera, facingMode } = useKioskCamera(handleQR);
 
