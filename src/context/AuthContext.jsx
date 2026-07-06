@@ -181,7 +181,39 @@ export const AuthProvider = ({ children }) => {
             } catch { /* ignore — non-critical */ }
           }
         } else {
-          // Member — profile is a random-id doc linked via auth_uid (there may
+          // No users/{uid} doc. This is a random-id account — either staff
+          // (manager/receptionist/trainer) or a member (one doc per gym).
+
+          // 1. Staff resolution first. resolveStaffLogin finds the staff doc by
+          // the verified phone, links auth_uid and mints role/gym_id claims;
+          // returns { found:false } for non-staff so members fall through.
+          let staffResolved = false;
+          try {
+            const resolveStaff = httpsCallable(functions, 'resolveStaffLogin');
+            const { data: staffRes } = await resolveStaff();
+            if (staffRes?.found) {
+              // Pull the freshly-minted role/gym_id claim into the cached token
+              // so the staff doc read below (gym-scoped) is authorized.
+              await firebaseUser.getIdToken(true).catch(() => {});
+              const snap = await getDoc(doc(db, 'users', staffRes.staffDocId));
+              if (snap.exists()) {
+                activeMembershipRef.current = null;
+                setUserDoc({ id: snap.id, ...snap.data() });
+                setPendingGymSelection(null);
+                if (staffRes.gym_id) await refreshGymDoc(staffRes.gym_id);
+                staffResolved = true;
+              }
+            }
+          } catch (err) {
+            if (import.meta.env.DEV) console.error('resolveStaffLogin failed:', err);
+          }
+
+          if (staffResolved) {
+            setLoading(false);
+            return;
+          }
+
+          // 2. Member — profile is a random-id doc linked via auth_uid (there may
           // be one per gym). Restore the gym they last selected on this device.
           let restored = null;
           try {

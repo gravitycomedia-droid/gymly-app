@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { capPhoneDigits } from '../utils/helpers';
 
 const CLEOMITRA_API_KEY = import.meta.env.VITE_CLEOMITRA_API_KEY;
 
@@ -163,9 +164,11 @@ const InquiryModal = ({ gymId, gymPhone, gymName, onClose }) => {
                 <label style={labelStyle}><span>📱</span> Phone Number</label>
                 <input
                   type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
                   placeholder="10-digit mobile number"
                   value={formData.phone}
-                  onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+                  onChange={(e) => setFormData(p => ({ ...p, phone: capPhoneDigits(e.target.value) }))}
                   required
                   style={inputStyle}
                   onFocus={e => e.target.style.borderColor = 'var(--primary)'}

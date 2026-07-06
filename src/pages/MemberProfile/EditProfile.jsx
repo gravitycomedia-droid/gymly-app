@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
+import { capPhoneDigits } from '../../utils/helpers';
 
 const EditProfile = () => {
   const navigate = useNavigate();
@@ -181,13 +182,15 @@ const EditProfile = () => {
 
           <div className="input-group">
             <label className="input-label">Emergency Contact</label>
-            <input 
-              type="tel" 
-              className="input-field" 
-              name="emergency_contact" 
-              placeholder="Phone number" 
-              value={formData.emergency_contact} 
-              onChange={handleChange} 
+            <input
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              className="input-field"
+              name="emergency_contact"
+              placeholder="Phone number"
+              value={formData.emergency_contact}
+              onChange={(e) => setFormData(prev => ({ ...prev, emergency_contact: capPhoneDigits(e.target.value) }))}
             />
           </div>
 

@@ -7,6 +7,7 @@ import { storage } from '../../firebase/config';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { compressImage } from '../../firebase/storage';
 import { ROLE_PERMISSIONS } from '../../utils/permissions';
+import { capPhoneDigits } from '../../utils/helpers';
 import './Staff.css';
 
 const ROLES = [
@@ -179,10 +180,12 @@ const AddStaff = () => {
               </select>
               <input
                 type="tel"
+                inputMode="numeric"
+                maxLength={10}
                 className={`input-field phone-number-input ${errors.phone ? 'error' : ''}`}
                 placeholder="98765 43210"
                 value={form.phone}
-                onChange={(e) => update('phone', e.target.value)}
+                onChange={(e) => update('phone', capPhoneDigits(e.target.value))}
                 onBlur={handlePhoneBlur}
                 id="staff-phone"
               />

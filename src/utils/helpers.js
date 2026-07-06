@@ -172,3 +172,9 @@ export function playHapticSound(type = 'success') {
   }
 }
 
+
+// Restrict a phone-number input to at most 10 digits: strips non-digits and
+// cuts off after ten. Country code is handled by a separate selector.
+export function capPhoneDigits(value) {
+  return (value || '').replace(/\D/g, '').slice(0, 10);
+}

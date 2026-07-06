@@ -5,6 +5,7 @@ import { linkMemberships } from '../../firebase/firestore';
 import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { capPhoneDigits } from '../../utils/helpers';
 import './Login.css';
 
 const COUNTRY_CODES = [
@@ -239,11 +240,13 @@ const MemberLogin = () => {
                     </select>
                     <input
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
                       className={`input-field phone-number-input ${error ? 'error' : ''}`}
                       placeholder="98765 43210"
                       value={phone}
                       onChange={(e) => {
-                        setPhone(e.target.value);
+                        setPhone(capPhoneDigits(e.target.value));
                         setError('');
                       }}
                       onKeyDown={(e) => e.key === 'Enter' && handleSendOTP()}

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getUser, getGym, updateMember, getTrainers } from '../../firebase/firestore';
-import { calculateBMI } from '../../utils/helpers';
+import { calculateBMI, capPhoneDigits } from '../../utils/helpers';
 import { uploadMemberPhoto } from '../../firebase/storage';
 import './AddMember.css';
 
@@ -240,7 +240,7 @@ const EditMember = () => {
 
           <div className="input-group">
             <label className="input-label">Emergency contact</label>
-            <input type="tel" className="input-field" value={form.emergencyContact} onChange={(e) => update('emergencyContact', e.target.value)} />
+            <input type="tel" inputMode="numeric" maxLength={10} className="input-field" value={form.emergencyContact} onChange={(e) => update('emergencyContact', capPhoneDigits(e.target.value))} />
           </div>
 
           <div className="section-header">

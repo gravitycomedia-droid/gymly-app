@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
 import { useToast } from '../../context/ToastContext';
+import { capPhoneDigits } from '../../utils/helpers';
 import './Login.css';
 
 const COUNTRY_CODES = [
@@ -201,11 +202,13 @@ const OwnerLogin = () => {
                   </select>
                   <input
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     className={`input-field phone-number-input ${error ? 'error' : ''}`}
                     placeholder="98765 43210"
                     value={phone}
                     onChange={(e) => {
-                      setPhone(e.target.value);
+                      setPhone(capPhoneDigits(e.target.value));
                       setError('');
                     }}
                     onKeyDown={(e) => e.key === 'Enter' && handleSendOTP()}

@@ -8,7 +8,7 @@ import {
 } from '../../firebase/firestore';
 import { db } from '../../firebase/config';
 import { createPayment, getNextInvoiceNumber } from '../../firebase/firestore-payments';
-import { addDays, formatDate, calculateBMI } from '../../utils/helpers';
+import { addDays, formatDate, calculateBMI, capPhoneDigits } from '../../utils/helpers';
 import { getRecommendedPlanName } from '../../data/exerciseLibrary';
 import { generateInvoicePDF, uploadInvoice } from '../../utils/invoiceGenerator';
 import {
@@ -525,12 +525,14 @@ const AddMember = ({ quickAddOnly = false }) => {
                       <option value="+1">🇺🇸 +1</option>
                       <option value="+44">🇬🇧 +44</option>
                     </select>
-                    <input 
+                    <input
                       type="tel"
+                      inputMode="numeric"
+                      maxLength={10}
                       className={`w-full rounded-lg px-4 py-3 glass-input text-on-surface placeholder:text-outline/50 font-body-md ${errors.phone ? 'border-error' : ''}`}
-                      placeholder="98765 43210" 
+                      placeholder="98765 43210"
                       value={form.phone}
-                      onChange={(e) => update('phone', e.target.value)}
+                      onChange={(e) => update('phone', capPhoneDigits(e.target.value))}
                       onBlur={handlePhoneBlur}
                     />
                   </div>

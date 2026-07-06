@@ -717,6 +717,11 @@ exports.refreshCheckinClaim = attendanceAuth.refreshCheckinClaim;
 // Member multi-gym — mints role/gym_id claims for the selected gym membership.
 const memberClaims = require("./src/memberClaims");
 exports.setActiveGymClaim = memberClaims.setActiveGymClaim;
+
+// Staff login — links a random-id staff doc to its Auth UID by phone and mints
+// role/gym_id claims (onUserWrite can't, since doc id != uid).
+const staffClaims = require("./src/staffClaims");
+exports.resolveStaffLogin = staffClaims.resolveStaffLogin;
 const processScanModule = require("./src/processScan");
 exports.processScan = processScanModule.processScan;
 
