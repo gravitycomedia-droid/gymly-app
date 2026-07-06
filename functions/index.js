@@ -708,6 +708,14 @@ exports.adminCreateBroadcast      = adminControl.adminCreateBroadcast;
 exports.adminSetBroadcastActive   = adminControl.adminSetBroadcastActive;
 exports.adminDeleteBroadcast      = adminControl.adminDeleteBroadcast;
 
+// Attendance security — signed check-in token + server-validated scans.
+// refreshCheckinClaim issues the member's short-lived QR token; processScan is
+// the single validated entry point for staff scanner, tablet and kiosk scans.
+const attendanceAuth = require("./src/attendanceAuth");
+exports.refreshCheckinClaim = attendanceAuth.refreshCheckinClaim;
+const processScanModule = require("./src/processScan");
+exports.processScan = processScanModule.processScan;
+
 // ─── 4. Trial Expiry Check (Daily 6 AM IST) ───
 exports.checkTrialExpiry = functions.pubsub
   .schedule("0 6 * * *")

@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import jsQR from 'jsqr';
-import { db } from '../../firebase/config';
-import { getDoc, doc, updateDoc, collection, query, where, getDocs, serverTimestamp, increment } from 'firebase/firestore';
-import { formatDateKey, createAttendanceLog, getPaymentsRealtime, updatePayment } from '../../firebase/firestore-payments';
+import { functions } from '../../firebase/config';
+import { httpsCallable } from 'firebase/functions';
+import { getPaymentsRealtime, updatePayment } from '../../firebase/firestore-payments';
 import { playHapticSound, getInitials, getAvatarColor, formatDate } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
 import '../Scanner/Scanner.css';
@@ -69,87 +69,45 @@ const ReceptionistDashboard = () => {
     }
   };
 
-  const handleCheckin = useCallback(async (memberId, gymId) => {
+  // Check-in logic runs server-side in processScan (expiry / duplicate /
+  // gym-match / signed-token). The reception scanner forwards the raw QR payload.
+  const handleCheckin = useCallback(async (qrPayload) => {
     if (!scanningRef.current) return;
     scanningRef.current = false;
 
     try {
-      const memberSnap = await getDoc(doc(db, 'users', memberId));
-      if (!memberSnap.exists()) {
+      const processScan = httpsCallable(functions, 'processScan');
+      const { data } = await processScan({ qrPayload });
+      const member = {
+        id: data.memberId,
+        name: data.memberName,
+        profile_photo: data.memberPhoto,
+        plan_name: data.planName,
+      };
+
+      if (data.status === 'success') {
+        playHapticSound('success');
+        setResult({ type: 'success', member, streak: data.currentStreak, isNewRecord: data.isNewRecord });
+      } else if (data.status === 'expired') {
         playHapticSound('error');
-        setResult({ type: 'error', message: 'Member not found' });
-        setTimeout(resetScan, 3000);
-        return;
-      }
-      const member = { id: memberSnap.id, ...memberSnap.data() };
-
-      const expectedGym = userDoc?.gym_id || gymId;
-      if (member.gym_id !== expectedGym) {
-        playHapticSound('error');
-        setResult({ type: 'error', message: 'Wrong gym QR code' });
-        setTimeout(resetScan, 3000);
-        return;
-      }
-
-      const now = new Date();
-      const expiry = member.subscription_expiry?.toDate ? member.subscription_expiry.toDate() : null;
-      const isExpired = !expiry || expiry < now;
-
-      if (isExpired) {
-        await createAttendanceLog({
-          gym_id: expectedGym, member_id: memberId, member_name: member.name,
-          member_photo: member.profile_photo || null, plan_name: member.plan_name || '',
-          subscription_expiry: member.subscription_expiry, exit_time: null,
-          date: formatDateKey(now), scanned_by: 'qr_self', scan_mode: 'reception',
-          is_expired: true,
-        });
-        playHapticSound('error');
-        setResult({ type: 'expired', member, daysAgo: expiry ? Math.ceil((now - expiry) / (1000*60*60*24)) : 0 });
-        setTimeout(resetScan, 3000);
-        return;
-      }
-
-      const todayKey = formatDateKey(now);
-      const todayQ = query(
-        collection(db, 'attendance_logs'),
-        where('member_id', '==', memberId),
-        where('date', '==', todayKey),
-        where('is_expired', '==', false)
-      );
-      const todaySnap = await getDocs(todayQ);
-
-      if (!todaySnap.empty) {
+        setResult({ type: 'expired', member });
+      } else if (data.status === 'duplicate') {
         playHapticSound('error');
         setResult({ type: 'already', member });
-        setTimeout(resetScan, 3000);
-        return;
+      } else {
+        playHapticSound('error');
+        setResult({ type: 'error', message: data.message || 'Check-in failed' });
       }
-
-      await createAttendanceLog({
-        gym_id: expectedGym, member_id: memberId, member_name: member.name,
-        member_photo: member.profile_photo || null, plan_name: member.plan_name || '',
-        subscription_expiry: member.subscription_expiry, exit_time: null,
-        date: todayKey, scanned_by: 'qr_self', scan_mode: 'reception',
-        is_expired: false,
-      });
-
-      const _lsKey = `last_seen_write_${memberId}`;
-      const _lastWrite = parseInt(sessionStorage.getItem(_lsKey) || '0', 10);
-      if (Date.now() - _lastWrite >= 30 * 60 * 1000) {
-        await updateDoc(doc(db, 'users', memberId), { last_seen: serverTimestamp() });
-        sessionStorage.setItem(_lsKey, String(Date.now()));
-      }
-
-      playHapticSound('success');
-      setResult({ type: 'success', member });
-      setTimeout(resetScan, 3000);
     } catch (err) {
       console.error('Check-in error:', err);
       playHapticSound('error');
-      setResult({ type: 'error', message: 'Check-in failed' });
-      setTimeout(resetScan, 3000);
+      const msg = (err?.message?.includes('Expired or invalid') || err?.message?.includes('Outdated'))
+        ? 'Expired code — ask member to reopen app'
+        : err?.message?.includes('different gym') ? 'Wrong gym QR code' : 'Check-in failed';
+      setResult({ type: 'error', message: msg });
     }
-  }, [userDoc]);
+    setTimeout(resetScan, 3000);
+  }, []);
 
   const resetScan = () => {
     setResult(null);
@@ -187,12 +145,7 @@ const ReceptionistDashboard = () => {
           });
 
           if (code && code.data.startsWith('gymly://checkin/')) {
-            const parts = code.data.split('/');
-            if (parts.length >= 5) {
-              const memberId = parts[3];
-              const gymId = parts[4];
-              handleCheckin(memberId, gymId);
-            }
+            handleCheckin(code.data);
           }
         } catch (e) {
           // ignore scan errors
