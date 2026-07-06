@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
-import { getUser, linkMemberAccount } from '../../firebase/firestore';
+import { linkMemberships } from '../../firebase/firestore';
+import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import './Login.css';
@@ -21,10 +22,12 @@ const COUNTRY_CODES = [
 
 const MemberLogin = () => {
   const navigate = useNavigate();
-  const { refreshUserDoc } = useAuth();
+  const { setActiveMembership } = useAuth();
   const { showToast } = useToast();
 
-  const [step, setStep] = useState('phone'); // 'phone' | 'otp' | 'not-registered'
+  const [step, setStep] = useState('phone'); // 'phone' | 'otp' | 'select-gym' | 'not-registered'
+  const [memberships, setMemberships] = useState([]);
+  const [selecting, setSelecting] = useState(false);
   const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -125,39 +128,30 @@ const MemberLogin = () => {
       // Step 1: Verify OTP with Firebase Auth
       const user = await verifyOTP(confirmationResult, code);
 
-      // Step 2: Ensure any unlinked member doc from Owner Dashboard is linked to this Auth UID
+      // Step 2: Link every gym membership registered to this phone to the Auth
+      // UID and get the list back (one entry per gym).
       const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
       const fullPhone = `${countryCode}${cleaned}`;
-      let linkStatus = 'none';
+      let list = [];
       try {
-          linkStatus = await linkMemberAccount(user.uid, fullPhone);
-          if (linkStatus === 'not_found') {
-              console.warn(`[Debug] Could not find pre-registered member with phone: ${fullPhone}`);
-          }
+        list = await linkMemberships(user.uid, fullPhone);
       } catch (linkErr) {
-          console.warn('Failed to link account (perhaps rules or network):', linkErr);
+        console.warn('Failed to link memberships:', linkErr);
       }
 
-      // Step 3: Fetch the newly linked (or already existing) user doc
-      let userDoc = null;
-      try {
-        userDoc = await getUser(user.uid);
-        await refreshUserDoc(user.uid);
-      } catch (firestoreErr) {
-        console.warn('Firestore read failed:', firestoreErr.code);
-      }
-
-      if (userDoc && userDoc.role === 'member') {
-        // Let AutoRedirect handle routing after AuthContext syncs
-        navigate('/', { replace: true });
-      } else if (!userDoc) {
-        if (linkStatus === 'not_found') {
-          showToast(`Phone ${fullPhone} not found in Gymly DB`, 'error');
-        }
+      if (!list || list.length === 0) {
+        console.warn(`[Debug] No membership found for phone: ${fullPhone}`);
         setStep('not-registered');
-      } else {
-        // User exists but is not a member (maybe owner) — redirect appropriately
+      } else if (list.length === 1) {
+        // Single gym — activate it and go straight in.
+        await setActiveMembership(user.uid, list[0].id);
         navigate('/', { replace: true });
+      } else {
+        // Registered in multiple gyms — let the member choose which to enter.
+        // Active (subscription live) memberships first.
+        const sorted = [...list].sort((a, b) => (b.active === true) - (a.active === true));
+        setMemberships(sorted);
+        setStep('select-gym');
       }
     } catch (err) {
       console.error('OTP verify error:', err.code, err.message);
@@ -176,6 +170,19 @@ const MemberLogin = () => {
       otpRefs.current[0]?.focus();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectGym = async (membershipId) => {
+    if (selecting) return;
+    setSelecting(true);
+    try {
+      await setActiveMembership(auth?.currentUser?.uid, membershipId);
+      navigate('/', { replace: true });
+    } catch (err) {
+      console.error('Gym selection error:', err);
+      showToast('Could not open that gym. Please try again.', 'error');
+      setSelecting(false);
     }
   };
 
@@ -206,7 +213,7 @@ const MemberLogin = () => {
           ← Back
         </button>
 
-        {step !== 'not-registered' ? (
+        {step === 'phone' || step === 'otp' ? (
           <div className="login-form-card glass-card">
             <h2 className="login-heading">Member login</h2>
             <p className="login-subtext">
@@ -305,6 +312,37 @@ const MemberLogin = () => {
                   )}
                 </div>
               </>
+            )}
+          </div>
+        ) : step === 'select-gym' ? (
+          /* Multi-gym picker — member is registered in more than one gym */
+          <div className="login-form-card glass-card gym-picker">
+            <h2 className="login-heading">Choose your gym</h2>
+            <p className="login-subtext">
+              You&apos;re a member at {memberships.length} gyms. Pick one to continue.
+            </p>
+            <div className="gym-picker-list">
+              {memberships.map((m) => (
+                <button
+                  key={m.id}
+                  className="gym-picker-item"
+                  onClick={() => handleSelectGym(m.id)}
+                  disabled={selecting}
+                >
+                  <div className="gym-picker-info">
+                    <span className="gym-picker-name">{m.gym_name}</span>
+                    {m.plan_name && <span className="gym-picker-plan">{m.plan_name}</span>}
+                  </div>
+                  <span className={`gym-picker-badge ${m.active ? 'active' : 'inactive'}`}>
+                    {m.active ? 'Active' : 'Expired'}
+                  </span>
+                </button>
+              ))}
+            </div>
+            {selecting && (
+              <div className="gym-picker-loading">
+                <div className="spinner" /> Opening…
+              </div>
             )}
           </div>
         ) : (

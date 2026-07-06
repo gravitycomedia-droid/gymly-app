@@ -164,3 +164,85 @@
 .btn-spacer {
   height: 24px;
 }
+
+/* ── Multi-gym picker ───────────────────────────────────────────── */
+.gym-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.gym-picker-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gym-picker-item:hover:not(:disabled) {
+  border-color: var(--member-accent, #1D9E75);
+  box-shadow: 0 4px 16px rgba(29, 158, 117, 0.15);
+  transform: translateY(-1px);
+}
+
+.gym-picker-item:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.gym-picker-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.gym-picker-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a1a);
+}
+
+.gym-picker-plan {
+  font-size: 12px;
+  color: var(--text-muted, #6b7280);
+}
+
+.gym-picker-badge {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: 999px;
+}
+
+.gym-picker-badge.active {
+  background: rgba(29, 158, 117, 0.14);
+  color: #1D9E75;
+}
+
+.gym-picker-badge.inactive {
+  background: rgba(226, 75, 74, 0.12);
+  color: #E24B4A;
+}
+
+.gym-picker-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--text-muted, #6b7280);
+}

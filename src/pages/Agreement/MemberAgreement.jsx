@@ -211,12 +211,12 @@ const MemberAgreement = () => {
 
       // Upload to Firebase Storage
       const timestamp = Date.now();
-      const storageRef = ref(storage, `agreements/${userDoc.gym_id}/${user.uid}_${timestamp}.pdf`);
+      const storageRef = ref(storage, `agreements/${userDoc.gym_id}/${userDoc.id}_${timestamp}.pdf`);
       await uploadBytes(storageRef, pdfBlob, { contentType: 'application/pdf', cacheControl: 'public,max-age=31536000' });
       const downloadUrl = await getDownloadURL(storageRef);
 
       // Update member doc
-      await updateDoc(doc(db, 'users', user.uid), {
+      await updateDoc(doc(db, 'users', userDoc.id), {
         agreement_status: 'agreed',
         agreement_signed_at: new Date().toISOString(),
         agreement_url: downloadUrl,
@@ -250,7 +250,7 @@ const MemberAgreement = () => {
         } catch (e) { /* non-critical */ }
       }
 
-      await refreshUserDoc(user.uid);
+      await refreshUserDoc(user?.uid);
       showToast('Agreement signed successfully! 🎉', 'success');
       navigate('/member/home', { replace: true });
     } catch (err) {

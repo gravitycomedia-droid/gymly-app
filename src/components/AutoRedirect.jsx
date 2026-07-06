@@ -11,7 +11,7 @@ const Spinner = () => (
 );
 
 const AutoRedirect = () => {
-  const { user, userDoc, superAdmin, loading } = useAuth();
+  const { user, userDoc, superAdmin, loading, pendingGymSelection } = useAuth();
 
   if (loading) return <Spinner />;
 
@@ -23,6 +23,12 @@ const AutoRedirect = () => {
   if (userDoc?.role) {
     // Go directly to home — agreement is shown as non-blocking inline card on the home screen
     return <Navigate to={getHomeRoute(userDoc.role)} replace />;
+  }
+
+  // Multi-gym member who hasn't picked a gym this session — send them to the
+  // gym picker, not owner registration.
+  if (pendingGymSelection && pendingGymSelection.length > 0) {
+    return <Navigate to="/member/select-gym" replace />;
   }
 
   // Authenticated but no user doc — likely new user, go to registration

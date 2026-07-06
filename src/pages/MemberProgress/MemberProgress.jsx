@@ -104,7 +104,7 @@ const MemberProgress = () => {
         type: 'weight'
       });
       const { updateMember } = await import('../../firebase/firestore');
-      await updateMember(user.uid, { weight: Number(newWeight) });
+      await updateMember(userDoc.id, { weight: Number(newWeight) });
 
       showToast('Weight updated! 🔥', 'success');
       setShowLogWeight(false);

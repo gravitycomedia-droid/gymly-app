@@ -35,6 +35,14 @@
       ]
     },
     {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "auth_uid", "order": "ASCENDING" },
+        { "fieldPath": "gym_id", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "workout_plans",
       "queryScope": "COLLECTION",
       "fields": [

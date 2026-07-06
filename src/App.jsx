@@ -14,6 +14,7 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 const RoleSelection        = lazy(() => import('./pages/RoleSelection/RoleSelection'));
 const OwnerLogin           = lazy(() => import('./pages/Login/OwnerLogin'));
 const MemberLogin          = lazy(() => import('./pages/Login/MemberLogin'));
+const SelectGym            = lazy(() => import('./pages/Login/SelectGym'));
 const GymRegistration      = lazy(() => import('./pages/GymRegistration/GymRegistration'));
 const SetupChecklist       = lazy(() => import('./pages/SetupChecklist/SetupChecklist'));
 const OwnerDashboard       = lazy(() => import('./pages/OwnerDashboard/OwnerDashboard'));
@@ -92,6 +93,7 @@ function AnimatedRoutes() {
           <Route path="/select-role" element={<PageTransition><RoleSelection /></PageTransition>} />
           <Route path="/owner/login" element={<PageTransition><OwnerLogin /></PageTransition>} />
           <Route path="/member/login" element={<PageTransition><MemberLogin /></PageTransition>} />
+          <Route path="/member/select-gym" element={<PageTransition><SelectGym /></PageTransition>} />
           <Route path="/public/member/:id" element={<PageTransition><PublicCardScreen /></PageTransition>} />
           <Route path="/gym/:gymId" element={<PageTransition><GymLandingPage /></PageTransition>} />
           <Route path="/gym/:gymId/plans" element={<PageTransition><SubscriptionPlans /></PageTransition>} />

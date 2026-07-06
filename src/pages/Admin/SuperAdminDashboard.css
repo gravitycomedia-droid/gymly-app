@@ -376,6 +376,11 @@
   cursor: pointer;
 }
 .sa-ghost-btn.sm { padding: 6px 10px; font-size: 12px; }
+.sa-logout-btn {
+  border-color: rgba(226,75,74,0.4);
+  color: #E24B4A;
+}
+.sa-logout-btn:hover { background: rgba(226,75,74,0.08); }
 .sa-primary-btn {
   padding: 9px 16px;
   border-radius: 10px;

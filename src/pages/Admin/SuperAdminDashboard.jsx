@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase/config';
+import { logout } from '../../firebase/auth';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import ViewAsOwner from './ViewAsOwner';
@@ -79,6 +80,16 @@ export default function SuperAdminDashboard() {
   const { superAdmin } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/select-role', { replace: true });
+    } catch (err) {
+      console.error('Logout error:', err);
+      showToast('Failed to log out. Please try again.', 'error');
+    }
+  };
 
   const [stats, setStats] = useState(null);
   const [gyms, setGyms] = useState([]);
@@ -217,6 +228,9 @@ export default function SuperAdminDashboard() {
           <button className="sa-ghost-btn" onClick={() => navigate('/admin/broadcasts')}>Broadcasts</button>
           <button className="sa-ghost-btn" onClick={() => navigate('/admin/plans')}>Manage plans</button>
           <span className="admin-badge purple">SUPER ADMIN</span>
+          <button className="sa-ghost-btn sa-logout-btn" onClick={handleLogout} title="Log out">
+            Log out
+          </button>
         </div>
       </div>
 

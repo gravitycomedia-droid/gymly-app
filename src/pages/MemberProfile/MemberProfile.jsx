@@ -2,20 +2,47 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../firebase/auth';
+import { linkMemberships } from '../../firebase/firestore';
 import { getInitials, getAvatarColor } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
 import './MemberProfile.css';
 
 const MemberProfile = () => {
   const navigate = useNavigate();
-  const { user, userDoc } = useAuth();
+  const { user, userDoc, setActiveMembership } = useAuth();
   const [loggingOut, setLoggingOut] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [memberships, setMemberships] = useState([]);
+  const [showGymModal, setShowGymModal] = useState(false);
+  const [switchingId, setSwitchingId] = useState(null);
+
+  // Discover the member's other gym memberships (if any) so we can offer a
+  // "Switch gym" option. Re-linking here is idempotent.
+  useEffect(() => {
+    if (!user?.uid || !userDoc?.phone) return;
+    let cancelled = false;
+    linkMemberships(user.uid, userDoc.phone)
+      .then((list) => { if (!cancelled) setMemberships(list || []); })
+      .catch(() => { /* non-critical */ });
+    return () => { cancelled = true; };
+  }, [user?.uid, userDoc?.phone]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
     await logout();
     navigate('/select-role', { replace: true });
+  };
+
+  const handleSwitchGym = async (membershipId) => {
+    if (membershipId === userDoc?.id) { setShowGymModal(false); return; }
+    setSwitchingId(membershipId);
+    try {
+      await setActiveMembership(user.uid, membershipId);
+      setShowGymModal(false);
+      navigate('/member/home', { replace: true });
+    } catch {
+      setSwitchingId(null);
+    }
   };
 
   const avatarColor = getAvatarColor(userDoc?.name);
@@ -112,6 +139,17 @@ const MemberProfile = () => {
             </div>
             <div className="menu-item-arrow">→</div>
           </button>
+
+          {memberships.length > 1 && (
+            <button className="profile-menu-item glass-card" onClick={() => setShowGymModal(true)}>
+              <div className="menu-item-icon" style={{ background: 'rgba(109,54,212,0.1)', color: '#6D36D4' }}>🏋️</div>
+              <div className="menu-item-text">
+                <div className="menu-item-title">Switch Gym</div>
+                <div className="menu-item-subtitle">You&apos;re a member at {memberships.length} gyms</div>
+              </div>
+              <div className="menu-item-arrow">→</div>
+            </button>
+          )}
         </div>
 
         <div className="profile-details glass-card" style={{ padding: '20px', marginBottom: 20 }}>
@@ -155,12 +193,53 @@ const MemberProfile = () => {
             </div>
             <div className="qr-container">
               <div className="qr-placeholder" style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=gymly://member/${user?.uid}/${userDoc?.gym_id}`} 
-                  alt="Membership QR" 
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=gymly://member/${userDoc?.id}/${userDoc?.gym_id}`}
+                  alt="Membership QR"
                 />
               </div>
               <p className="qr-help">Show this code to your gym owner to quickly pull up your membership details.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Switch Gym Modal */}
+      {showGymModal && (
+        <div className="modal-overlay" onClick={() => setShowGymModal(false)}>
+          <div className="qr-modal glass-card" onClick={e => e.stopPropagation()}>
+            <div className="qr-modal-header">
+              <h3>Switch Gym</h3>
+              <button className="qr-close" onClick={() => setShowGymModal(false)}>×</button>
+            </div>
+            <div className="gym-switch-list">
+              {[...memberships]
+                .sort((a, b) => (b.active === true) - (a.active === true))
+                .map((m) => {
+                  const isCurrent = m.id === userDoc?.id;
+                  return (
+                    <button
+                      key={m.id}
+                      className={`gym-switch-item${isCurrent ? ' current' : ''}`}
+                      onClick={() => handleSwitchGym(m.id)}
+                      disabled={switchingId != null}
+                    >
+                      <div className="gym-switch-info">
+                        <span className="gym-switch-name">{m.gym_name}</span>
+                        {m.plan_name && <span className="gym-switch-plan">{m.plan_name}</span>}
+                      </div>
+                      {switchingId === m.id ? (
+                        <div className="spinner" style={{ width: 16, height: 16 }} />
+                      ) : isCurrent ? (
+                        <span className="gym-switch-badge current">Current</span>
+                      ) : (
+                        <span className={`gym-switch-badge ${m.active ? 'active' : 'inactive'}`}>
+                          {m.active ? 'Active' : 'Expired'}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
             </div>
           </div>
         </div>

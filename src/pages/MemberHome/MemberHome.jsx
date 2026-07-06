@@ -166,7 +166,7 @@ const MemberHome = () => {
 
     const qSession = query(
       collection(db, 'attendance_sessions'),
-      where('memberId', '==', user.uid),
+      where('memberId', '==', userDoc.id),
       where('gymId', '==', userDoc.gym_id),
       orderBy('createdAt', 'desc'),
       limit(1)
@@ -220,7 +220,7 @@ const MemberHome = () => {
     });
 
     return () => unsub();
-  }, [user?.uid, userDoc?.gym_id, firstName]);
+  }, [userDoc?.id, userDoc?.gym_id, firstName]);
 
   const handleSorenessSubmit = async () => {
     try {
@@ -238,13 +238,13 @@ const MemberHome = () => {
 
   const [allPayments, setAllPayments] = useState([]);
   useEffect(() => {
-    if (!userDoc?.gym_id || !user?.uid) return;
-    const unsub = getMemberPaymentsRealtime(userDoc.gym_id, user.uid, (payments) => {
+    if (!userDoc?.gym_id || !userDoc?.id) return;
+    const unsub = getMemberPaymentsRealtime(userDoc.gym_id, userDoc.id, (payments) => {
       setAllPayments(payments);
       setPendingPayments(payments.filter(p => p.status === 'pending' || p.status === 'partial'));
     });
     return () => unsub();
-  }, [userDoc?.gym_id, user?.uid]);
+  }, [userDoc?.gym_id, userDoc?.id]);
 
   const handleScreenshotUpload = async (paymentId, file) => {
     if (!file) return;

@@ -713,6 +713,10 @@ exports.adminDeleteBroadcast      = adminControl.adminDeleteBroadcast;
 // the single validated entry point for staff scanner, tablet and kiosk scans.
 const attendanceAuth = require("./src/attendanceAuth");
 exports.refreshCheckinClaim = attendanceAuth.refreshCheckinClaim;
+
+// Member multi-gym — mints role/gym_id claims for the selected gym membership.
+const memberClaims = require("./src/memberClaims");
+exports.setActiveGymClaim = memberClaims.setActiveGymClaim;
 const processScanModule = require("./src/processScan");
 exports.processScan = processScanModule.processScan;
 

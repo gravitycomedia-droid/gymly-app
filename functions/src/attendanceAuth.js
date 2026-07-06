@@ -54,17 +54,45 @@ exports.refreshCheckinClaim = functions
       throw new functions.https.HttpsError("unauthenticated", "Login required");
     }
     const uid = context.auth.uid;
-    const userDoc = await admin.firestore().doc(`users/${uid}`).get();
-    if (!userDoc.exists) {
-      throw new functions.https.HttpsError("not-found", "User not found");
+    const db = admin.firestore();
+
+    // Resolve the member's active membership. Multi-gym members have their
+    // membership under a random doc id (linked via auth_uid), so the QR must be
+    // keyed by that membership id — which is what processScan looks up. The
+    // active gym comes from the gym_id claim set by setActiveGymClaim.
+    const gymId = context.auth.token.gym_id || null;
+    let subjectId = uid; // legacy: owners/staff whose doc IS at users/{uid}
+    let resolvedGymId = gymId;
+
+    // Prefer the membership doc for this UID + active gym.
+    if (gymId) {
+      const q = await db.collection("users")
+        .where("auth_uid", "==", uid)
+        .where("gym_id", "==", gymId)
+        .limit(1)
+        .get();
+      if (!q.empty) {
+        subjectId = q.docs[0].id;
+        resolvedGymId = q.docs[0].data().gym_id;
+      }
     }
-    const gymId = userDoc.data().gym_id;
-    if (!gymId) {
-      throw new functions.https.HttpsError("failed-precondition", "No gym on profile");
+
+    // Fallback for legacy accounts whose profile lives at users/{uid}.
+    if (subjectId === uid && !resolvedGymId) {
+      const userDoc = await db.doc(`users/${uid}`).get();
+      if (userDoc.exists && userDoc.data().gym_id) {
+        resolvedGymId = userDoc.data().gym_id;
+      }
     }
+
+    if (!resolvedGymId) {
+      throw new functions.https.HttpsError("failed-precondition", "No active gym — pick a gym first");
+    }
+
     const windowStart = currentWindowStart();
-    const token = computeToken(process.env.QR_SIGNING_SECRET, uid, gymId, windowStart);
-    return { token, windowStart, gymId };
+    const token = computeToken(process.env.QR_SIGNING_SECRET, subjectId, resolvedGymId, windowStart);
+    // `uid` in the response is the QR subject (membership id) the scanner resolves.
+    return { token, windowStart, gymId: resolvedGymId, uid: subjectId };
   });
 
 exports.computeToken = computeToken;

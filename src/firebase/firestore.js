@@ -29,7 +29,7 @@ export const updateGym = (...args) => run('updateGym', real.updateGym, ...args);
 
 export const getGymMembers = (...args) => run('getGymMembers', real.getGymMembers, ...args);
 export const getGymMembersRealtime = (...args) => run('getGymMembersRealtime', real.getGymMembersRealtime, ...args);
-export const linkMemberAccount = (...args) => run('linkMemberAccount', real.linkMemberAccount, ...args);
+export const linkMemberships = (...args) => run('linkMemberships', real.linkMemberships, ...args);
 export const createMember = (...args) => run('createMember', real.createMember, ...args);
 export const updateMember = (...args) => run('updateMember', real.updateMember, ...args);
 export const deleteMember = (...args) => run('deleteMember', real.deleteMember, ...args);

@@ -159,36 +159,79 @@ export const getGymMembersRealtime = (gymId, callback, onError) => {
 };
 
 /**
- * Links an owner-created member document (random ID) to the actual Firebase Auth UID
- * which is generated when the member logs in via Phone Auth for the first time.
+ * Multi-gym account linking.
+ *
+ * A member may be registered in more than one gym — each registration is a
+ * separate `users` document (owner-created, random ID) that shares the member's
+ * phone number. When the member logs in via Phone Auth we stamp their Firebase
+ * Auth UID onto every matching document (the `auth_uid` field) so security rules
+ * grant them access. Documents are NOT migrated or deleted, so each gym keeps a
+ * stable membership record and the owner's member list is unaffected.
+ *
+ * Returns an array of membership summaries (one per gym) for the login gym
+ * picker, or `[]` when the phone is not registered anywhere.
+ *
+ * @param {string} uid   Firebase Auth UID of the just-verified member.
+ * @param {string} phone E.164 phone number (e.g. "+919876543210").
  */
-export const linkMemberAccount = async (uid, phone) => {
-  const q = query(collection(db, 'users'), where('phone', '==', phone), limit(1));
+export const linkMemberships = async (uid, phone) => {
+  const q = query(collection(db, 'users'), where('phone', '==', phone));
   const snap = await getDocs(q);
-  
-  if (snap.empty) {
-    return 'not_found';
+  if (snap.empty) return [];
+
+  const memberships = [];
+  const gymNameCache = {};
+  const now = Date.now();
+
+  for (const membershipDoc of snap.docs) {
+    const data = membershipDoc.data();
+    // Only member registrations participate in the picker (defensive: a phone
+    // could in theory collide with a staff/owner doc).
+    if (data.role !== 'member') continue;
+
+    // Stamp the Auth UID onto docs that aren't linked yet (first login for this
+    // gym). Idempotent — re-linking on later logins is a no-op.
+    if (data.auth_uid !== uid) {
+      try {
+        await updateDoc(doc(db, 'users', membershipDoc.id), {
+          auth_uid: uid,
+          linked_at: serverTimestamp(),
+        });
+      } catch (err) {
+        // A single gym failing to link shouldn't block the others.
+        console.warn(`Failed to link membership ${membershipDoc.id}:`, err?.code || err);
+      }
+    }
+
+    // Resolve the gym's display name (cached per gym).
+    let gymName = gymNameCache[data.gym_id];
+    if (gymName === undefined && data.gym_id) {
+      try {
+        const gymSnap = await getDoc(doc(db, 'gyms', data.gym_id));
+        gymName = gymSnap.exists() ? (gymSnap.data().name || 'Gym') : 'Gym';
+      } catch {
+        gymName = 'Gym';
+      }
+      gymNameCache[data.gym_id] = gymName;
+    }
+
+    const expiryMs = data.subscription_expiry?.toMillis
+      ? data.subscription_expiry.toMillis()
+      : null;
+
+    memberships.push({
+      id: membershipDoc.id,
+      gym_id: data.gym_id,
+      gym_name: gymName || 'Gym',
+      name: data.name || '',
+      plan_name: data.plan_name || '',
+      subscription_expiry: expiryMs,
+      // "Active" = membership subscription hasn't lapsed.
+      active: expiryMs != null ? expiryMs > now : false,
+    });
   }
 
-  const oldDocSnap = snap.docs[0];
-  const oldDocId = oldDocSnap.id;
-  
-  // If the doc ID is already the UID, no need to link
-  if (oldDocId === uid) return 'already_linked';
-
-  const data = oldDocSnap.data();
-  
-  // Create new doc with real UID
-  await setDoc(doc(db, 'users', uid), {
-    ...data,
-    auth_uid: uid,
-    linked_at: serverTimestamp(),
-  });
-  
-  // Delete the old unauthenticated document
-  await deleteDoc(doc(db, 'users', oldDocId));
-  
-  return 'migrated';
+  return memberships;
 };
 
 /**

@@ -9,18 +9,18 @@ import '../MemberProfile/MemberProfile.css';
 
 const MemberPayments = () => {
   const navigate = useNavigate();
-  const { user, userDoc } = useAuth();
+  const { userDoc } = useAuth();
   const { showToast } = useToast();
   const [payments, setPayments] = useState([]);
   const [selectedPayment, setSelectedPayment] = useState(null);
 
   useEffect(() => {
-    if (!user?.uid || !userDoc?.gym_id) return;
-    const unsub = getMemberPaymentsRealtime(userDoc.gym_id, user.uid, (data) => {
+    if (!userDoc?.id || !userDoc?.gym_id) return;
+    const unsub = getMemberPaymentsRealtime(userDoc.gym_id, userDoc.id, (data) => {
       setPayments(data);
     });
     return () => unsub();
-  }, [user?.uid, userDoc?.gym_id]);
+  }, [userDoc?.id, userDoc?.gym_id]);
 
   const handleDownloadReceipt = async (payment) => {
     // If the official Zoho Invoice PDF exists, open it directly

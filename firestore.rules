@@ -14,11 +14,20 @@ service cloud.firestore {
         && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
-    // Users — same-gym read/write; role and gym_id are server-managed fields
+    // Users — same-gym read/write; role and gym_id are server-managed fields.
+    //
+    // Multi-gym members: a member doc keeps its own random ID (one doc per gym).
+    // The member's Firebase Auth UID is linked onto every matching doc via the
+    // `auth_uid` field at login (no doc migration/deletion). A member may
+    // therefore own several `users` docs — one per gym they belong to — all
+    // sharing the same `auth_uid` and `phone`.
     match /users/{uid} {
       allow read: if request.auth != null
                   && (
                     request.auth.uid == uid
+                    ||
+                    // Member reads any membership doc linked to their Auth UID.
+                    resource.data.auth_uid == request.auth.uid
                     ||
                     request.auth.token.gym_id
                       == resource.data.gym_id
@@ -28,7 +37,7 @@ service cloud.firestore {
                     isKiosk()
                     ||
                     // Phone Auth linking: newly authenticated member can find their
-                    // owner-created doc by matching the phone number claim.
+                    // owner-created doc(s) by matching the phone number claim.
                     request.auth.token.phone_number == resource.data.phone
                   );
 
@@ -38,17 +47,29 @@ service cloud.firestore {
                     && (
                       request.auth.uid == uid
                       ||
+                      // Member updates a membership doc already linked to them
+                      // (profile edits, agreement, progress) …
+                      resource.data.auth_uid == request.auth.uid
+                      ||
+                      // … or claims one of their owner-created docs by phone at
+                      // first login (setting auth_uid). Guarded below so this
+                      // path can only ever attach their own UID.
+                      (
+                        request.auth.token.phone_number == resource.data.phone
+                        && request.resource.data.auth_uid == request.auth.uid
+                      )
+                      ||
                       request.auth.token.gym_id
                         == resource.data.gym_id
                     )
-                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'gym_id']);
+                    // role and gym_id are server-managed and can never be changed
+                    // by a client. auth_uid, once set, is immutable.
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'gym_id'])
+                    && (resource.data.auth_uid == null
+                        || request.resource.data.auth_uid == resource.data.auth_uid);
 
-      // Allow a newly-linked member to delete their old pre-created doc (random ID).
-      // Conditions: phone must match the auth token, and the doc must not already
-      // be linked to an auth account (auth_uid field absent = null).
-      allow delete: if request.auth != null
-                    && request.auth.token.phone_number == resource.data.phone
-                    && resource.data.auth_uid == null;
+      // No client deletes — memberships are removed server-side only.
+      allow delete: if false;
     }
 
     // Gyms — authenticated read; writes scoped to owner_id (H-3)

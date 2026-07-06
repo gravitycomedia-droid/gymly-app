@@ -7,7 +7,7 @@ import { db } from '../../firebase/config';
 
 const EditProfile = () => {
   const navigate = useNavigate();
-  const { user, userDoc } = useAuth();
+  const { userDoc } = useAuth();
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -47,10 +47,10 @@ const EditProfile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!user?.uid) return;
+    if (!userDoc?.id) return;
     setLoading(true);
     try {
-      await updateDoc(doc(db, 'users', user.uid), formData);
+      await updateDoc(doc(db, 'users', userDoc.id), formData);
       showToast('Profile updated successfully', 'success');
       navigate(-1);
     } catch (err) {
