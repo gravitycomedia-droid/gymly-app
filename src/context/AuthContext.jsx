@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
+import { getDoc, doc } from 'firebase/firestore';
 import { auth, functions, db } from '../firebase/config';
-import { getUser, getGym, updateUser, getDoc, doc, linkMemberships } from '../firebase/firestore';
+import { getUser, getGym, updateUser, linkMemberships } from '../firebase/firestore';
 import { ROLE_PERMISSIONS } from '../utils/permissions';
 
 const AuthContext = createContext();
@@ -27,7 +28,6 @@ export const AuthProvider = ({ children }) => {
   // owner registration.
   const [pendingGymSelection, setPendingGymSelection] = useState(null);
   const [loading, setLoading] = useState(true);
-  const tokenRefreshed = useRef(false);
   // For multi-gym members, the membership doc id currently in session. When set,
   // the member's profile lives at users/{activeMembershipId}, NOT users/{uid}.
   const activeMembershipRef = useRef(null);
@@ -100,6 +100,22 @@ export const AuthProvider = ({ children }) => {
     return loadMembershipDoc(uid, membershipId);
   };
 
+  // Polls for a custom claim to land on the ID token, force-refreshing each
+  // attempt (claims never appear on a cached token). Backoff delays sum to
+  // 2000ms — the same worst-case ceiling as the fixed sleep this replaces —
+  // but resolves as soon as the claim shows up instead of always waiting the
+  // full duration.
+  const waitForClaim = async (firebaseUser, claimKey, delays = [150, 300, 600, 950]) => {
+    for (const delay of delays) {
+      await new Promise((r) => setTimeout(r, delay));
+      try {
+        const tr = await firebaseUser.getIdTokenResult(true);
+        if (tr.claims[claimKey]) return tr;
+      } catch { /* ignore — retry */ }
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (import.meta.env.DEV) {
       const mockRole = localStorage.getItem('mockRole');
@@ -130,6 +146,7 @@ export const AuthProvider = ({ children }) => {
         });
         setSuperAdmin(mockRole === 'admin');
         setLoading(false);
+        refreshGymDoc('mock_gym_123');
         return;
       }
     }
@@ -144,40 +161,43 @@ export const AuthProvider = ({ children }) => {
       setUser(firebaseUser);
 
       if (firebaseUser) {
-        // Refresh token once per login to pick up custom claims (gym_id, role).
-        // Must be awaited so components never mount with a stale token.
-        if (!tokenRefreshed.current) {
-          tokenRefreshed.current = true;
-          await firebaseUser.getIdToken(true).catch(() => {});
-        }
-
-        // Read the super_admin platform claim from the (refreshed) token.
+        // Read the cached token first — no forced network round trip on every
+        // login. A forced refresh only happens below, and only for the one
+        // case where a just-created account's custom claims haven't landed yet.
+        let claims = {};
         try {
           const tr = await firebaseUser.getIdTokenResult();
-          setSuperAdmin(tr.claims.super_admin === true);
+          claims = tr.claims;
+          setSuperAdmin(claims.super_admin === true);
         } catch { setSuperAdmin(false); }
 
-        // Owners/staff/legacy accounts have their profile at users/{uid}.
-        const fetchedDoc = await getUser(firebaseUser.uid).catch(() => null);
+        // Owners/staff/legacy accounts have their profile at users/{uid}. Fetch
+        // it alongside the gym doc (using the token's gym_id claim, if present)
+        // instead of waiting for the user-doc round trip to learn the same id.
+        const [fetchedDoc] = await Promise.all([
+          getUser(firebaseUser.uid).catch(() => null),
+          claims.gym_id ? refreshGymDoc(claims.gym_id) : Promise.resolve(null),
+        ]);
 
         if (fetchedDoc) {
           activeMembershipRef.current = null;
           setUserDoc(fetchedDoc);
-          if (fetchedDoc.gym_id) await refreshGymDoc(fetchedDoc.gym_id);
+          // Only re-fetch if the doc's gym_id disagrees with the claim we
+          // already used above — avoids a redundant read in the common case.
+          if (fetchedDoc.gym_id && fetchedDoc.gym_id !== claims.gym_id) {
+            await refreshGymDoc(fetchedDoc.gym_id);
+          }
 
           // Heal missing custom claims: if the user doc has gym_id but the JWT
           // doesn't, the onUserWrite Cloud Function never ran for this account.
           // Writing last_active to their own doc re-triggers it (allowed by
-          // "request.auth.uid == uid" in the update rule), then we get a fresh token.
-          if (fetchedDoc.gym_id) {
+          // "request.auth.uid == uid" in the update rule), then poll for the
+          // claim to land instead of blindly waiting a fixed 2s.
+          if (fetchedDoc.gym_id && !claims.gym_id) {
             try {
-              const tokenResult = await firebaseUser.getIdTokenResult();
-              if (!tokenResult.claims.gym_id) {
-                await updateUser(firebaseUser.uid, { last_active: new Date().toISOString() }).catch(() => {});
-                await new Promise(r => setTimeout(r, 2000));
-                await firebaseUser.getIdToken(true).catch(() => {});
-                await refreshUserDoc(firebaseUser.uid);
-              }
+              await updateUser(firebaseUser.uid, { last_active: new Date().toISOString() }).catch(() => {});
+              await waitForClaim(firebaseUser, 'gym_id');
+              await refreshUserDoc(firebaseUser.uid);
             } catch { /* ignore — non-critical */ }
           }
         } else {
@@ -255,7 +275,6 @@ export const AuthProvider = ({ children }) => {
         setGymDoc(null);
         setSuperAdmin(false);
         setPendingGymSelection(null);
-        tokenRefreshed.current = false;
       }
       setLoading(false);
     });

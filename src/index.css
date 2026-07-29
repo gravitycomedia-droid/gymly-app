@@ -1,6 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@500;600;700&family=Geist:wght@500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+/* Fonts are loaded from <link> tags in index.html — never re-@import them here.
+   A CSS @import is hoisted to the top of the built stylesheet, which chains the
+   font requests behind the 80 KB CSS download instead of starting them from the
+   HTML. See PLAN-owner-dashboard-performance.md. */
 
 @tailwind base;
 @tailwind components;
@@ -76,6 +77,27 @@ html, body, #root {
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Material Symbols ──
+   The icon font is requested with display=swap so icons never block paint; it
+   used to default to font-display: block, which left the LCP element invisible
+   for up to 3 s.
+
+   Reserving the box is what removes the swap's layout shift. Until the font
+   arrives the element is as wide as the literal ligature text ("fitness_center")
+   and snaps to icon width when it loads — that was the 0.05 CLS. Every Material
+   Symbols glyph has an advance of exactly 1em (960/960 upem), so a 1em box is
+   the final size and nothing moves.
+
+   Deliberately no `overflow: hidden` here: glyph ink runs to y=-91 units, i.e.
+   0.095em below the baseline, and with line-height:1 the baseline sits on the
+   box's bottom edge — clipping would shave the bottom off every icon. */
+.material-symbols-outlined {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
 }
 
 /* ── Screen Container ── */

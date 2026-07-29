@@ -1,10 +1,19 @@
+import { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { can } from '../utils/permissions';
 import AccessRestricted from './AccessRestricted';
 
-const ProtectedRoute = ({ children, requiredRole, allowedRoles, requiredPermission, requireSuperAdmin }) => {
+const ProtectedRoute = ({ children, requiredRole, allowedRoles, requiredPermission, requireSuperAdmin, preload }) => {
   const { user, userDoc, superAdmin, loading } = useAuth();
+
+  // Kick off the route's lazy chunk as soon as this guard mounts, instead of
+  // waiting for `loading` to resolve — otherwise React.lazy's import() never
+  // fires until auth is done, queuing the chunk behind the whole auth waterfall.
+  useEffect(() => {
+    preload?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (

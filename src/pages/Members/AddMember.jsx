@@ -4,8 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import {
   createMember, getMemberByPhone, getGym, getTrainers,
-  Timestamp, getPlanByName, assignWorkoutPlanToMember, updateDoc, doc
+  getPlanByName, assignWorkoutPlanToMember
 } from '../../firebase/firestore';
+import { Timestamp, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { createPayment, getNextInvoiceNumber } from '../../firebase/firestore-payments';
 import { addDays, formatDate, calculateBMI, capPhoneDigits } from '../../utils/helpers';

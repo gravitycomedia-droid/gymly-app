@@ -2,10 +2,17 @@
 // Proxy wrapper to redirect queries to mockFirestore in demo/screenshot mode
 
 import * as real from './firestore_real';
-import * as mock from './mockFirestore';
-export * from 'firebase/firestore';
 
 const isMock = () => import.meta.env.DEV && typeof window !== 'undefined' && localStorage.getItem('mockRole');
+
+// mockFirestore is a dev-only fixture module (343 lines) — importing it with a
+// bare `import` would ship it to prod. Guarding the dynamic import behind
+// import.meta.env.DEV lets Vite/Rollup dead-code-eliminate it from the prod
+// build entirely, since DEV is statically inlined to `false` there.
+let mock = {};
+if (import.meta.env.DEV) {
+  import('./mockFirestore').then((m) => { mock = m; });
+}
 
 // Wrapper helper
 const run = (fnName, realFn, ...args) => {

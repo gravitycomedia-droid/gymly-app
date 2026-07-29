@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import BroadcastBanner from '../../components/BroadcastBanner';
-import { getGym } from '../../firebase/firestore';
 import { logout } from '../../firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +12,7 @@ import { db } from '../../firebase/config';
 import { getInitials, getAvatarColor, getExpiryStatus, getPlanName, formatDate } from '../../utils/helpers';
 import StatusBadge from '../../components/StatusBadge';
 import useLiveOccupancy from '../../hooks/useLiveOccupancy';
+import useNewLeadsCount from '../../hooks/useNewLeadsCount';
 import './OwnerDashboard.css';
 
 function getGreeting() {
@@ -23,35 +23,17 @@ function getGreeting() {
 }
 
 const OwnerDashboard = () => {
-  const { userDoc } = useAuth();
+  const { userDoc, gymDoc: gym } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  const [gym, setGym] = useState(null);
   const [stats, setStats] = useState(null);
   const [memberCounts, setMemberCounts] = useState(null);
   const [recentMembers, setRecentMembers] = useState([]);
   const [expiringMembers, setExpiringMembers] = useState([]);
   const [recentPayments, setRecentPayments] = useState([]);
-  const [newLeadsCount, setNewLeadsCount] = useState(0);
-  const [loading, setLoading] = useState(true);
   const { occupancy } = useLiveOccupancy(userDoc?.gym_id);
-
-  // Gym info
-  useEffect(() => {
-    const fetchGym = async () => {
-      if (!userDoc?.gym_id) { setLoading(false); return; }
-      try {
-        const gymData = await getGym(userDoc.gym_id);
-        setGym(gymData);
-      } catch (err) {
-        console.error('Error fetching gym:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGym();
-  }, [userDoc]);
+  const newLeadsCount = useNewLeadsCount(userDoc?.gym_id);
 
   // Stats doc — live listener on 1 document (replaces full members + payments fetch)
   useEffect(() => {
@@ -114,36 +96,39 @@ const OwnerDashboard = () => {
 
   // Member counts — always fetched live so the cards are accurate regardless of
   // whether the CF-managed stats/summary doc exists or is stale after a write.
+  // Deferred to idle time: `stats` (above) already renders the cards immediately,
+  // so these 4 requests shouldn't compete with the critical-path fetches on mount.
   useEffect(() => {
     if (!userDoc?.gym_id) return;
     const gymId = userDoc.gym_id;
-    const now = new Date();
-    const in7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const membersRef = collection(db, 'users');
-    const base = [where('gym_id', '==', gymId), where('role', '==', 'member')];
 
-    Promise.allSettled([
-      getCountFromServer(query(membersRef, ...base)),
-      getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '>', now))),
-      getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '>', now), where('subscription_expiry', '<=', in7d))),
-      getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '<=', now))),
-    ]).then(([totR, actR, expR, expdR]) => {
-      setMemberCounts({
-        total_members:   totR.status   === 'fulfilled' ? totR.value.data().count   : 0,
-        active_members:  actR.status   === 'fulfilled' ? actR.value.data().count   : 0,
-        expiring_7d:     expR.status   === 'fulfilled' ? expR.value.data().count   : 0,
-        expired_members: expdR.status  === 'fulfilled' ? expdR.value.data().count  : 0,
-      });
-    }).catch(() => {});
-  }, [userDoc?.gym_id]);
+    const fetchCounts = () => {
+      const now = new Date();
+      const in7d = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+      const membersRef = collection(db, 'users');
+      const base = [where('gym_id', '==', gymId), where('role', '==', 'member')];
 
-  // New leads count
-  useEffect(() => {
-    if (!userDoc?.gym_id) return;
-    if (localStorage.getItem('mockRole')) { setNewLeadsCount(1); return; }
-    const q = query(collection(db, 'leads'), where('gym_id', '==', userDoc.gym_id), where('status', '==', 'new'));
-    const unsub = onSnapshot(q, (snap) => { setNewLeadsCount(snap.docs.length); });
-    return () => unsub();
+      Promise.allSettled([
+        getCountFromServer(query(membersRef, ...base)),
+        getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '>', now))),
+        getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '>', now), where('subscription_expiry', '<=', in7d))),
+        getCountFromServer(query(membersRef, ...base, where('subscription_expiry', '<=', now))),
+      ]).then(([totR, actR, expR, expdR]) => {
+        setMemberCounts({
+          total_members:   totR.status   === 'fulfilled' ? totR.value.data().count   : 0,
+          active_members:  actR.status   === 'fulfilled' ? actR.value.data().count   : 0,
+          expiring_7d:     expR.status   === 'fulfilled' ? expR.value.data().count   : 0,
+          expired_members: expdR.status  === 'fulfilled' ? expdR.value.data().count  : 0,
+        });
+      }).catch(() => {});
+    };
+
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(fetchCounts, { timeout: 2000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(fetchCounts, 200);
+    return () => clearTimeout(id);
   }, [userDoc?.gym_id]);
 
   // Member counts: live getCountFromServer (always accurate, no CF latency)
@@ -167,16 +152,6 @@ const OwnerDashboard = () => {
   };
 
   const firstName = (userDoc?.name || 'there').split(' ')[0];
-
-  if (loading) {
-    return (
-      <div className="screen dashboard-screen">
-        <div className="screen-content spinner-center">
-          <div className="spinner spinner-primary" style={{ width: 32, height: 32 }} />
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="screen dashboard-screen">

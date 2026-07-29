@@ -27,7 +27,7 @@ service cloud.firestore {
                     request.auth.uid == uid
                     ||
                     // Member reads any membership doc linked to their Auth UID.
-                    resource.data.auth_uid == request.auth.uid
+                    resource.data.get('auth_uid', null) == request.auth.uid
                     ||
                     request.auth.token.gym_id
                       == resource.data.gym_id
@@ -49,7 +49,7 @@ service cloud.firestore {
                       ||
                       // Member updates a membership doc already linked to them
                       // (profile edits, agreement, progress) …
-                      resource.data.auth_uid == request.auth.uid
+                      resource.data.get('auth_uid', null) == request.auth.uid
                       ||
                       // … or claims one of their owner-created docs by phone at
                       // first login (setting auth_uid). Guarded below so this
@@ -65,8 +65,12 @@ service cloud.firestore {
                     // role and gym_id are server-managed and can never be changed
                     // by a client. auth_uid, once set, is immutable.
                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'gym_id'])
-                    && (resource.data.auth_uid == null
-                        || request.resource.data.auth_uid == resource.data.auth_uid);
+                    // auth_uid may be entirely absent on owner-created member docs
+                    // (not just null) — resource.data.auth_uid would throw on a
+                    // missing key and silently deny the whole update, so read it
+                    // via get() with a default instead.
+                    && (resource.data.get('auth_uid', null) == null
+                        || request.resource.data.auth_uid == resource.data.get('auth_uid', null));
 
       // No client deletes — memberships are removed server-side only.
       allow delete: if false;

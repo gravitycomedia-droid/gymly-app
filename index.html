@@ -10,10 +10,29 @@
     <link rel="apple-touch-icon" href="/favicon.svg" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Geist:wght@400;500;600&display=swap" rel="stylesheet"/>
     <meta name="apple-mobile-web-app-title" content="Gymly" />
     <title>Gymly — Gym Management</title>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet" />
+
+    <!-- ── Fonts ──────────────────────────────────────────────────────────────
+         These two <link> tags are the ONLY place fonts are requested. Do not add
+         @import url(...) to any CSS file: Vite hoists those into the built
+         stylesheet, which chains the font downloads behind an 80 KB CSS file.
+
+         Weight ranges (wght@400..800) return a single variable WOFF2 per subset
+         instead of one static file per weight. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://firestore.googleapis.com" />
+    <link rel="preconnect" href="https://apis.google.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400..800&family=Inter:wght@400..800&family=Geist:wght@400..700&display=swap" rel="stylesheet" />
+    <!-- Material Symbols, subset to the icons this app actually renders: 43 KB
+         instead of the full 1.12 MB variable face.
+
+         ⚠️  Adding a new icon to the UI means adding its name here, or it will
+         render as literal text. The list is generated and verified by
+         `npm run icons` / `npm run icons:check` (scripts/extractIconNames.cjs).
+         Names must stay sorted alphabetically — the API rejects them otherwise. -->
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@300..700,0..1&icon_names=accessibility_new,account_balance,account_balance_wallet,add,add_a_photo,add_circle,all_inclusive,analytics,arrow_back,arrow_back_ios,autorenew,badge,bar_chart,block,cable,calendar_month,call,camera_alt,campaign,cancel,card_membership,chat,check,check_circle,chevron_right,close,confirmation_number,content_copy,credit_card,delete,delete_forever,desktop_windows,directions,directions_run,directions_walk,done,download,edit,edit_note,email,emoji_events,error,event_available,event_note,female,fiber_new,filter,fingerprint,fitness_center,flag,flip_camera_ios,gif,grid_view,group,groups,health_and_safety,height,history,home,hourglass_empty,inbox,info,inventory_2,lightbulb,link,list_alt,local_fire_department,location_on,lock_open,login,logout,male,monitor_heart,monitor_weight,monitoring,more_horiz,nights_stay,notifications,offline_bolt,open_in_new,overview,paid,pause_circle,payment,payments,pending,pending_actions,people,person,person_add,person_check,person_off,phone,phone_iphone,photo,photo_camera,photo_camera_front,photo_library,point_of_sale,pool,portrait,preview,public,qr_code,qr_code_2,qr_code_scanner,receipt_long,refresh,restaurant,restore,save,schedule,script,search,search_off,self_improvement,sensors,sensors_off,settings,smartphone,sports_gymnastics,sports_handball,sports_martial_arts,star,subscriptions,switch,sync_alt,task_alt,timer,today,touch_app,upcoming,uppercase,verified,visibility,visibility_off,warning,watch,weight,wifi_off&display=swap" rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

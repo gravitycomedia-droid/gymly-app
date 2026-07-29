@@ -67,4 +67,17 @@ export default defineConfig({
       }
     })
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+          if (id.includes('firebase') || id.includes('@firebase')) return 'vendor-firebase'
+          if (id.includes('framer-motion')) return 'vendor-framer-motion'
+          if (id.includes('react-router')) return 'vendor-router'
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('scheduler')) return 'vendor-react'
+        }
+      }
+    }
+  }
 })

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
 import { useToast } from '../../context/ToastContext';
 import { capPhoneDigits } from '../../utils/helpers';
+import { importOwnerDashboard } from '../../routePreload';
 import './Login.css';
 
 const COUNTRY_CODES = [
@@ -124,6 +125,11 @@ const OwnerLogin = () => {
     try {
       // Verify OTP — Firebase Auth signs the user in
       await verifyOTP(confirmationResult, code);
+
+      // Start the dashboard chunk downloading now, in parallel with the
+      // getIdToken/Firestore round-trip AuthContext is about to run — instead
+      // of waiting for ProtectedRoute to resolve and mount it.
+      importOwnerDashboard();
 
       // Navigate to root. AuthContext's onAuthStateChanged handler awaits
       // getIdToken(true) before reading Firestore, so by the time loading

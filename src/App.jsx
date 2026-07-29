@@ -9,6 +9,7 @@ import PageTransition from './components/PageTransition';
 import OwnerLayout from './components/layouts/OwnerLayout';
 import MemberLayout from './components/layouts/MemberLayout';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { importOwnerDashboard } from './routePreload';
 
 // ── Lazy-loaded pages ──
 const RoleSelection        = lazy(() => import('./pages/RoleSelection/RoleSelection'));
@@ -17,7 +18,7 @@ const MemberLogin          = lazy(() => import('./pages/Login/MemberLogin'));
 const SelectGym            = lazy(() => import('./pages/Login/SelectGym'));
 const GymRegistration      = lazy(() => import('./pages/GymRegistration/GymRegistration'));
 const SetupChecklist       = lazy(() => import('./pages/SetupChecklist/SetupChecklist'));
-const OwnerDashboard       = lazy(() => import('./pages/OwnerDashboard/OwnerDashboard'));
+const OwnerDashboard       = lazy(importOwnerDashboard);
 const MemberHome           = lazy(() => import('./pages/MemberHome/MemberHome'));
 const MemberList           = lazy(() => import('./pages/Members/MemberList'));
 const AddMember            = lazy(() => import('./pages/Members/AddMember'));
@@ -108,7 +109,7 @@ function AnimatedRoutes() {
           {/* Owner dashboard */}
           <Route
             path="/owner/dashboard"
-            element={<ProtectedRoute allowedRoles={['owner']}><OwnerLayout activeTab="home"><PageTransition><OwnerDashboard /></PageTransition></OwnerLayout></ProtectedRoute>}
+            element={<ProtectedRoute allowedRoles={['owner']} preload={importOwnerDashboard}><OwnerLayout activeTab="home"><PageTransition><OwnerDashboard /></PageTransition></OwnerLayout></ProtectedRoute>}
           />
           <Route
             path="/owner/leads"

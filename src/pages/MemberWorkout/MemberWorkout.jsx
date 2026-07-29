@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
-import { 
-  doc,
-  updateDoc,
-  getDoc,
-  createWorkoutLog, 
-  getMemberPRs, 
+import {
+  createWorkoutLog,
+  getMemberPRs,
   checkAndUpdatePR,
   getMemberWorkoutLogs,
   getMemberTodayLog,
   incrementallyUpdateWorkoutLog,
-  Timestamp
 } from '../../firebase/firestore';
+import { doc, updateDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { GYMLY_EXERCISE_DB } from '../../data/gymlyExerciseDb';
 import { calculateExerciseCalories, parseWeight, parseReps } from '../../utils/calorieEngine';

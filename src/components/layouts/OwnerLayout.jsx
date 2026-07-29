@@ -2,11 +2,8 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { logout } from '../../firebase/auth';
 import { getInitials } from '../../utils/helpers';
-import { useEffect, useState } from 'react';
-import { getGym } from '../../firebase/firestore';
 import BottomNav from '../BottomNav';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db } from '../../firebase/config';
+import useNewLeadsCount from '../../hooks/useNewLeadsCount';
 
 const OWNER_NAV = [
   { id: 'home',      label: 'Dashboard',  path: '/owner/dashboard',  icon: 'home' },
@@ -20,27 +17,9 @@ const OWNER_NAV = [
 export default function OwnerLayout({ children, activeTab }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userDoc } = useAuth();
-
-  const [gymName, setGymName] = useState('');
-  const [leadsCount, setLeadsCount] = useState(0);
-
-  useEffect(() => {
-    if (!userDoc?.gym_id) return;
-    getGym(userDoc.gym_id).then(g => setGymName(g?.name || ''));
-  }, [userDoc?.gym_id]);
-
-  useEffect(() => {
-    if (!userDoc?.gym_id) return;
-    if (localStorage.getItem('mockRole')) { setLeadsCount(1); return; }
-    const q = query(
-      collection(db, 'leads'),
-      where('gym_id', '==', userDoc.gym_id),
-      where('status', '==', 'new')
-    );
-    const unsub = onSnapshot(q, snap => setLeadsCount(snap.docs.length));
-    return () => unsub();
-  }, [userDoc?.gym_id]);
+  const { user, userDoc, gymDoc } = useAuth();
+  const gymName = gymDoc?.name || '';
+  const leadsCount = useNewLeadsCount(userDoc?.gym_id);
 
   const handleLogout = async () => {
     try {
