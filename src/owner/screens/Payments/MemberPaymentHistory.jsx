@@ -6,6 +6,7 @@ import { getInitials, formatDate } from '../../../utils/helpers';
 import { getAvatarColor } from '../../lib/avatarColor';
 import Badge from '../../primitives/Badge';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 export default function MemberPaymentHistory() {
   const { memberId } = useParams();
@@ -19,7 +20,7 @@ export default function MemberPaymentHistory() {
     getMemberPayments(userDoc.gym_id, memberId).then(setPayments).catch((err) => console.error(err)).finally(() => setLoading(false));
   }, [userDoc?.gym_id, memberId]);
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="kpis" rows={5} />;
 
   const memberName = payments[0]?.member_name || 'Member';
   const memberPhone = payments[0]?.member_phone || '';

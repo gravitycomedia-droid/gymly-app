@@ -5,6 +5,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { db } from '../../../firebase/config';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 export default function RecycleBin() {
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ export default function RecycleBin() {
   };
   const daysRemaining = (expiresAt) => expiresAt ? Math.max(0, Math.ceil((expiresAt.toMillis() - Date.now()) / 86400000)) : 0;
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="list" rows={4} />;
 
   return (
     <section data-screen-label="Recycle bin">
@@ -85,23 +86,27 @@ export default function RecycleBin() {
             const days = daysRemaining(entry.expires_at);
             const isUrgent = days <= 5;
             return (
-              <div key={entry.id} className="gl2-row" style={{ flexWrap: 'wrap' }}>
-                <span className="gl2-avatar" style={{ background: 'var(--gl2-danger-strong)' }}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>person_off</span>
-                </span>
-                <div style={{ flex: 1, minWidth: 150 }}>
-                  <p style={{ margin: 0, fontWeight: 700 }}>{entry.snapshot?.name || 'Unknown'}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--gl2-muted)' }}>{entry.snapshot?.phone || '—'}</p>
-                  <p style={{ margin: '4px 0 0', fontSize: 12.5, color: isUrgent ? 'var(--gl2-danger-fg)' : 'var(--gl2-muted)', fontWeight: isUrgent ? 700 : 500 }}>
+              <div key={entry.id} className="gl2-member-row">
+                <div className="gl2-member-row-top">
+                  <span className="gl2-avatar" style={{ background: 'var(--gl2-danger-strong)' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 18 }}>person_off</span>
+                  </span>
+                  <div className="gl2-member-row-info">
+                    <p style={{ margin: 0, fontWeight: 700 }}>{entry.snapshot?.name || 'Unknown'}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--gl2-muted)' }}>{entry.snapshot?.phone || '—'}</p>
+                  </div>
+                </div>
+                <div className="gl2-member-row-actions">
+                  <p style={{ margin: 0, fontSize: 12.5, color: isUrgent ? 'var(--gl2-danger-fg)' : 'var(--gl2-muted)', fontWeight: isUrgent ? 700 : 500, flex: 1, minWidth: 150 }}>
                     Deleted {formatDate(entry.deleted_at)}{entry.deleted_by_name ? ` by ${entry.deleted_by_name}` : ''} · {days} day{days !== 1 ? 's' : ''} remaining
                   </p>
+                  <button type="button" className="gl2-btn gl2-btn-secondary" disabled={restoringId === entry.id || deletingId === entry.id} onClick={() => handleRestore(entry.id)}>
+                    {restoringId === entry.id ? 'Restoring…' : 'Restore'}
+                  </button>
+                  <button type="button" className="gl2-btn gl2-btn-danger" disabled={restoringId === entry.id || deletingId === entry.id} onClick={() => setConfirmPermanentId(entry.id)}>
+                    {deletingId === entry.id ? 'Deleting…' : 'Delete forever'}
+                  </button>
                 </div>
-                <button type="button" className="gl2-btn gl2-btn-secondary" disabled={restoringId === entry.id || deletingId === entry.id} onClick={() => handleRestore(entry.id)}>
-                  {restoringId === entry.id ? 'Restoring…' : 'Restore'}
-                </button>
-                <button type="button" className="gl2-btn gl2-btn-danger" disabled={restoringId === entry.id || deletingId === entry.id} onClick={() => setConfirmPermanentId(entry.id)}>
-                  {deletingId === entry.id ? 'Deleting…' : 'Delete forever'}
-                </button>
               </div>
             );
           })

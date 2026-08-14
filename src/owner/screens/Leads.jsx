@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { getInitials } from '../../utils/helpers';
 import { getAvatarColor } from '../lib/avatarColor';
 import EmptyState from '../primitives/EmptyState';
+import PageSkeleton from '../primitives/PageSkeleton';
 
 const TABS = [
   { id: 'new', label: 'New' },
@@ -69,11 +70,7 @@ export default function Leads() {
   };
 
   if (loading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
-        <div className="spinner spinner-primary" style={{ width: 32, height: 32 }} />
-      </div>
-    );
+    return <PageSkeleton variant="kpis" rows={5} />;
   }
 
   const counts = {

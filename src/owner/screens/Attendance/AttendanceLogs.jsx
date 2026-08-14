@@ -8,6 +8,7 @@ import { getInitials } from '../../../utils/helpers';
 import { getAvatarColor } from '../../lib/avatarColor';
 import useLiveOccupancy from '../../../hooks/useLiveOccupancy';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 const getDateRange = (period) => {
   const end = new Date(); end.setHours(23, 59, 59, 999);
@@ -195,7 +196,7 @@ export default function AttendanceLogs() {
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>
+        <PageSkeleton variant="kpis" rows={5} />
       ) : (
         <>
           <div className="gl2-kpi-grid">

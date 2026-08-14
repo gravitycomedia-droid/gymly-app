@@ -7,6 +7,7 @@ import {
 } from '../../../firebase/firestore-kiosk';
 import useLiveOccupancy from '../../../hooks/useLiveOccupancy';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 const formatLastSeen = (ts) => {
   if (!ts) return 'Never';
@@ -197,7 +198,7 @@ export default function KioskDevices() {
       </a>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>
+        <PageSkeleton variant="grid" rows={3} />
       ) : devices.length === 0 ? (
         <div className="gl2-list">
           <EmptyState title="No kiosk devices yet" sub="Add a device to start tracking entry and exit attendance with QR codes." action={<button type="button" className="gl2-btn gl2-btn-primary" onClick={() => setShowAdd(true)}>+ Add first device</button>} />

@@ -7,6 +7,7 @@ import { getInitials } from '../../../utils/helpers';
 import DeleteConfirmModal from '../../../components/DeleteConfirmModal';
 import ListScreen from '../../components/ListScreen';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 const ROLE_COLOR = { manager: 'neutral', trainer: 'active', receptionist: 'expiring' };
 
@@ -46,7 +47,7 @@ export default function StaffList() {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="list" rows={6} />;
 
   const groups = [
     ['Managers', staff.filter((s) => s.role === 'manager')],

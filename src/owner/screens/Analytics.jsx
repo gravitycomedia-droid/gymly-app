@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
+import { getGymMembersRealtime } from '../../firebase/firestore';
 import { getAttendanceRange, formatDateKey } from '../../firebase/firestore-payments';
 import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { getDaysRemaining, getPlanName } from '../../utils/helpers';
 import { Chart, registerables } from 'chart.js';
+import PageSkeleton from '../primitives/PageSkeleton';
+import useOwnerGym from '../hooks/useOwnerGym';
 
 Chart.register(...registerables);
 
@@ -18,7 +20,7 @@ export default function Analytics() {
   const navigate = useNavigate();
   const { userDoc } = useAuth();
 
-  const [gym, setGym] = useState(null);
+  const { gym } = useOwnerGym(userDoc?.gym_id);
   const [members, setMembers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [range, setRange] = useState('This month');
@@ -33,7 +35,6 @@ export default function Analytics() {
 
   useEffect(() => {
     if (!userDoc?.gym_id) return;
-    getGym(userDoc.gym_id).then(setGym);
     const unsub = getGymMembersRealtime(userDoc.gym_id, (list) => { setMembers(list); setLoading(false); });
     return () => unsub();
   }, [userDoc?.gym_id]);
@@ -188,7 +189,7 @@ export default function Analytics() {
 
   useEffect(() => () => { Object.values(chartInstances.current).forEach((c) => c?.destroy()); }, []);
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="grid" rows={4} />;
 
   return (
     <section data-screen-label="Analytics">

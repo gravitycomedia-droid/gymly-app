@@ -1,11 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import {
-  createMember, getMemberByPhone, getGym,
+  createMember, getMemberByPhone,
   getPlanByName, assignWorkoutPlanToMember,
 } from '../../../firebase/firestore';
+import useOwnerGym from '../../hooks/useOwnerGym';
 import { Timestamp, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { createPayment, getNextInvoiceNumber } from '../../../firebase/firestore-payments';
@@ -27,7 +28,7 @@ export default function AddMember() {
   const leadData = location.state?.leadData || null;
 
   const [showFull, setShowFull] = useState(false);
-  const [gym, setGym] = useState(null);
+  const { gym } = useOwnerGym(userDoc?.gym_id);
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(null); // { memberId, memberNumber, enrollmentNumber, name }
   const [duplicate, setDuplicate] = useState(null);
@@ -48,11 +49,6 @@ export default function AddMember() {
   const [discount, setDiscount] = useState('');
   const [errors, setErrors] = useState({});
   const photoInputRef = useRef(null);
-
-  useEffect(() => {
-    if (!userDoc?.gym_id) return;
-    getGym(userDoc.gym_id).then(setGym).catch((err) => console.error('Error fetching gym:', err));
-  }, [userDoc?.gym_id]);
 
   const plans = (gym?.settings?.plans?.filter((p) => p.is_active) || []).sort((a, b) => (a.duration_days || 0) - (b.duration_days || 0));
   const selectedPlan = plans.find((p) => p.id === form.planId);

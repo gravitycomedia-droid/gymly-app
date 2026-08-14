@@ -2,13 +2,15 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
-import { getGym, getGymMembersRealtime } from '../../../firebase/firestore';
+import { getGymMembersRealtime } from '../../../firebase/firestore';
 import { backfillMemberNumbers, getNumberingSettings } from '../../../utils/numberingService';
 import { getInitials } from '../../../utils/helpers';
 import { getAvatarColor } from '../../lib/avatarColor';
 import { useOwnerShell } from '../../OwnerShellContext';
+import useOwnerGym from '../../hooks/useOwnerGym';
 import Badge from '../../primitives/Badge';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 const PAGE_SIZE = 20;
 
@@ -19,7 +21,7 @@ export default function MembersList() {
   const { showToast } = useToast();
   const { openQuickView } = useOwnerShell();
 
-  const [gym, setGym] = useState(null);
+  const { gym } = useOwnerGym(userDoc?.gym_id);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -37,11 +39,6 @@ export default function MembersList() {
   const [deletePayments, setDeletePayments] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const backfillRan = useRef(false);
-
-  useEffect(() => {
-    if (!userDoc?.gym_id) return;
-    getGym(userDoc.gym_id).then(setGym).catch((err) => console.error('Gym fetch error:', err));
-  }, [userDoc?.gym_id]);
 
   useEffect(() => {
     if (!userDoc?.gym_id) return;
@@ -133,7 +130,7 @@ export default function MembersList() {
   };
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+    return <PageSkeleton variant="list" rows={8} />;
   }
 
   const useEnrollId = numberingSettings?.useEnrollmentIdForAdmin || false;
@@ -192,26 +189,30 @@ export default function MembersList() {
             const label = isExpired ? 'Expired' : isExpiring ? 'Expiring' : 'Active';
             const selected = selectedIds.has(m.id);
             return (
-              <div key={m.id} className="gl2-row" style={{ flexWrap: 'wrap' }}>
-                {selectMode && (
-                  <button type="button" onClick={() => toggleSelect(m.id)} style={{ flex: 'none', width: 22, height: 22, borderRadius: 6, border: `2px solid ${selected ? 'var(--gl2-primary)' : 'var(--gl2-border)'}`, background: selected ? 'var(--gl2-primary)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                    {selected && <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#fff' }}>check</span>}
+              <div key={m.id} className="gl2-member-row">
+                <div className="gl2-member-row-top">
+                  {selectMode && (
+                    <button type="button" onClick={() => toggleSelect(m.id)} style={{ flex: 'none', width: 22, height: 22, borderRadius: 6, border: `2px solid ${selected ? 'var(--gl2-primary)' : 'var(--gl2-border)'}`, background: selected ? 'var(--gl2-primary)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                      {selected && <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#fff' }}>check</span>}
+                    </button>
+                  )}
+                  <span className="gl2-avatar" style={{ background: getAvatarColor(m.name) }}>{getInitials(m.name)}</span>
+                  <button type="button" className="gl2-member-row-info" onClick={() => navigate(`/owner/members/${m.id}`)}>
+                    <p style={{ margin: 0, fontSize: 15, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--gl2-muted)' }}>{m.phone}{!useEnrollId && m.memberNumber ? ` · #${m.memberNumber}` : ''}</p>
                   </button>
-                )}
-                <span className="gl2-avatar" style={{ background: getAvatarColor(m.name) }}>{getInitials(m.name)}</span>
-                {useEnrollId && m.latestEnrollmentNumber && <span className="gl2-enroll">{m.latestEnrollmentNumber}</span>}
-                <button type="button" onClick={() => navigate(`/owner/members/${m.id}`)} style={{ flex: 1, minWidth: 140, border: 0, background: 'none', padding: 0, textAlign: 'left', cursor: 'pointer', font: 'inherit' }}>
-                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700 }}>{m.name}</p>
-                  <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--gl2-muted)' }}>{m.phone}{!useEnrollId && m.memberNumber ? ` · #${m.memberNumber}` : ''}</p>
-                </button>
-                <Badge variant={type}>{label}</Badge>
-                <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 36, padding: '0 11px' }} onClick={() => openQuickView({ ...m, status: type, planName: m.plan_name })}>Quick view</button>
-                <button type="button" className="gl2-icon-btn" style={{ width: 36, height: 36 }} title="Edit" onClick={() => navigate(`/owner/members/${m.id}/edit`)}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 17 }}>edit</span>
-                </button>
-                <button type="button" className="gl2-icon-btn danger" style={{ width: 36, height: 36 }} title="Delete" onClick={() => handleDeleteClick(m)}>
-                  <span className="material-symbols-outlined" style={{ fontSize: 17 }}>delete</span>
-                </button>
+                  {useEnrollId && m.latestEnrollmentNumber && <span className="gl2-enroll" style={{ flex: 'none' }}>{m.latestEnrollmentNumber}</span>}
+                </div>
+                <div className="gl2-member-row-actions">
+                  <Badge variant={type}>{label}</Badge>
+                  <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 36, padding: '0 11px' }} onClick={() => openQuickView({ ...m, status: type, planName: m.plan_name })}>Quick view</button>
+                  <button type="button" className="gl2-icon-btn" style={{ width: 36, height: 36, marginLeft: 'auto' }} title="Edit" onClick={() => navigate(`/owner/members/${m.id}/edit`)}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 17 }}>edit</span>
+                  </button>
+                  <button type="button" className="gl2-icon-btn danger" style={{ width: 36, height: 36 }} title="Delete" onClick={() => handleDeleteClick(m)}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 17 }}>delete</span>
+                  </button>
+                </div>
               </div>
             );
           })

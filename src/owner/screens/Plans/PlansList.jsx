@@ -4,6 +4,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { getGym, updateGym } from '../../../firebase/firestore';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
+import { invalidateOwnerGym } from '../../hooks/useOwnerGym';
 
 function periodStr(plan) {
   if (plan.category === 'Yearly') return 'yr';
@@ -62,6 +64,8 @@ export default function PlansList() {
   const { userDoc } = useAuth();
   const { showToast } = useToast();
   const [plans, setPlans] = useState([]);
+
+  useEffect(() => () => { if (userDoc?.gym_id) invalidateOwnerGym(userDoc.gym_id); }, [userDoc?.gym_id]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function PlansList() {
 
   const handleToggle = (planId) => savePlans(plans.map((p) => (p.id === planId ? { ...p, is_active: !p.is_active } : p)));
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="grid" rows={6} />;
 
   const activePlans = plans.filter((p) => p.is_active);
   const inactivePlans = plans.filter((p) => !p.is_active);

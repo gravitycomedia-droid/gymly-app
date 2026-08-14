@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
-import { getGym, getGymMembersRealtime } from '../../../firebase/firestore';
+import { getGymMembersRealtime } from '../../../firebase/firestore';
+import useOwnerGym from '../../hooks/useOwnerGym';
 import { createPayment, getNextInvoiceNumber, Timestamp } from '../../../firebase/firestore-payments';
 import { updateDoc, doc } from '../../../firebase/firestore-payments';
 import { db, storage } from '../../../firebase/config';
@@ -29,7 +30,7 @@ export default function AddPayment() {
   const { user, userDoc } = useAuth();
   const { showToast } = useToast();
 
-  const [gym, setGym] = useState(null);
+  const { gym } = useOwnerGym(userDoc?.gym_id);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -55,7 +56,6 @@ export default function AddPayment() {
 
   useEffect(() => {
     if (!userDoc?.gym_id) return;
-    getGym(userDoc.gym_id).then(setGym);
     const unsub = getGymMembersRealtime(userDoc.gym_id, setMembers);
     return () => unsub();
   }, [userDoc?.gym_id]);

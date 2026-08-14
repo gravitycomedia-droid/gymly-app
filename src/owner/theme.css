@@ -243,7 +243,19 @@
   display: flex; align-items: center; gap: 11px; padding: 10px 13px; border-bottom: 1px solid var(--gl2-divider);
 }
 .gl2-row:last-child { border-bottom: none; }
-.gl2-row-mobile { flex-direction: column; align-items: stretch; gap: 7px; padding: 10px 13px; }
+
+/* Member list / recycle-bin rows — stacked (info above actions) on phones,
+   side-by-side from tablet width up. Two named slots so markup doesn't have
+   to duplicate for each breakpoint. */
+.gl2-member-row { display: flex; flex-direction: column; gap: 10px; padding: 12px 13px; border-bottom: 1px solid var(--gl2-divider); }
+.gl2-member-row:last-child { border-bottom: none; }
+.gl2-member-row-top { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gl2-member-row-info { flex: 1; min-width: 0; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; font: inherit; }
+.gl2-member-row-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+@media (min-width: 640px) {
+  .gl2-member-row { flex-direction: row; align-items: center; padding: 10px 13px; }
+  .gl2-member-row-actions { margin-left: auto; flex-wrap: nowrap; }
+}
 
 .gl2-avatar {
   flex: none; width: 40px; height: 40px; border-radius: 20px; display: flex; align-items: center; justify-content: center;
@@ -424,10 +436,25 @@
 }
 
 /* ── Skeleton loading ────────────────────────────────────────────────── */
-.gl2-skel-title { height: 26px; width: 180px; border-radius: 8px; background: var(--gl2-skeleton); margin-bottom: 16px; }
-.gl2-skel-row { height: 92px; border-radius: var(--gl2-r-lg); background: var(--gl2-skeleton); }
+@keyframes gl2Shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.gl2-skel {
+  background: linear-gradient(90deg, var(--gl2-skeleton) 25%, #EEF0F6 37%, var(--gl2-skeleton) 63%);
+  background-size: 400% 100%;
+  animation: gl2Shimmer 1.6s ease-in-out infinite;
+  border-radius: var(--gl2-r-sm);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gl2-skel { animation: none; background: var(--gl2-skeleton); }
+}
+.gl2-skel-title { height: 26px; width: 180px; border-radius: 8px; margin-bottom: 16px; }
+.gl2-skel-line { height: 13px; border-radius: 6px; }
+.gl2-skel-circle { border-radius: 50%; flex: none; }
+.gl2-skel-row { height: 92px; border-radius: var(--gl2-r-lg); }
 .gl2-skel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.gl2-skel-block { height: 260px; border-radius: var(--gl2-r-lg); background: var(--gl2-skeleton); }
+.gl2-skel-block { height: 260px; border-radius: var(--gl2-r-lg); }
+.gl2-skel-card { padding: 16px; border-radius: var(--gl2-r-lg); background: var(--gl2-surface); border: 1px solid var(--gl2-border); }
+.gl2-skel-list-row { display: flex; align-items: center; gap: 11px; padding: 12px 13px; border-bottom: 1px solid var(--gl2-divider); }
+.gl2-skel-list-row:last-child { border-bottom: none; }
 
 /* ── Responsive: prototype breakpoint is 1024px (sidebar shell vs bottom nav) ── */
 @media (max-width: 1023px) {

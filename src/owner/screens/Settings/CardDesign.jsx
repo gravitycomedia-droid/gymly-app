@@ -6,6 +6,8 @@ import { getGym, updateGym } from '../../../firebase/firestore';
 import { getExpiryStatus } from '../../../utils/helpers';
 import MembershipCard from '../../components/MembershipCard';
 import { ToggleRow } from '../../components/EditSheet';
+import PageSkeleton from '../../primitives/PageSkeleton';
+import { invalidateOwnerGym } from '../../hooks/useOwnerGym';
 
 const DEFAULT_CARD_SETTINGS = {
   card_enabled: true, show_gym_name: true, show_gymly_label: true, show_member_name: true, show_photo: true,
@@ -42,6 +44,8 @@ export default function CardDesign() {
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState(DEFAULT_CARD_SETTINGS);
 
+  useEffect(() => () => { if (userDoc?.gym_id) invalidateOwnerGym(userDoc.gym_id); }, [userDoc?.gym_id]);
+
   useEffect(() => {
     if (!userDoc?.gym_id) return;
     getGym(userDoc.gym_id).then((g) => {
@@ -66,7 +70,7 @@ export default function CardDesign() {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="card" />;
 
   const fakeExpiry = { toDate: () => { const d = new Date(); d.setDate(d.getDate() + 30); return d; } };
   const { label: statusLabel, type: statusType } = getExpiryStatus(fakeExpiry);

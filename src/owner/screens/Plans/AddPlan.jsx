@@ -4,6 +4,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { getGym, updateGym } from '../../../firebase/firestore';
 import { useToast } from '../../../context/ToastContext';
 import { Field } from '../../components/Wizard';
+import PageSkeleton from '../../primitives/PageSkeleton';
+import { invalidateOwnerGym } from '../../hooks/useOwnerGym';
 
 const DURATION_DAYS = { Monthly: 30, Quarterly: 90, 'Six Months': 180, 'Nine Months': 270, Yearly: 365 };
 const DURATION_LABEL = { Monthly: 'mo', Quarterly: 'qtr', 'Six Months': '6mo', 'Nine Months': '9mo', Yearly: 'yr' };
@@ -31,6 +33,8 @@ export default function AddPlan() {
   const [discountPercent, setDiscountPercent] = useState(0);
   const [maxVisits, setMaxVisits] = useState(0);
   const [features, setFeatures] = useState({ gymAccess: true, personalTrainer: false, dietPlan: false, poolSpa: false, groupClasses: false });
+
+  useEffect(() => () => { if (userDoc?.gym_id) invalidateOwnerGym(userDoc.gym_id); }, [userDoc?.gym_id]);
   const [access, setAccess] = useState({ qrEntry: true, mobileApp: true });
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function AddPlan() {
 
   const toggleFeature = (key) => setFeatures((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="card" />;
 
   return (
     <section data-screen-label="Add plan">

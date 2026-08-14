@@ -8,6 +8,8 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { compressImage } from '../../../firebase/storage';
 import EditSheet from '../../components/EditSheet';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
+import { invalidateOwnerGym } from '../../hooks/useOwnerGym';
 
 const MUSCLE_GROUPS = ['Chest', 'Back', 'Shoulders', 'Biceps', 'Triceps', 'Legs', 'Core', 'Cardio', 'Full Body', 'Glutes'];
 
@@ -27,6 +29,8 @@ export default function Equipment() {
     if (!userDoc?.gym_id) return;
     getGym(userDoc.gym_id).then((g) => { if (g) setEquipment(g.equipment || []); setLoading(false); });
   }, [userDoc?.gym_id]);
+
+  useEffect(() => () => { if (userDoc?.gym_id) invalidateOwnerGym(userDoc.gym_id); }, [userDoc?.gym_id]);
 
   const openAdd = () => { setEditingEquipment({ id: `eq_${Date.now()}`, name: '', photo: '', muscles: [] }); setShowSheet(true); };
   const openEdit = (eq) => { setEditingEquipment({ ...eq }); setShowSheet(true); };
@@ -71,7 +75,7 @@ export default function Equipment() {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="grid" rows={6} />;
 
   return (
     <section data-screen-label="Gym equipment">

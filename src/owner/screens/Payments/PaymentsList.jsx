@@ -11,6 +11,7 @@ import { getAvatarColor } from '../../lib/avatarColor';
 import ListScreen from '../../components/ListScreen';
 import Badge from '../../primitives/Badge';
 import EmptyState from '../../primitives/EmptyState';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 const FILTERS = ['All', 'Paid', 'Pending', 'Partial', 'This month', 'Cash', 'UPI'];
 
@@ -89,7 +90,7 @@ export default function PaymentsList() {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="kpis" rows={7} />;
 
   return (
     <ListScreen

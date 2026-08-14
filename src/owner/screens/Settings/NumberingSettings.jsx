@@ -9,6 +9,7 @@ import {
   MONTH_CODE_LABELS,
 } from '../../../utils/numberingService';
 import { ToggleRow } from '../../components/EditSheet';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 const MEMBER_VARS = ['{GYM_PREFIX}', '{MONTH}', '{YY}', '{YYYY}', '{SERIAL}'];
 const ENROLLMENT_VARS = ['{JOIN_DATE}', '{PLAN_DURATION}', '{SERIAL}', '{MONTH}', '{GYM_CODE}', '{YY}'];
@@ -112,7 +113,7 @@ export default function NumberingSettings() {
   const memberPreview = previewMemberNumber(memberTemplate, gymPrefix, serialDigits);
   const enrollPreview = previewEnrollmentNumber(enrollTemplate, gymPrefix);
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="card" />;
 
   return (
     <section data-screen-label="Numbering system">

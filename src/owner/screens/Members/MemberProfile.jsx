@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
-import { getUser, getGym, updateMember } from '../../../firebase/firestore';
+import { getUser, updateMember } from '../../../firebase/firestore';
+import useOwnerGym from '../../hooks/useOwnerGym';
 import { getMemberPaymentsRealtime, clearPaymentDue, updatePayment } from '../../../firebase/firestore-payments';
 import { getInitials, getExpiryStatus, formatDate, getPlanName, getDaysRemaining } from '../../../utils/helpers';
 import { getAvatarColor } from '../../lib/avatarColor';
@@ -11,6 +12,7 @@ import DeleteConfirmModal from '../../../components/DeleteConfirmModal';
 import { QRCodeCanvas } from 'qrcode.react';
 import { uploadMemberPhoto } from '../../../firebase/storage';
 import Badge from '../../primitives/Badge';
+import PageSkeleton from '../../primitives/PageSkeleton';
 import MembershipCard from '../../components/MembershipCard';
 
 const DEFAULT_CS = {
@@ -32,7 +34,7 @@ export default function MemberProfile() {
   const { showToast } = useToast();
 
   const [member, setMember] = useState(null);
-  const [gym, setGym] = useState(null);
+  const { gym } = useOwnerGym(userDoc?.gym_id);
   const [loading, setLoading] = useState(true);
   const [showRenew, setShowRenew] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
@@ -46,9 +48,7 @@ export default function MemberProfile() {
 
   const fetchData = async () => {
     try {
-      const [memberDoc, gymDoc] = await Promise.all([getUser(id), userDoc?.gym_id ? getGym(userDoc.gym_id) : null]);
-      setMember(memberDoc);
-      setGym(gymDoc);
+      setMember(await getUser(id));
     } catch (err) {
       console.error('Error fetching member:', err);
       showToast('Failed to load member', 'error');
@@ -107,7 +107,7 @@ export default function MemberProfile() {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="profile" />;
   if (!member) return <div style={{ textAlign: 'center', padding: '60px 0' }}><p style={{ fontWeight: 700, marginBottom: 12 }}>Member not found</p><button type="button" className="gl2-btn gl2-btn-secondary" onClick={() => navigate('/owner/members')}>Back to members</button></div>;
 
   const { label, type, daysText } = getExpiryStatus(member.subscription_expiry);
@@ -309,9 +309,19 @@ export default function MemberProfile() {
 
   return (
     <section data-screen-label="Member Profile">
-      <button type="button" className="gl2-back-link" onClick={() => navigate('/owner/members')}>
-        <span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_back_ios</span>Members
-      </button>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+        <button type="button" className="gl2-back-link" style={{ margin: 0 }} onClick={() => navigate('/owner/members')}>
+          <span className="material-symbols-outlined" style={{ fontSize: 17 }}>arrow_back_ios</span>Members
+        </button>
+        <div style={{ display: 'flex', gap: 8, flex: 'none' }}>
+          <button type="button" className="gl2-icon-btn" title="Edit member" onClick={() => navigate(`/owner/members/${id}/edit`)}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>edit</span>
+          </button>
+          <button type="button" className="gl2-icon-btn danger" title="Delete member" onClick={() => setShowDelete(true)}>
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
+          </button>
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gap: 14, gridTemplateColumns: '1.4fr 1fr', alignItems: 'start' }} className="gl2-grid-2">
         <div className="gl2-card">
@@ -334,9 +344,7 @@ export default function MemberProfile() {
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             <button type="button" className="gl2-btn gl2-btn-primary" onClick={() => setShowRenew(true)}>Record Payment</button>
-            <button type="button" className="gl2-btn gl2-btn-secondary" onClick={() => navigate(`/owner/members/${id}/edit`)}>Edit Member</button>
             <a href={member.phone ? `https://wa.me/${String(member.phone).replace(/[^0-9]/g, '')}` : '#'} target="_blank" rel="noreferrer" className="gl2-btn gl2-btn-secondary">Message</a>
-            <button type="button" className="gl2-btn gl2-btn-danger" onClick={() => setShowDelete(true)}>Delete</button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 10 }}>

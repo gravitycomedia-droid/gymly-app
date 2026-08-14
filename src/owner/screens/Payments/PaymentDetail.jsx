@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { getPaymentById, deletePayment, updatePayment, getMemberPayments } from '../../../firebase/firestore-payments';
-import { getGym, updateMember } from '../../../firebase/firestore';
+import { updateMember } from '../../../firebase/firestore';
 import { sendWhatsApp, buildReceiptParams } from '../../../utils/whatsapp';
 import { formatDate } from '../../../utils/helpers';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import Badge from '../../primitives/Badge';
+import PageSkeleton from '../../primitives/PageSkeleton';
+import useOwnerGym from '../../hooks/useOwnerGym';
 
 export default function PaymentDetail() {
   const { id } = useParams();
@@ -15,7 +17,7 @@ export default function PaymentDetail() {
   const { userDoc } = useAuth();
   const { showToast } = useToast();
   const [payment, setPayment] = useState(null);
-  const [gym, setGym] = useState(null);
+  const { gym } = useOwnerGym(userDoc?.gym_id);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -23,9 +25,7 @@ export default function PaymentDetail() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [paymentData, gymData] = await Promise.all([getPaymentById(id), userDoc?.gym_id ? getGym(userDoc.gym_id) : null]);
-        setPayment(paymentData);
-        setGym(gymData);
+        setPayment(await getPaymentById(id));
       } catch (err) {
         console.error('Error fetching payment:', err);
         showToast('Failed to load payment', 'error');
@@ -123,7 +123,7 @@ export default function PaymentDetail() {
     }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="card" />;
   if (!payment) return <div style={{ textAlign: 'center', padding: '60px 0' }}><p style={{ fontWeight: 700 }}>Payment not found</p></div>;
 
   const isPendingOrPartial = payment.status === 'pending' || payment.status === 'partial';

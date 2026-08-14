@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGymSubscription, getBillingHistory } from '../../utils/subscriptionService';
 import { initiateRazorpayPayment } from '../../utils/razorpay';
+import PageSkeleton from '../primitives/PageSkeleton';
 
 const PLANS = {
   FREE: { name: 'Free', price: 0, billing: 'Free forever', members: 30, color: '#5A5E76', features: ['Up to 30 members', 'QR attendance', 'Member profiles'], missing: ['Payments', 'Analytics', 'WhatsApp automation'] },
@@ -68,7 +69,7 @@ export default function Subscription() {
   const handleCancelSubscription = async () => { showToast('Please contact support to cancel your subscription.', 'info'); setCancelModal(false); };
   const toDateStr = (ts) => (!ts ? '—' : (ts.toDate ? ts.toDate() : new Date(ts)).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }));
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="grid" rows={5} />;
 
   return (
     <section data-screen-label="Subscription">

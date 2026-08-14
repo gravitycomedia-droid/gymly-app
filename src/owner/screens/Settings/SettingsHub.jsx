@@ -9,6 +9,8 @@ import { compressImage } from '../../../firebase/storage';
 import { logout } from '../../../firebase/auth';
 import { getInitials } from '../../../utils/helpers';
 import EditSheet, { ToggleRow, SettingsRow } from '../../components/EditSheet';
+import PageSkeleton from '../../primitives/PageSkeleton';
+import { invalidateOwnerGym } from '../../hooks/useOwnerGym';
 
 const FACILITIES = ['Cardio', 'Strength', 'CrossFit', 'Yoga Studio', 'Showers', 'Lockers', 'WiFi', 'Parking', 'Personal Training', 'Cafe'];
 
@@ -37,6 +39,11 @@ export default function SettingsHub() {
   const [couponCode, setCouponCode] = useState('');
   const [couponSaving, setCouponSaving] = useState(false);
   const [activeSubInfo, setActiveSubInfo] = useState(null);
+
+  // Settings writes the gym doc directly (not through the shared read-only
+  // cache) — invalidate on unmount so read-only screens (Members, Add
+  // Member, Analytics, ...) don't serve stale gym data after edits here.
+  useEffect(() => () => { if (userDoc?.gym_id) invalidateOwnerGym(userDoc.gym_id); }, [userDoc?.gym_id]);
 
   useEffect(() => {
     if (!userDoc?.gym_id) return;
@@ -195,7 +202,7 @@ export default function SettingsHub() {
     catch (e) { showToast(`Failed to save: ${e.message}`, 'error'); setWorkoutEnabled(!value); }
   };
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="list" rows={8} />;
 
   return (
     <section data-screen-label="Settings">

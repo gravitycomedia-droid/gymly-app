@@ -6,6 +6,7 @@ import { getUser, updateMember, getTrainers } from '../../../firebase/firestore'
 import { calculateBMI, capPhoneDigits } from '../../../utils/helpers';
 import { uploadMemberPhoto } from '../../../firebase/storage';
 import { Field } from '../../components/Wizard';
+import PageSkeleton from '../../primitives/PageSkeleton';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
 const GOALS = ['Fat loss', 'Muscle gain', 'Endurance', 'General fitness'];
@@ -123,7 +124,7 @@ export default function EditMember() {
   };
 
   if (loading) {
-    return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+    return <PageSkeleton variant="card" />;
   }
 
   return (

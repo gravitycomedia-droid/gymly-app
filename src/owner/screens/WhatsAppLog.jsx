@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getWhatsAppLogsRealtime } from '../../firebase/firestore-payments';
 import ListScreen from '../components/ListScreen';
 import EmptyState from '../primitives/EmptyState';
+import PageSkeleton from '../primitives/PageSkeleton';
 
 const TYPE_LABELS = {
   welcome: 'Welcome', welcome_message: 'Welcome', expiry_7d: 'Expiry 7d', expiry_3d: 'Expiry 3d', expiry_1d: 'Expiry 1d',
@@ -29,7 +30,7 @@ export default function WhatsAppLog() {
     return () => unsub();
   }, [userDoc?.gym_id]);
 
-  if (loading) return <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}><div className="spinner spinner-primary" style={{ width: 32, height: 32 }} /></div>;
+  if (loading) return <PageSkeleton variant="kpis" rows={6} />;
 
   const now = new Date();
   const todayStr = now.toDateString();
