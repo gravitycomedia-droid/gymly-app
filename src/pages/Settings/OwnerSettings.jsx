@@ -11,7 +11,7 @@ import { getInitials } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
 import './Settings.css';
 
-const PLAN_COLORS = ['var(--primary)', '#1D9E75', '#EF9F27', 'var(--error)', '#378ADD', '#9333ea', '#f97316'];
+const PLAN_COLORS = ['var(--primary)', '#8A83D6', '#3E7CB1', '#2E8B6E', '#B5643C', '#4A438F', '#9089D8'];
 
 const emptyPlan = () => ({
   id: `plan_${Date.now()}`,

@@ -62,12 +62,12 @@ const buildHeatmap = (sessions) => {
 };
 
 const heatColor = (val, max) => {
-  if (val === 0 || max === 0) return '#f0edef';
+  if (val === 0 || max === 0) return '#F0EFFA';
   const pct = val / max;
-  if (pct < 0.2) return '#d4cffe';
-  if (pct < 0.45) return '#9b91e8';
-  if (pct < 0.7) return '#6b5fd0';
-  return '#534ab7';
+  if (pct < 0.25) return '#C9C5EC';
+  if (pct < 0.5) return '#9089D8';
+  if (pct < 0.75) return '#6C63C7';
+  return '#4A438F';
 };
 
 // ─── Streak calculation ───────────────────────────────────────────
@@ -318,7 +318,7 @@ const AttendanceLogs = () => {
             <section className="aa-section">
               <div className="aa-kpi-grid">
                 <div className="aa-kpi-card">
-                  <div className="aa-kpi-icon" style={{ background: 'rgba(83,74,183,0.1)', color: '#534ab7' }}>
+                  <div className="aa-kpi-icon" style={{ background: 'rgba(83,74,183,0.1)', color: '#6C63C7' }}>
                     <span className="material-symbols-outlined">person_check</span>
                   </div>
                   <div className="aa-kpi-value">{sessions.length}</div>
@@ -332,7 +332,7 @@ const AttendanceLogs = () => {
                   <div className="aa-kpi-label">Unique Members</div>
                 </div>
                 <div className="aa-kpi-card">
-                  <div className="aa-kpi-icon" style={{ background: 'rgba(0,64,139,0.1)', color: '#00408b' }}>
+                  <div className="aa-kpi-icon" style={{ background: 'rgba(74,67,143,0.1)', color: '#4A438F' }}>
                     <span className="material-symbols-outlined">people</span>
                   </div>
                   <div className="aa-kpi-value">{occupancy}</div>
@@ -349,14 +349,14 @@ const AttendanceLogs = () => {
                   <div className="aa-kpi-label">Avg Duration</div>
                 </div>
                 <div className="aa-kpi-card" style={{ borderColor: 'rgba(186,26,26,0.2)' }}>
-                  <div className="aa-kpi-icon" style={{ background: 'rgba(186,26,26,0.08)', color: '#ba1a1a' }}>
+                  <div className="aa-kpi-icon" style={{ background: 'rgba(186,26,26,0.08)', color: '#A62C22' }}>
                     <span className="material-symbols-outlined">block</span>
                   </div>
-                  <div className="aa-kpi-value" style={{ color: '#ba1a1a' }}>{deniedLogs.length}</div>
+                  <div className="aa-kpi-value" style={{ color: '#A62C22' }}>{deniedLogs.length}</div>
                   <div className="aa-kpi-label">Denied Attempts</div>
                 </div>
                 <div className="aa-kpi-card">
-                  <div className="aa-kpi-icon" style={{ background: 'rgba(83,74,183,0.08)', color: '#534ab7' }}>
+                  <div className="aa-kpi-icon" style={{ background: 'rgba(83,74,183,0.08)', color: '#6C63C7' }}>
                     <span className="material-symbols-outlined">local_fire_department</span>
                   </div>
                   <div className="aa-kpi-value">{streaks[0]?.streak || 0}</div>
@@ -457,7 +457,7 @@ const AttendanceLogs = () => {
                     const color = getAvatarColor(m.name);
                     return (
                       <div key={m.id} className="aa-top-row">
-                        <div className="aa-top-rank" style={{ color: i < 3 ? '#534ab7' : '#787584' }}>#{i + 1}</div>
+                        <div className="aa-top-rank" style={{ color: i < 3 ? '#6C63C7' : '#5A5E76' }}>#{i + 1}</div>
                         <div className="aa-log-avatar" style={{ background: color.bg, color: color.text, width: 36, height: 36, fontSize: 13 }}>
                           {getInitials(m.name)}
                         </div>
@@ -495,7 +495,7 @@ const AttendanceLogs = () => {
                         <div className="aa-top-info">
                           <div className="aa-top-name">{m.name}</div>
                           <div className="aa-top-bar-track">
-                            <div className="aa-top-bar-fill" style={{ width: `${(m.streak / maxStreak) * 100}%`, background: '#534ab7' }} />
+                            <div className="aa-top-bar-fill" style={{ width: `${(m.streak / maxStreak) * 100}%`, background: '#6C63C7' }} />
                           </div>
                         </div>
                         <div className="aa-streak-count">{m.streak} <span>days</span></div>

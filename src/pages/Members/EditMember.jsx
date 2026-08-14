@@ -170,8 +170,8 @@ const EditMember = () => {
               onClick={() => photoInputRef.current?.click()}
               style={{
                 width: 88, height: 88, borderRadius: '50%', overflow: 'hidden',
-                border: '3px solid rgba(255,255,255,0.5)', boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                background: 'rgba(109,54,212,0.08)', cursor: 'pointer',
+                border: '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                background: 'var(--primary-light)', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 padding: 0,
               }}

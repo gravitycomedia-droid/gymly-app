@@ -222,24 +222,24 @@ const PaymentList = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-headline-md text-headline-md text-on-surface">Revenue Trend</h2>
             <div className="flex gap-2">
-              <button className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary px-3 py-1 rounded-full bg-white/50 transition-colors">1M</button>
+              <button className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary px-3 py-1 rounded-full bg-surface-container-low transition-colors">1M</button>
               <button className="font-label-sm text-label-sm text-white bg-secondary px-3 py-1 rounded-full shadow-sm">6M</button>
-              <button className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary px-3 py-1 rounded-full bg-white/50 transition-colors">1Y</button>
+              <button className="font-label-sm text-label-sm text-on-surface-variant hover:text-primary px-3 py-1 rounded-full bg-surface-container-low transition-colors">1Y</button>
             </div>
           </div>
           <div className="w-full h-[240px] relative border-b border-l border-on-surface-variant/20 flex items-end">
             <svg className="w-full h-full preserve-3d" preserveAspectRatio="none" viewBox="0 0 1000 200">
               <defs>
                 <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                  <stop offset="0%" stopColor="#6d36d4" stopOpacity="0.2"></stop>
-                  <stop offset="100%" stopColor="#6d36d4" stopOpacity="0"></stop>
+                  <stop offset="0%" stopColor="#6C63C7" stopOpacity="0.2"></stop>
+                  <stop offset="100%" stopColor="#6C63C7" stopOpacity="0"></stop>
                 </linearGradient>
               </defs>
               <path d="M0,200 L0,150 C100,120 200,180 300,140 C400,100 500,160 600,90 C700,20 800,110 900,60 C950,35 1000,40 1000,40 L1000,200 Z" fill="url(#chartGradient)"></path>
-              <path d="M0,150 C100,120 200,180 300,140 C400,100 500,160 600,90 C700,20 800,110 900,60 C950,35 1000,40 1000,40" fill="none" stroke="#6d36d4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" style={{ filter: 'drop-shadow(0 4px 6px rgba(109,54,212,0.3))' }}></path>
-              <circle cx="300" cy="140" fill="#ffffff" r="6" stroke="#6d36d4" strokeWidth="3"></circle>
-              <circle cx="600" cy="90" fill="#ffffff" r="6" stroke="#6d36d4" strokeWidth="3"></circle>
-              <circle cx="900" cy="60" fill="#ffffff" r="6" stroke="#6d36d4" strokeWidth="3"></circle>
+              <path d="M0,150 C100,120 200,180 300,140 C400,100 500,160 600,90 C700,20 800,110 900,60 C950,35 1000,40 1000,40" fill="none" stroke="#6C63C7" strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" style={{ filter: 'drop-shadow(0 4px 6px rgba(109,54,212,0.3))' }}></path>
+              <circle cx="300" cy="140" fill="#ffffff" r="6" stroke="#6C63C7" strokeWidth="3"></circle>
+              <circle cx="600" cy="90" fill="#ffffff" r="6" stroke="#6C63C7" strokeWidth="3"></circle>
+              <circle cx="900" cy="60" fill="#ffffff" r="6" stroke="#6C63C7" strokeWidth="3"></circle>
             </svg>
           </div>
           <div className="flex justify-between w-full mt-2 px-2">
@@ -261,7 +261,7 @@ const PaymentList = () => {
               className={`font-label-sm text-label-sm whitespace-nowrap px-4 py-1.5 rounded-full transition-colors flex-shrink-0 ${
                 filter === f 
                   ? 'bg-secondary text-white shadow-sm' 
-                  : 'text-on-surface-variant bg-white/50 hover:bg-white/80'
+                  : 'text-on-surface-variant bg-surface-container-low hover:bg-white/80'
               }`}
             >
               {f}
@@ -297,7 +297,7 @@ const PaymentList = () => {
                   <div
                     key={p.id}
                     onClick={() => navigate(`/owner/payments/${p.id}`)}
-                    className="grid grid-cols-12 gap-2 px-4 py-4 border-b border-white/10 hover:bg-white/40 transition-colors items-center cursor-pointer"
+                    className="grid grid-cols-12 gap-2 px-4 py-4 border-b border-white/10 hover:bg-primary/5 transition-colors items-center cursor-pointer"
                   >
                     <div className="col-span-7 md:col-span-6 flex items-center gap-3">
                       <div
@@ -379,7 +379,7 @@ const PaymentList = () => {
               <h3 className="font-headline-sm text-lg font-bold text-on-surface">Collect Payment</h3>
               <button 
                 onClick={() => setClearModalPayment(null)}
-                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-white/40 transition-colors"
+                className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-black/5 transition-colors"
               >
                 <span className="material-symbols-outlined text-[20px]">close</span>
               </button>
@@ -404,7 +404,7 @@ const PaymentList = () => {
                     type="number"
                     value={clearAmount}
                     onChange={(e) => setClearAmount(e.target.value)}
-                    className="w-full bg-white/50 border border-white/40 rounded-xl py-3 pl-8 pr-4 font-body-md text-on-surface outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
+                    className="w-full bg-surface-container-low border border-white/40 rounded-xl py-3 pl-8 pr-4 font-body-md text-on-surface outline-none focus:ring-2 focus:ring-primary/50 transition-shadow"
                     placeholder="0"
                   />
                 </div>

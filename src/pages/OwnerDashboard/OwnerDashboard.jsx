@@ -195,6 +195,45 @@ const OwnerDashboard = () => {
           </button>
         </div>
 
+        {/* ══════ Needs attention today ══════ */}
+        {(pendingDues > 0 || expiringCount > 0 || newLeadsCount > 0) && (
+          <div className="dash-attention-card dash-glass">
+            <p className="dash-attention-heading">Needs attention today</p>
+            <div className="dash-attention-list">
+              {pendingDues > 0 && (
+                <div className="dash-attention-row">
+                  <span className="dash-attention-dot" style={{ background: '#C1362C' }} />
+                  <div className="dash-attention-body">
+                    <p className="dash-attention-title">Members have unpaid dues</p>
+                    <p className="dash-attention-sub">₹{pendingDues.toLocaleString('en-IN')} outstanding</p>
+                  </div>
+                  <button className="dash-attention-cta" onClick={() => navigate('/owner/payments?filter=Pending')}>Collect</button>
+                </div>
+              )}
+              {expiringCount > 0 && (
+                <div className="dash-attention-row">
+                  <span className="dash-attention-dot" style={{ background: '#D08700' }} />
+                  <div className="dash-attention-body">
+                    <p className="dash-attention-title">{expiringCount} membership{expiringCount !== 1 ? 's' : ''} expire{expiringCount === 1 ? 's' : ''} this week</p>
+                    <p className="dash-attention-sub">Send WhatsApp reminders</p>
+                  </div>
+                  <button className="dash-attention-cta" onClick={() => navigate('/owner/members?filter=expiring')}>Review</button>
+                </div>
+              )}
+              {newLeadsCount > 0 && (
+                <div className="dash-attention-row">
+                  <span className="dash-attention-dot" style={{ background: 'var(--gl-primary)' }} />
+                  <div className="dash-attention-body">
+                    <p className="dash-attention-title">{newLeadsCount} new enquir{newLeadsCount !== 1 ? 'ies' : 'y'} waiting</p>
+                    <p className="dash-attention-sub">Follow up before they go cold</p>
+                  </div>
+                  <button className="dash-attention-cta" onClick={() => navigate('/owner/leads')}>Open</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* ══════ Live Occupancy Widget ══════ */}
         <div
           className="dash-occupancy-widget dash-glass"

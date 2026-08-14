@@ -243,7 +243,7 @@ const PaymentDetail = () => {
           {payment.discount > 0 && (
             <div className="payment-info-row">
               <span className="payment-info-label">Discount</span>
-              <span className="payment-info-value" style={{ color: '#1D9E75' }}>- ₹{payment.discount}</span>
+              <span className="payment-info-value" style={{ color: '#1E7A4B' }}>- ₹{payment.discount}</span>
             </div>
           )}
           <div className="payment-info-row">
@@ -271,7 +271,7 @@ const PaymentDetail = () => {
             <span className="payment-info-label">WhatsApp receipt</span>
             <span className="payment-info-value">
               {payment.invoice_status === 'sent_via_wa' 
-                ? <span style={{ color: '#1D9E75', fontWeight: 600 }}>✓ Auto-Delivered</span> 
+                ? <span style={{ color: '#1E7A4B', fontWeight: 600 }}>✓ Auto-Delivered</span> 
                 : payment.invoice_status === 'wa_failed' 
                 ? <span style={{ color: 'var(--error)', fontWeight: 600 }}>✕ Delivery Failed</span>
                 : payment.whatsapp_sent 
@@ -311,7 +311,7 @@ const PaymentDetail = () => {
             {(payment.status === 'pending' || payment.status === 'partial') && (
               <button
                 className="btn-primary"
-                style={{ marginTop: 12, background: '#1D9E75' }}
+                style={{ marginTop: 12, background: '#1E7A4B' }}
                 onClick={async () => {
                   try {
                     await updatePayment(id, { status: 'paid', pending_amount: 0, paid_amount: payment.final_amount });
@@ -332,7 +332,7 @@ const PaymentDetail = () => {
         {!payment.screenshot_url && (payment.status === 'pending' || payment.status === 'partial') && (
           <button
             className="btn-primary"
-            style={{ background: '#1D9E75', marginTop: 12 }}
+            style={{ background: '#1E7A4B', marginTop: 12 }}
             onClick={async () => {
               try {
                 await updatePayment(id, { status: 'paid', pending_amount: 0, paid_amount: payment.final_amount });

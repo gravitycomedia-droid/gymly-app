@@ -9,7 +9,7 @@ export default function QuickLinks() {
       label: 'Subscription & Billing',
       desc: 'Manage your Gymly plan',
       color: 'rgba(156,39,176,0.12)',
-      iconColor: '#9c27b0',
+      iconColor: '#4A438F',
       route: '/owner/subscription',
     },
     {
@@ -25,7 +25,7 @@ export default function QuickLinks() {
       label: 'Analytics',
       desc: 'Insights and growth data',
       color: 'rgba(29,158,117,0.12)',
-      iconColor: '#1D9E75',
+      iconColor: '#1E7A4B',
       route: '/owner/analytics',
     },
     {

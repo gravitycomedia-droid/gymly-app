@@ -9,9 +9,9 @@ import DeleteConfirmModal from '../../components/DeleteConfirmModal';
 import './Staff.css';
 
 const ROLE_COLORS = {
-  manager: { bg: '#EEEDFE', text: 'var(--primary)' },
-  trainer: { bg: '#E1F5EE', text: '#0F6E56' },
-  receptionist: { bg: '#FAEEDA', text: '#633806' },
+  manager: { bg: '#F0EFFA', text: 'var(--primary)' },
+  trainer: { bg: '#E7F5EE', text: '#1E7A4B' },
+  receptionist: { bg: '#FDF3E2', text: '#8A4B00' },
 };
 
 const StaffList = () => {

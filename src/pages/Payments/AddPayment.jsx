@@ -238,7 +238,7 @@ const AddPayment = () => {
   };
 
   if (showSuccess && successData) {
-    const statusColors = { paid: '#1D9E75', partial: '#EF9F27', pending: 'var(--primary)' };
+    const statusColors = { paid: '#1E7A4B', partial: '#EF9F27', pending: 'var(--primary)' };
     const statusLabel = { paid: 'Fully Paid', partial: 'Partial Payment', pending: 'Pending' };
     return (
       <div className="mesh-bg min-h-screen text-on-surface flex items-center justify-center p-4">
@@ -257,7 +257,7 @@ const AddPayment = () => {
           <div className="bg-surface/40 rounded-2xl p-4 mb-8 text-left border border-white/40">
             <div className="flex justify-between mb-2"><span className="text-on-surface-variant text-sm">Invoice</span><span className="font-bold">{successData.invoiceNumber}</span></div>
             <div className="flex justify-between mb-2"><span className="text-on-surface-variant text-sm">Member</span><span className="font-bold">{selectedMember?.name}</span></div>
-            <div className="flex justify-between mb-2"><span className="text-on-surface-variant text-sm">Amount Paid</span><span className="font-bold text-[#1D9E75]">₹{paidNowVal.toLocaleString('en-IN')}</span></div>
+            <div className="flex justify-between mb-2"><span className="text-on-surface-variant text-sm">Amount Paid</span><span className="font-bold text-[#1E7A4B]">₹{paidNowVal.toLocaleString('en-IN')}</span></div>
             {pendingAmount > 0 && <div className="flex justify-between"><span className="text-on-surface-variant text-sm">Pending</span><span className="font-bold text-[#EF9F27]">₹{pendingAmount.toLocaleString('en-IN')}</span></div>}
           </div>
           
@@ -338,8 +338,8 @@ const AddPayment = () => {
                   </div>
                   <div className="flex-1 pt-1">
                     <h3 className="font-headline-md text-xl font-bold text-on-surface leading-tight">{selectedMember.name}</h3>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-label-sm text-[10px] mt-1.5 ${isMemberActive ? 'bg-[#1D9E75]/10 text-[#1D9E75]' : 'bg-[var(--error)]/10 text-[var(--error)]'}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isMemberActive ? 'bg-[#1D9E75]' : 'bg-[var(--error)]'}`}></span> {isMemberActive ? 'Active Member' : 'Expired'}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full font-label-sm text-[10px] mt-1.5 ${isMemberActive ? 'bg-[#1E7A4B]/10 text-[#1E7A4B]' : 'bg-[var(--error)]/10 text-[var(--error)]'}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${isMemberActive ? 'bg-[#1E7A4B]' : 'bg-[var(--error)]'}`}></span> {isMemberActive ? 'Active Member' : 'Expired'}
                     </span>
                   </div>
                 </div>

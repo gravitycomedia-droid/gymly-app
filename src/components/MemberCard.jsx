@@ -10,14 +10,14 @@ const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showAction
   const isExpiringSoon = !isExpired && exp <= sevenDaysFromNow;
 
   let statusType = 'ACTIVE';
-  let statusColorClass = 'bg-[#E6F4EA] text-[#137333]';
+  let statusColorClass = 'bg-[#E7F5EE] text-[#1E7A4B]';
 
   if (isExpired) {
     statusType = 'EXPIRED';
-    statusColorClass = 'bg-[#FCE8E6] text-[#C5221F]';
+    statusColorClass = 'bg-[#FBEBE9] text-[#A62C22]';
   } else if (isExpiringSoon) {
     statusType = 'EXPIRING SOON';
-    statusColorClass = 'bg-[#FEF7E0] text-[#B06000]';
+    statusColorClass = 'bg-[#FDF3E2] text-[#8A4B00]';
   }
 
   const planName = getPlanName(gym, member.plan_id);
@@ -56,26 +56,26 @@ const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showAction
           {member.profile_photo ? (
             <img src={member.profile_photo} alt={member.name} className="w-12 h-12 rounded-full object-cover shadow-sm flex-shrink-0" />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-[#EBE5FF] text-[#0058bc] flex items-center justify-center font-headline-md text-xl shadow-sm flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-[#F0EFFA] text-[#4A438F] flex items-center justify-center font-headline-md text-xl shadow-sm flex-shrink-0">
               {getInitials(member.name)}
             </div>
           )}
-          
+
           {/* Info */}
           <div className="min-w-0">
-            <h3 className="font-headline-md text-[15px] text-[#1b1b1d] font-semibold truncate">{member.name}</h3>
+            <h3 className="font-headline-md text-[15px] text-[#14152B] font-semibold truncate">{member.name}</h3>
             {useEnrollmentIdForAdmin ? (
               (member.latestEnrollmentNumber || member.memberNumber) ? (
-                <p className="font-body-md text-[11px] mt-0.5 font-mono tracking-wide font-semibold" style={{ color: '#1D9E75' }}>
+                <p className="font-body-md text-[11px] mt-0.5 font-mono tracking-wide font-semibold" style={{ color: '#1E7A4B' }}>
                   {member.latestEnrollmentNumber || member.memberNumber}
                 </p>
               ) : null
             ) : (
               member.memberNumber && (
-                <p className="font-body-md text-[11px] text-[#9BA3B5] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
+                <p className="font-body-md text-[11px] text-[#8A8FA6] mt-0.5 font-mono tracking-wide">#{member.memberNumber}</p>
               )
             )}
-            <p className="font-body-md text-[13px] text-[#717786] mt-0.5 truncate">{planName}</p>
+            <p className="font-body-md text-[13px] text-[#5A5E76] mt-0.5 truncate">{planName}</p>
           </div>
         </div>
 
@@ -88,19 +88,19 @@ const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showAction
       {/* Bottom Section */}
       <div className="flex justify-between items-center z-10 relative">
         <div className="flex flex-col">
-          <span className="font-headline-md text-[11px] text-[#c1c6d7] font-semibold">{isExpired ? 'Expired On' : 'Expires On'}</span>
-          <span className="font-headline-md text-[15px] text-[#414755] font-bold mt-0.5">
+          <span className="font-headline-md text-[11px] text-[#8A8FA6] font-semibold">{isExpired ? 'Expired On' : 'Expires On'}</span>
+          <span className="font-headline-md text-[15px] text-[#14152B] font-bold mt-0.5">
             {exp ? exp.toLocaleDateString('en-US', {month: 'short', day: '2-digit', year: 'numeric'}) : 'N/A'}
           </span>
         </div>
-        
+
         {/* Action buttons — hidden in select mode */}
         {!isSelectMode && (
           <div className="flex items-center gap-1.5">
             {/* Edit */}
             {onEdit && (
-              <button 
-                className="w-8 h-8 rounded-full border border-[#534ab7]/20 flex items-center justify-center text-[#534ab7] hover:bg-[#534ab7] hover:text-white transition-colors"
+              <button
+                className="w-8 h-8 rounded-full border border-[#6C63C7]/20 flex items-center justify-center text-[#6C63C7] hover:bg-[#6C63C7] hover:text-white transition-colors"
                 onClick={(e) => { e.stopPropagation(); onEdit(member.id); }}
                 title="Edit member"
               >
@@ -126,8 +126,8 @@ const MemberCard = ({ member, gym, onView, onRenew, onEdit, onDelete, showAction
               </button>
             )}
             {/* View arrow */}
-            <button 
-              className="w-8 h-8 rounded-full border border-[#0058bc]/20 flex items-center justify-center text-[#0058bc] hover:bg-[#0058bc] hover:text-white transition-colors"
+            <button
+              className="w-8 h-8 rounded-full border border-[#6C63C7]/20 flex items-center justify-center text-[#6C63C7] hover:bg-[#6C63C7] hover:text-white transition-colors"
               onClick={(e) => { e.stopPropagation(); onView?.(member.id); }}
               title="View member"
             >

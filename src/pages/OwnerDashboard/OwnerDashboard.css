@@ -816,3 +816,153 @@
   0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,110,40,0.4); }
   50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(0,110,40,0); }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Gymloop redesign overrides — scoped to `.owner-theme` (see
+   src/styles/gymloop-theme.css). Logic/markup above is untouched; this
+   section only restyles the existing classes to the new design tokens.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.owner-theme .dash-glass {
+  background: var(--gl-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--gl-border);
+  border-radius: var(--gl-radius-md);
+  box-shadow: var(--gl-shadow);
+}
+
+.owner-theme .dashboard-greeting-time { font-family: inherit; color: var(--gl-muted); }
+.owner-theme .dashboard-greeting-name { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dashboard-gym-badge { background: var(--gl-primary-tint); color: var(--gl-primary-deep); font-family: inherit; }
+.owner-theme .dashboard-avatar-new { background: var(--gl-primary); font-family: inherit; box-shadow: none; }
+.owner-theme .dashboard-avatar-new:hover { box-shadow: 0 4px 16px rgba(108, 99, 199, .25); }
+
+.owner-theme .dash-action-btn { border-radius: var(--gl-radius-sm); font-family: inherit; font-weight: 700; font-size: 14px; }
+.owner-theme .dash-action-primary { background: var(--gl-primary); box-shadow: none; }
+.owner-theme .dash-action-primary:hover { background: var(--gl-primary-deep); box-shadow: none; }
+.owner-theme .dash-action-secondary { background: var(--gl-primary-tint); color: var(--gl-primary-deep); border: 1px solid #E0DDF6; }
+.owner-theme .dash-action-secondary:hover { background: #E5E2F7; }
+.owner-theme .dash-action-badge { background: #C1362C; box-shadow: none; }
+
+.owner-theme .dash-stat-card { border-radius: var(--gl-radius-md); }
+.owner-theme .dash-stat-card:hover { box-shadow: var(--gl-shadow); }
+.owner-theme .dash-stat-icon { border-radius: var(--gl-radius-sm); }
+.owner-theme .dash-stat-icon.primary { background: var(--gl-primary-tint); color: var(--gl-primary-deep); }
+.owner-theme .dash-stat-icon.success { background: var(--gl-success-bg); color: var(--gl-success-fg); }
+.owner-theme .dash-stat-icon.warning { background: var(--gl-warning-bg); color: var(--gl-warning-fg); }
+.owner-theme .dash-stat-icon.danger { background: var(--gl-danger-bg); color: var(--gl-danger-fg); }
+.owner-theme .dash-stat-label { font-family: inherit; color: var(--gl-muted); }
+.owner-theme .dash-stat-value { font-family: inherit; color: var(--gl-ink); }
+
+.owner-theme .dash-section-title { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dash-section-link { font-family: inherit; color: var(--gl-primary-deep); }
+
+.owner-theme .dash-revenue-card { border-radius: var(--gl-radius-md); }
+.owner-theme .dash-revenue-label { font-family: inherit; color: var(--gl-muted); }
+.owner-theme .dash-revenue-amount { font-family: inherit; }
+.owner-theme .dash-revenue-amount.collected { color: var(--gl-success-fg); }
+.owner-theme .dash-revenue-amount.pending { color: var(--gl-warning-fg); }
+
+.owner-theme .dash-row-card { border-radius: var(--gl-radius-md); }
+.owner-theme .dash-row-avatar { font-family: inherit; }
+.owner-theme .dash-row-name { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dash-row-sub { font-family: inherit; color: var(--gl-muted); }
+.owner-theme .dash-row-amount { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dash-pay-badge { font-family: inherit; border-radius: 20px; }
+.owner-theme .dash-pay-badge.paid { background: var(--gl-success-bg); color: var(--gl-success-fg); }
+.owner-theme .dash-pay-badge.partial { background: var(--gl-warning-bg); color: var(--gl-warning-fg); }
+.owner-theme .dash-pay-badge.due { background: var(--gl-danger-bg); color: var(--gl-danger-fg); }
+
+.owner-theme .dash-empty-icon { border-color: var(--gl-primary-mid-2); }
+.owner-theme .dash-empty-icon .material-symbols-outlined { color: var(--gl-primary); }
+.owner-theme .dash-empty-title { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dash-empty-sub { color: var(--gl-muted); }
+.owner-theme .dash-empty-btn { background: var(--gl-primary); font-family: inherit; box-shadow: none; }
+.owner-theme .dash-empty-btn:hover { box-shadow: 0 4px 16px rgba(108, 99, 199, .25); }
+
+.owner-theme .dash-expiring-card { border-radius: var(--gl-radius-md); border: 1px solid var(--gl-border); box-shadow: var(--gl-shadow); }
+.owner-theme .dash-expiring-card::after { background-color: var(--gl-danger-fg); }
+.owner-theme .dash-expiring-name { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dash-expiring-days { font-family: inherit; color: var(--gl-danger-fg); }
+.owner-theme .dash-expiring-remind-btn { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dash-expiring-renew-btn { background: var(--gl-primary); font-family: inherit; box-shadow: none; }
+.owner-theme .dash-expiring-renew-btn:hover { background: var(--gl-primary-deep); opacity: 1; }
+
+.owner-theme .dash-occupancy-widget { border-radius: var(--gl-radius-md); }
+.owner-theme .dash-occupancy-widget::before { background: linear-gradient(135deg, var(--gl-primary-tint) 0%, transparent 70%); }
+.owner-theme .dash-occupancy-count { font-family: inherit; color: var(--gl-ink); }
+.owner-theme .dash-occupancy-label { color: var(--gl-muted); }
+.owner-theme .dash-occupancy-link { color: var(--gl-primary-deep); opacity: 1; }
+
+/* ── Needs attention today (new) ── */
+.owner-theme .dash-attention-card {
+  padding: 16px;
+  margin-bottom: 24px;
+  animation: slideInUp 380ms ease-out;
+}
+
+.owner-theme .dash-attention-heading {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .7px;
+  text-transform: uppercase;
+  color: var(--gl-muted-2);
+}
+
+.owner-theme .dash-attention-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.owner-theme .dash-attention-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 11px 12px;
+  border-radius: 11px;
+  background: var(--gl-bg);
+  border: 1px solid var(--gl-border);
+}
+
+.owner-theme .dash-attention-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 5px;
+}
+
+.owner-theme .dash-attention-body { flex: 1; min-width: 150px; }
+
+.owner-theme .dash-attention-title {
+  margin: 0;
+  font-family: inherit;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--gl-ink);
+}
+
+.owner-theme .dash-attention-sub {
+  margin: 2px 0 0;
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--gl-muted);
+}
+
+.owner-theme .dash-attention-cta {
+  min-height: 44px;
+  padding: 0 13px;
+  border-radius: 9px;
+  border: 1px solid var(--gl-border);
+  background: var(--gl-surface);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--gl-primary-deep);
+  cursor: pointer;
+}
+
+.owner-theme .dash-attention-cta:hover { border-color: var(--gl-primary); }

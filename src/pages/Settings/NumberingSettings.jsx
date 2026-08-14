@@ -276,7 +276,7 @@ const NumberingSettings = () => {
                 <div className="spinner" style={{ width: 18, height: 18 }} />
               )}
               {prefixStatus === 'available' && (
-                <span className="text-[#1D9E75] text-sm font-semibold flex items-center gap-1">
+                <span className="text-[#1E7A4B] text-sm font-semibold flex items-center gap-1">
                   <span className="material-symbols-outlined" style={{ fontSize: 16 }}>check_circle</span> Available
                 </span>
               )}
@@ -392,7 +392,7 @@ const NumberingSettings = () => {
                   style={{
                     background: 'rgba(29,158,117,0.06)',
                     borderColor: 'rgba(29,158,117,0.15)',
-                    color: '#1D9E75',
+                    color: '#1E7A4B',
                   }}
                 >
                   {v.key}
@@ -430,7 +430,7 @@ const NumberingSettings = () => {
                   onClick={() => setEnrollTemplate(p.tmpl)}
                   className={`flex items-center justify-between px-3 py-2.5 rounded-xl border text-left transition-all text-sm ${
                     enrollTemplate === p.tmpl
-                      ? 'bg-[#1D9E75]/8 border-[#1D9E75]/30 text-[#1D9E75]'
+                      ? 'bg-[#1E7A4B]/8 border-[#1E7A4B]/30 text-[#1E7A4B]'
                       : 'bg-surface-variant/20 border-outline-variant/30 text-on-surface-variant'
                   }`}
                 >
@@ -444,7 +444,7 @@ const NumberingSettings = () => {
           {/* Live Preview */}
           <div className="rounded-xl p-4 mb-4" style={{ background: 'rgba(29,158,117,0.05)', border: '1px dashed rgba(29,158,117,0.2)' }}>
             <div className="text-[10px] text-on-surface-variant uppercase tracking-widest mb-1 font-semibold">Live Preview</div>
-            <div className="text-xl font-bold font-mono tracking-wider" style={{ color: '#1D9E75' }}>{enrollPreview}</div>
+            <div className="text-xl font-bold font-mono tracking-wider" style={{ color: '#1E7A4B' }}>{enrollPreview}</div>
           </div>
 
           {/* Save */}
@@ -452,7 +452,7 @@ const NumberingSettings = () => {
             onClick={() => handleSave('enrollment')}
             disabled={saving}
             className="w-full py-3 rounded-xl text-white font-label-md hover:opacity-90 transition-opacity disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #1D9E75, #378ADD)' }}
+            style={{ background: 'linear-gradient(135deg, #1E7A4B, #4A438F)' }}
             id="save-enrollment-format-btn"
           >
             {saving ? <div className="spinner" style={{ width: 18, height: 18, margin: '0 auto' }} /> : 'Save Enrollment Number Format'}

@@ -31,15 +31,15 @@ const ToggleRow = ({ label, icon, description, value, onChange }) => (
   }}>
     <span style={{ fontSize: 20, width: 28, textAlign: 'center', flexShrink: 0 }}>{icon}</span>
     <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: '#1b1b1d' }}>{label}</div>
-      {description && <div style={{ fontSize: 12, color: '#787584', marginTop: 2 }}>{description}</div>}
+      <div style={{ fontSize: 14, fontWeight: 600, color: '#14152B' }}>{label}</div>
+      {description && <div style={{ fontSize: 12, color: '#5A5E76', marginTop: 2 }}>{description}</div>}
     </div>
     <button
       type="button"
       onClick={() => onChange(!value)}
       style={{
         width: 48, height: 26, borderRadius: 13, border: 'none', cursor: 'pointer',
-        background: value ? '#534ab7' : '#c8c4d5',
+        background: value ? '#6C63C7' : '#c8c4d5',
         position: 'relative', transition: 'background 0.2s', flexShrink: 0,
       }}
     >
@@ -68,7 +68,7 @@ const PreviewCard = ({ settings, gym, ownerDoc, disabled }) => {
   const statusColors = {
     active: { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' },
     expiring: { bg: 'rgba(239,159,39,0.15)', color: '#EF9F27', dot: '#EF9F27' },
-    expired: { bg: 'rgba(186,26,26,0.15)', color: '#ba1a1a', dot: '#ba1a1a' },
+    expired: { bg: 'rgba(186,26,26,0.15)', color: '#A62C22', dot: '#A62C22' },
   };
   const sc = statusColors[statusType] || statusColors.active;
 
@@ -127,7 +127,7 @@ const PreviewCard = ({ settings, gym, ownerDoc, disabled }) => {
           {settings.show_photo && (
             <div style={{
               width: 52, height: 52, borderRadius: '50%',
-              background: 'linear-gradient(135deg, #7c6fe8, #378add)',
+              background: 'linear-gradient(135deg, #6C63C7, #4A438F)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: 18, fontWeight: 700, color: '#fff', flexShrink: 0,
               border: '2px solid rgba(255,255,255,0.3)',
@@ -253,11 +253,11 @@ const CardEditor = () => {
           onClick={() => navigate(-1)}
           style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(200,196,213,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
         >
-          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#474553' }}>arrow_back_ios</span>
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#3A3E55' }}>arrow_back_ios</span>
         </button>
         <div style={{ flex: 1 }}>
-          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#1b1b1d' }}>Membership Card Design</h1>
-          <div style={{ fontSize: 12, color: '#787584' }}>Changes apply to all member cards instantly</div>
+          <h1 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#14152B' }}>Membership Card Design</h1>
+          <div style={{ fontSize: 12, color: '#5A5E76' }}>Changes apply to all member cards instantly</div>
         </div>
         {saving && <div className="spinner spinner-primary" style={{ width: 18, height: 18 }} />}
       </div>
@@ -265,12 +265,12 @@ const CardEditor = () => {
       <div style={{ padding: '24px 20px', maxWidth: 640, margin: '0 auto' }}>
         {/* Live Preview */}
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#474553', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#3A3E55', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
             <span className="material-symbols-outlined" style={{ fontSize: 16 }}>preview</span>
             Live Preview
           </div>
           <PreviewCard settings={settings} gym={gym} ownerDoc={userDoc} disabled={settings.card_enabled === false} />
-          <div style={{ fontSize: 12, color: '#787584', textAlign: 'center', marginTop: 10 }}>
+          <div style={{ fontSize: 12, color: '#5A5E76', textAlign: 'center', marginTop: 10 }}>
             Preview uses your gym name and profile. Members will see their own data.
           </div>
         </div>
@@ -282,7 +282,7 @@ const CardEditor = () => {
           borderRadius: 20, padding: '4px 20px', marginBottom: 16,
           boxShadow: '0 4px 16px rgba(83,74,183,0.05)',
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#474553', padding: '16px 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#3A3E55', padding: '16px 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Feature
           </div>
           <ToggleRow
@@ -308,7 +308,7 @@ const CardEditor = () => {
           pointerEvents: settings.card_enabled !== false ? 'auto' : 'none',
           transition: 'opacity 0.2s',
         }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#474553', padding: '16px 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#3A3E55', padding: '16px 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
             Card Fields
           </div>
           {TOGGLES.map(({ key, label, icon, description }) => (
@@ -325,7 +325,7 @@ const CardEditor = () => {
         </div>
 
         <div style={{ marginTop: 16, padding: '12px 16px', background: 'rgba(83,74,183,0.06)', borderRadius: 14, border: '1px solid rgba(83,74,183,0.12)' }}>
-          <div style={{ fontSize: 12, color: '#534ab7', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: '#6C63C7', lineHeight: 1.5 }}>
             💡 <strong>Tip:</strong> These settings control what's shown on the <strong>Digital ID</strong> card your members see in the app. Toggle fields on or off — changes apply immediately to all members.
           </div>
         </div>

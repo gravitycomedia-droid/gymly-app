@@ -23,7 +23,7 @@ const PLANS = {
     price: 199,
     billing: '₹199/month',
     members: 50,
-    color: '#4A90E2',
+    color: '#3E7CB1',
     features: ['Up to 50 members', 'QR attendance', 'Member management'],
     missing: ['Payments', 'Analytics', 'WhatsApp automation'],
   },
@@ -32,7 +32,7 @@ const PLANS = {
     price: 499,
     billing: '₹499/month',
     members: 200,
-    color: '#1D9E75',
+    color: '#1E7A4B',
     features: ['Up to 200 members', 'Payment integration', 'Landing page + QR', 'Lead inquiry form', 'Invoice generation'],
     missing: ['Analytics', 'WhatsApp automation'],
   },
@@ -50,7 +50,7 @@ const PLANS = {
     price: 999,
     billing: '₹999/month',
     members: Infinity,
-    color: '#9C27B0',
+    color: '#4A438F',
     featured: true,
     features: ['Unlimited members', 'WhatsApp automation', 'All analytics', 'Complete dashboard', 'Unlimited branches', 'Priority support'],
     missing: [],
@@ -381,7 +381,7 @@ export default function OwnerSubscriptionPage() {
               </div>
             )}
             {upgradeModal.planKey === 'PREMIUM' && (
-              <div className="sub-modal-info" style={{ background: 'rgba(156,39,176,0.08)', color: '#9C27B0' }}>
+              <div className="sub-modal-info" style={{ background: 'rgba(74,67,143,0.08)', color: '#4A438F' }}>
                 🎉 Premium includes a 30-day free trial. You won't be charged until day 31.
               </div>
             )}

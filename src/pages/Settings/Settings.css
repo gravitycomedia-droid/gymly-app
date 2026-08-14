@@ -15,7 +15,7 @@
   width: 72px;
   height: 72px;
   border-radius: 20px;
-  background: linear-gradient(135deg, var(--primary), #7c6ef0);
+  background: linear-gradient(135deg, var(--primary), #6C63C7);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -121,7 +121,7 @@
 
 /* Danger zone */
 .settings-danger .settings-row-label {
-  color: #E24B4A;
+  color: #A62C22;
 }
 
 /* Settings edit sheet */
@@ -202,7 +202,7 @@
 
 .plan-edit-btn.delete {
   background: rgba(226, 75, 74, 0.08);
-  color: #E24B4A;
+  color: #A62C22;
 }
 
 .plan-toggle {
@@ -217,7 +217,7 @@
 }
 
 .plan-toggle.on {
-  background: #1D9E75;
+  background: #1E7A4B;
 }
 
 .plan-toggle.off {

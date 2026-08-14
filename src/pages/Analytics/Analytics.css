@@ -92,11 +92,11 @@
 }
 
 .analytics-stat-trend.up {
-  color: #1D9E75;
+  color: #1E7A4B;
 }
 
 .analytics-stat-trend.down {
-  color: #E24B4A;
+  color: #A62C22;
 }
 
 /* Heatmap */
@@ -171,9 +171,9 @@
   font-weight: 600;
 }
 
-.retention-rate.good { color: #1D9E75; }
+.retention-rate.good { color: #1E7A4B; }
 .retention-rate.medium { color: #EF9F27; }
-.retention-rate.bad { color: #E24B4A; }
+.retention-rate.bad { color: #A62C22; }
 
 .retention-label {
   font-size: 12px;
@@ -244,7 +244,7 @@
 
 .expiring-days-badge.urgent {
   background: rgba(226, 75, 74, 0.1);
-  color: #E24B4A;
+  color: #A62C22;
 }
 
 .expiring-days-badge.warning {

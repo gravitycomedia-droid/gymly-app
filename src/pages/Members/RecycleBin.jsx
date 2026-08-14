@@ -129,11 +129,11 @@ const RecycleBin = () => {
                 return (
                   <div
                     key={entry.id}
-                    className="glass-panel rounded-2xl p-5 border border-white/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                    className="glass-panel rounded-2xl p-5 border border-black/10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-xl text-red-400">person_off</span>
+                      <div className="w-11 h-11 rounded-full bg-error/10 flex items-center justify-center flex-shrink-0">
+                        <span className="material-symbols-outlined text-xl text-error">person_off</span>
                       </div>
                       <div>
                         <p className="font-headline-sm font-bold text-on-surface">
@@ -147,7 +147,7 @@ const RecycleBin = () => {
                             Deleted {formatDate(entry.deleted_at)}
                             {entry.deleted_by_name ? ` by ${entry.deleted_by_name}` : ''}
                           </span>
-                          <span className={`font-label-sm text-xs font-semibold ${isUrgent ? 'text-red-500' : 'text-on-surface-variant'}`}>
+                          <span className={`font-label-sm text-xs font-semibold ${isUrgent ? 'text-error' : 'text-on-surface-variant'}`}>
                             {days} day{days !== 1 ? 's' : ''} remaining
                           </span>
                         </div>
@@ -168,7 +168,7 @@ const RecycleBin = () => {
                       <button
                         onClick={() => setConfirmPermanentId(entry.id)}
                         disabled={restoringId === entry.id || deletingId === entry.id}
-                        className="px-4 py-2.5 rounded-xl bg-red-500/10 text-red-500 font-label-md font-semibold text-sm hover:bg-red-500/20 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        className="px-4 py-2.5 rounded-xl bg-error/10 text-error font-label-md font-semibold text-sm hover:bg-error/20 transition-colors disabled:opacity-50 flex items-center gap-2"
                       >
                         {deletingId === entry.id
                           ? <div className="spinner" style={{ width: 16, height: 16 }} />

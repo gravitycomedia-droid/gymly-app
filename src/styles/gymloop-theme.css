@@ -1,0 +1,410 @@
+/* ════════════════════════════════════════════════════════════════════════
+   Gymloop redesign theme — scoped to `.owner-theme` only.
+   Member / Trainer / Receptionist layouts render `.layout-shell` /
+   `.sidebar-*` / `.bottom-nav*` without this class and keep the existing
+   Stitch Glassmorphic look untouched. Never move these rules to :root.
+   Source: handoff/INTEGRATION.md §3 (design tokens).
+   ════════════════════════════════════════════════════════════════════════ */
+
+.owner-theme {
+  --gl-primary: #6C63C7;
+  --gl-primary-deep: #4A438F;
+  --gl-primary-tint: #F0EFFA;
+  --gl-primary-mid: #9089D8;
+  --gl-primary-mid-2: #C9C5EC;
+  --gl-ink: #14152B;
+  --gl-muted: #5A5E76;
+  --gl-muted-2: #8A8FA6;
+  --gl-border: #E3E5EE;
+  --gl-divider: #C9CCDC;
+  --gl-surface: #FFFFFF;
+  --gl-bg: #FAFAFD;
+  --gl-success-bg: #E7F5EE;
+  --gl-success-fg: #1E7A4B;
+  --gl-warning-bg: #FDF3E2;
+  --gl-warning-fg: #8A4B00;
+  --gl-danger-bg: #FBEBE9;
+  --gl-danger-fg: #A62C22;
+  --gl-radius-sm: 10px;
+  --gl-radius-md: 14px;
+  --gl-radius-lg: 18px;
+  --gl-radius-xl: 22px;
+  --gl-shadow: 0 1px 2px rgba(20, 21, 43, .06);
+
+  font-family: 'Manrope', 'Hanken Grotesk', 'Inter', system-ui, sans-serif;
+  color: var(--gl-ink);
+
+  /* ── Retint the app's base design tokens (src/index.css :root) for owner
+     pages only. Tailwind's `primary`/`on-surface`/`warning`/etc. utility
+     classes (tailwind.config.js) resolve through these SAME custom
+     properties, so this single block retints every Tailwind-styled owner
+     page (member list, leads, plans, staff, ...) without touching their
+     markup — no need to hand-override each page's className strings. ── */
+  --primary: var(--gl-primary);
+  --primary-container: var(--gl-primary-mid);
+  --primary-dark: var(--gl-primary-deep);
+  --primary-light: var(--gl-primary-tint);
+  --primary-border: rgba(108, 99, 199, .25);
+  --secondary: var(--gl-primary-deep);
+  --secondary-container: var(--gl-primary-mid);
+  --tertiary: var(--gl-success-fg);
+  --member-accent: var(--gl-success-fg);
+  --member-accent-light: var(--gl-success-bg);
+  --text-primary: var(--gl-ink);
+  --text-secondary: #3A3E55;
+  --text-muted: var(--gl-muted);
+  --text-placeholder: #B7BACB;
+  --error: #C1362C;
+  --success: var(--gl-success-fg);
+  --glass-bg: var(--gl-surface);
+  --glass-border: var(--gl-border);
+  --glass-bg-focus: var(--gl-surface);
+  --glass-blur: blur(0px);
+  --radius-sm: var(--gl-radius-sm);
+  --radius-md: var(--gl-radius-md);
+  --radius-lg: var(--gl-radius-lg);
+  --radius-xl: var(--gl-radius-xl);
+  --shadow-soft: var(--gl-shadow);
+  --shadow-card: var(--gl-shadow);
+  --shadow-glow: 0 4px 16px rgba(108, 99, 199, .15);
+  --grad-floor: var(--gl-bg);
+  --grad-role: var(--gl-bg);
+  --grad-otp: var(--gl-bg);
+  --grad-otp-member: var(--gl-bg);
+  --grad-register: var(--gl-bg);
+  --grad-checklist: var(--gl-bg);
+  --grad-dashboard: var(--gl-bg);
+  --grad-btn: linear-gradient(to right, var(--gl-primary), var(--gl-primary-deep));
+}
+
+/* ── Shell background: flatten the glass/gradient to the design's off-white ── */
+.owner-theme.layout-shell {
+  background: var(--gl-bg);
+}
+
+.owner-theme .layout-sidebar {
+  background: var(--gl-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-right: 1px solid var(--gl-border);
+  box-shadow: none;
+}
+
+/* ── Sidebar brand ── */
+.owner-theme .sidebar-brand-icon {
+  background: var(--gl-primary);
+  border-radius: var(--gl-radius-sm);
+}
+
+.owner-theme .sidebar-gym-name {
+  font-family: inherit;
+  color: var(--gl-ink);
+}
+
+/* ── Sidebar nav ── */
+.owner-theme .sidebar-nav-item {
+  font-family: inherit;
+  color: #3A3E55;
+  border-radius: var(--gl-radius-sm);
+  font-weight: 700;
+  font-size: 14.5px;
+}
+
+.owner-theme .sidebar-nav-item:hover {
+  background: var(--gl-primary-tint);
+  color: var(--gl-ink);
+}
+
+.owner-theme .sidebar-nav-item.active {
+  background: var(--gl-primary-tint);
+  color: var(--gl-primary-deep);
+  font-weight: 700;
+}
+
+.owner-theme .sidebar-nav-badge {
+  background: #C1362C;
+}
+
+/* ── Sidebar quick actions ── */
+.owner-theme .sidebar-quick-btn {
+  font-family: inherit;
+  border-radius: var(--gl-radius-sm);
+  font-weight: 700;
+}
+
+.owner-theme .sidebar-quick-btn.primary {
+  background: var(--gl-primary);
+  box-shadow: none;
+}
+
+.owner-theme .sidebar-quick-btn.primary:hover {
+  background: var(--gl-primary-deep);
+  transform: none;
+}
+
+.owner-theme .sidebar-quick-btn.secondary {
+  background: var(--gl-primary-tint);
+  color: var(--gl-primary-deep);
+  border: 1px solid #E0DDF6;
+}
+
+.owner-theme .sidebar-quick-btn.secondary:hover {
+  background: #E5E2F7;
+}
+
+/* ── Sidebar user ── */
+.owner-theme .sidebar-user-avatar {
+  background: var(--gl-primary);
+}
+
+.owner-theme .sidebar-user-name {
+  font-family: inherit;
+}
+
+.owner-theme .sidebar-user:hover {
+  background: var(--gl-danger-bg);
+}
+
+/* ── Bottom nav (mobile) ── */
+.owner-theme .bottom-nav-inner {
+  background: var(--gl-surface);
+  border: 1px solid var(--gl-border);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 6px 24px rgba(20, 21, 43, .10);
+}
+
+.owner-theme .bottom-nav-item {
+  font-family: inherit;
+  color: var(--gl-muted);
+}
+
+.owner-theme .bottom-nav-item.active {
+  color: var(--gl-primary);
+  background: var(--gl-primary-tint);
+}
+
+.owner-theme .bottom-nav-item.active::after {
+  background: var(--gl-primary);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Reusable primitives — new class names, safe to use unscoped on any page
+   rendered inside `.owner-theme` (they don't collide with existing classes).
+   ════════════════════════════════════════════════════════════════════════ */
+
+.gl-card {
+  background: var(--gl-surface);
+  border: 1px solid var(--gl-border);
+  border-radius: var(--gl-radius-md);
+  box-shadow: var(--gl-shadow);
+}
+
+.gl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 15px;
+  border-radius: var(--gl-radius-sm);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 150ms, border-color 150ms;
+  white-space: nowrap;
+}
+
+.gl-btn-primary {
+  background: var(--gl-primary);
+  color: #fff;
+}
+
+.gl-btn-primary:hover {
+  background: var(--gl-primary-deep);
+}
+
+.gl-btn-secondary {
+  background: var(--gl-surface);
+  border-color: var(--gl-border);
+  color: var(--gl-ink);
+}
+
+.gl-btn-secondary:hover {
+  border-color: var(--gl-primary);
+}
+
+.gl-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.gl-badge-active { background: var(--gl-success-bg); color: var(--gl-success-fg); }
+.gl-badge-expiring { background: var(--gl-warning-bg); color: var(--gl-warning-fg); }
+.gl-badge-expired { background: var(--gl-danger-bg); color: var(--gl-danger-fg); }
+.gl-badge-neutral { background: var(--gl-primary-tint); color: var(--gl-primary-deep); }
+
+.gl-chip {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 22px;
+  border: 1px solid var(--gl-border);
+  background: var(--gl-surface);
+  color: var(--gl-ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.gl-chip.active {
+  border-color: var(--gl-primary);
+  background: var(--gl-primary);
+  color: #fff;
+}
+
+.gl-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 13px;
+  border-radius: var(--gl-radius-sm);
+  border: 1px solid var(--gl-border);
+  background: var(--gl-surface);
+  font: inherit;
+  font-size: 15px;
+  color: var(--gl-ink);
+}
+
+.gl-input:focus-visible {
+  outline: 2px solid var(--gl-primary);
+  outline-offset: 1px;
+}
+
+.gl-kpi-tile {
+  padding: 14px;
+  border-radius: var(--gl-radius-md);
+  background: var(--gl-surface);
+  border: 1px solid var(--gl-border);
+}
+
+.gl-kpi-label {
+  margin: 0 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gl-muted);
+  line-height: 1.3;
+}
+
+.gl-kpi-value {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+  color: var(--gl-ink);
+}
+
+.gl-kpi-delta {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  color: var(--gl-muted);
+}
+
+.gl-list-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 10px 13px;
+  border-bottom: 1px solid #EDEEF5;
+}
+
+.gl-list-row:last-child {
+  border-bottom: none;
+}
+
+.gl-avatar {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.gl-enroll-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 7px;
+  background: var(--gl-primary-tint);
+  color: var(--gl-primary-deep);
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+
+@media (max-width: 1023px) {
+  .gl-list-row {
+    flex-wrap: wrap;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Flatten shared glass surfaces used directly across many owner pages
+   (MemberList, PaymentList, MembershipPlansList, the Add* forms, Settings
+   sub-pages, ...) that DON'T route through the --glass-* tokens the way
+   .glass-card does — .glass-panel and .mesh-bg/.bg-mesh hardcode their own
+   translucent/blur values, so retinting --primary etc. alone doesn't reach
+   them. This is the fix for pages that otherwise still "look like the old
+   site" despite the token remap above.
+   ════════════════════════════════════════════════════════════════════════ */
+
+.owner-theme .glass-panel {
+  background: var(--gl-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--gl-border);
+  box-shadow: var(--gl-shadow);
+}
+
+.owner-theme .glass-input {
+  background: var(--gl-surface);
+  border: 1px solid var(--gl-border);
+}
+
+.owner-theme .glass-input:focus {
+  background: var(--gl-surface);
+  border-color: var(--gl-primary);
+  box-shadow: 0 0 0 3px rgba(108, 99, 199, .12);
+  outline: none;
+}
+
+.owner-theme .mesh-bg,
+.owner-theme .bg-mesh {
+  background-color: var(--gl-bg);
+  background-image: none;
+  background-attachment: scroll;
+}
+
+/* Shared fixed page header repeated across owner list/form pages
+   (bg-surface/30 backdrop-blur-3xl border-white/10) — no dedicated class,
+   matched by tag + the two utility classes every instance shares. */
+.owner-theme header.fixed.top-0 {
+  background: var(--gl-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-bottom: 1px solid var(--gl-border);
+  box-shadow: none;
+}

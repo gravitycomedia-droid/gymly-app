@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Kannada:wght@400;500;700;800&family=Noto+Sans+Telugu:wght@400;500;700;800&display=swap">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#E9EAF0;font-family:Manrope,'Noto Sans Telugu','Noto Sans Kannada',system-ui,sans-serif}
+a{color:#4A438F}a:hover{color:#332D6E}
+button,input,select{font-family:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid #6C63C7;outline-offset:2px}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#CFD2E0;border-radius:5px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{transform:translateX(18px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:20px 22px 40px">
+
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px">
+    <div style="display:flex;align-items:baseline;gap:9px">
+      <h1 style="margin:0;font-size:17px;font-weight:800;letter-spacing:-.3px;color:#14152B">Gymloop · Owner section</h1>
+      <span style="font-size:12.5px;color:#5A5E76;font-weight:600">clickable prototype</span>
+    </div>
+    <div style="display:flex;gap:6px;padding:3px;border-radius:11px;background:#fff;border:1px solid #D9DCE8">
+      <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="3">
+        <button type="button" onClick="{{ v.go }}" style="min-height:36px;padding:0 13px;border-radius:8px;border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:700;background:{{ v.bg }};color:{{ v.fg }}">{{ v.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:6px;padding:3px;border-radius:11px;background:#fff;border:1px solid #D9DCE8">
+      <sc-for list="{{ roleTabs }}" as="rt" hint-placeholder-count="4">
+        <button type="button" onClick="{{ rt.go }}" style="min-height:36px;padding:0 12px;border-radius:8px;border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:700;background:{{ rt.bg }};color:{{ rt.fg }}">{{ rt.label }}</button>
+      </sc-for>
+    </div>
+    <p style="margin:0;font-size:12.5px;color:#5A5E76;max-width:420px;line-height:1.4">Role switcher is prototype chrome only. Language now lives in Settings → Language; the header carries check-in scan instead.</p>
+  </div>
+
+  <div style="display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap">
+
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#8A8FA6">Desktop · ≥1024px · sidebar shell</p>
+        <div style="width:1180px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid #CFD2E0;box-shadow:0 6px 24px rgba(20,21,43,.09)">
+          <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 13px;background:#F1F2F7;border-bottom:1px solid #E3E5EE">
+            <span style="width:11px;height:11px;border-radius:6px;background:#E0808A"></span>
+            <span style="width:11px;height:11px;border-radius:6px;background:#E5C069"></span>
+            <span style="width:11px;height:11px;border-radius:6px;background:#8FC79D"></span>
+            <span style="margin-left:10px;font-size:12px;font-weight:600;color:#5A5E76">app.gymloop.in/owner/{{ routeSlug }}</span>
+          </div>
+          <div style="height:772px;position:relative;overflow:hidden">
+            <dc-import name="GymloopApp" mode="desktop" app="{{ app }}" actions="{{ actions }}" style="position:absolute;inset:0" hint-size="100%,772px"></dc-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showMobile }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#8A8FA6">Mobile · &lt;1024px · bottom nav</p>
+        <div style="width:393px;border-radius:34px;padding:11px;background:#14152B;box-shadow:0 8px 28px rgba(20,21,43,.22)">
+          <div style="height:812px;border-radius:25px;overflow:hidden;background:#fff;position:relative">
+            <dc-import name="GymloopApp" mode="mobile" app="{{ app }}" actions="{{ actions }}" style="position:absolute;inset:0" hint-size="100%,812px"></dc-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;dashboardLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;priority&quot;,&quot;kpi&quot;],&quot;default&quot;:&quot;priority&quot;,&quot;tsType&quot;:&quot;'priority'|'kpi'&quot;,&quot;section&quot;:&quot;Design variations&quot;},&quot;quickActionStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;fab&quot;,&quot;sheet&quot;,&quot;bar&quot;],&quot;default&quot;:&quot;fab&quot;,&quot;tsType&quot;:&quot;'fab'|'sheet'|'bar'&quot;,&quot;section&quot;:&quot;Design variations&quot;},&quot;cardStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;brand&quot;,&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;brand&quot;,&quot;tsType&quot;:&quot;'brand'|'light'|'dark'&quot;,&quot;section&quot;:&quot;Design variations&quot;},&quot;stepIndicator&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;numbered&quot;,&quot;dots&quot;,&quot;progress&quot;],&quot;default&quot;:&quot;numbered&quot;,&quot;tsType&quot;:&quot;'numbered'|'dots'|'progress'&quot;,&quot;section&quot;:&quot;Design variations&quot;},&quot;profileLayout&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;split&quot;,&quot;stacked&quot;],&quot;default&quot;:&quot;split&quot;,&quot;tsType&quot;:&quot;'split'|'stacked'&quot;,&quot;section&quot;:&quot;Design variations&quot;}}">
+const FIRST = ['Arjun','Sai','Kavya','Rakesh','Divya','Naveen','Sneha','Praveen','Lakshmi','Manoj','Harika','Vikram','Anitha','Rohit','Swathi','Ganesh','Meghana','Kiran','Bhavani','Suresh','Deepika','Chandra','Pooja','Ramesh','Ashwini','Vinay','Sruthi','Girish','Nandini','Sandeep','Keerthi','Mahesh','Varsha','Prashanth','Yamini','Tejas','Anjali','Raghu','Shilpa','Dinesh'];
+const LAST = ['Reddy','Rao','Gowda','Nair','Shetty','Kumar','Prasad','Naidu','Hegde','Iyer','Sharma','Patil','Bhat','Varma','Chowdary','Murthy','Raju','Kulkarni','Devi','Sastry'];
+const PLANS = ['Monthly Gym','Quarterly Gym','Half-yearly Gym','Annual Gym','Monthly + Cardio','Personal Training'];
+const AVATAR = ['#6C63C7','#3E7CB1','#2E8B6E','#B5643C','#8A5AA8','#3F7A8C','#A8523C','#4E6BB5'];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+function buildMembers() {
+  const rnd = mulberry(20260809);
+  const out = [];
+  for (let i = 0; i < 124; i++) {
+    const name = FIRST[Math.floor(rnd() * FIRST.length)] + ' ' + LAST[Math.floor(rnd() * LAST.length)];
+    const plan = PLANS[Math.floor(rnd() * PLANS.length)];
+    const roll = rnd();
+    const status = roll < 0.72 ? 'active' : roll < 0.88 ? 'expiring' : 'expired';
+    const dayOffset = status === 'expired' ? -Math.floor(rnd() * 40) - 1 : status === 'expiring' ? Math.floor(rnd() * 7) + 1 : Math.floor(rnd() * 120) + 10;
+    const d = new Date(2026, 7, 9 + dayOffset);
+    const due = status === 'expired' ? Math.floor(rnd() * 5 + 1) * 500 : rnd() < 0.12 ? 500 : 0;
+    out.push({
+      id: i + 1, name, plan, status, due,
+      enrollNo: 'IPF-' + String(1000 + i + 1),
+      phone: '9' + String(Math.floor(rnd() * 900000000) + 100000000),
+      expiry: d.getDate() + ' ' + MONTHS[d.getMonth()] + ' ' + d.getFullYear(),
+      expiryIdx: dayOffset,
+      lastVisit: status === 'expired' ? String(Math.floor(rnd() * 30) + 8) + ' days ago' : (rnd() < .4 ? 'Today' : String(Math.floor(rnd() * 6) + 1) + ' days ago'),
+      initials: name.split(' ').map(w => w[0]).join(''),
+      color: AVATAR[i % AVATAR.length],
+      recent: [
+        { label: plan + ' renewal', date: '12 Jul 2026', method: 'UPI', amount: 2400 },
+        { label: plan + ' renewal', date: '12 Apr 2026', method: 'Cash', amount: 2400 },
+        { label: 'Joining fee', date: '12 Jan 2026', method: 'UPI', amount: 1000 }
+      ]
+    });
+  }
+  return out;
+}
+
+const WIZ = {
+  addMember: { title: 'Add member', done: 'Member added', summaryAt: 2,
+    steps: ['Member', 'Plan & payment', 'Summary'],
+    fields: [
+      [{ key:'name', label:'Full name', type:'text', placeholder:'e.g. Kavya Reddy', required:true },
+       { key:'phone', label:'Mobile number', type:'text', placeholder:'10-digit number', required:true, phone:true },
+       { key:'dob', label:'Date of birth', type:'text', placeholder:'DD/MM/YYYY — skip if you don\u2019t have it' }],
+      [{ key:'plan', label:'Membership plan', type:'select', options:['Not now'].concat(PLANS) },
+       { key:'discount', label:'Discount (₹)', type:'text', placeholder:'0' },
+       { key:'method', label:'Payment method', type:'select', options:['Not collected yet','UPI','Cash','Card','Bank transfer'] },
+       { key:'amount', label:'Amount collected (₹)', type:'text', placeholder:'2400' }],
+      []
+    ] },
+  addStaff: { title: 'Add staff member', done: 'Staff member added',
+    steps: ['Personal info', 'Role & permissions', 'Compensation', 'Confirm'],
+    fields: [
+      [{ key:'name', label:'Full name', type:'text', required:true, placeholder:'e.g. Ganesh Rao' },
+       { key:'phone', label:'Mobile number', type:'text', required:true, phone:true, placeholder:'10-digit number' }],
+      [{ key:'role', label:'Role', type:'select', options:['Manager','Trainer','Receptionist'], required:true },
+       { key:'access', label:'Can collect payments', type:'select', options:['Yes','No'] },
+       { key:'branch', label:'Branch', type:'select', options:['Kukatpally','Madhapur'] }],
+      [{ key:'salary', label:'Monthly salary (₹)', type:'text', required:true, placeholder:'18000' },
+       { key:'payday', label:'Pay day', type:'select', options:['1st','5th','10th','Last working day'] }],
+      [{ key:'confirm', label:'Review', type:'note', placeholder:'The staff member gets an SMS invite to set their own password.' }]
+    ] },
+  addPlan: { title: 'Create membership plan', done: 'Plan created',
+    steps: ['Basic details', 'Pricing', 'Perks', 'Access & limits', 'Confirm'],
+    fields: [
+      [{ key:'name', label:'Plan name', type:'text', required:true, placeholder:'e.g. Quarterly Gym' },
+       { key:'duration', label:'Duration', type:'select', options:['1 month','3 months','6 months','12 months'] }],
+      [{ key:'price', label:'Price (₹)', type:'text', required:true, placeholder:'6000' },
+       { key:'joining', label:'Joining fee (₹)', type:'text', placeholder:'1000' },
+       { key:'tax', label:'Tax treatment', type:'select', options:['Inclusive of GST','Exclusive of GST','No GST'] }],
+      [{ key:'perks', label:'Perks included', type:'text', placeholder:'Cardio, steam, 1 free PT session' }],
+      [{ key:'batch', label:'Allowed batches', type:'select', options:['All day','Morning only','Evening only'] },
+       { key:'freeze', label:'Freeze days allowed', type:'text', placeholder:'15' }],
+      [{ key:'confirm', label:'Review', type:'note', placeholder:'The plan becomes selectable in Add Member as soon as you confirm.' }]
+    ] },
+  addPayment: { title: 'Record payment', done: 'Payment recorded',
+    steps: ['Member', 'Amount', 'Confirm'],
+    fields: [
+      [{ key:'member', label:'Member name or phone', type:'text', required:true, placeholder:'Start typing a name' }],
+      [{ key:'amount', label:'Amount (₹)', type:'text', required:true, placeholder:'2400' },
+       { key:'method', label:'Method', type:'select', options:['UPI','Cash','Card','Bank transfer'] },
+       { key:'date', label:'Date', type:'text', placeholder:'09/08/2026' }],
+      [{ key:'confirm', label:'Review', type:'note', placeholder:'A receipt goes out on WhatsApp once you confirm.' }]
+    ] },
+  addLead: { title: 'Add lead', done: 'Lead added',
+    steps: ['Lead details'],
+    fields: [
+      [{ key:'name', label:'Name', type:'text', required:true, placeholder:'e.g. Sneha Nair' },
+       { key:'phone', label:'Mobile number', type:'text', required:true, phone:true, placeholder:'10-digit number' },
+       { key:'source', label:'How did they reach you', type:'select', options:['Walk-in','Phone call','Instagram','Referral','Website'] },
+       { key:'interest', label:'Interested in', type:'select', options:PLANS }]
+    ] },
+  editMember: { title: 'Edit member', done: 'Changes saved',
+    steps: ['Member details'],
+    fields: [
+      [{ key:'name', label:'Full name', type:'text', required:true },
+       { key:'phone', label:'Mobile number', type:'text', required:true, phone:true },
+       { key:'plan', label:'Membership plan', type:'select', options:PLANS },
+       { key:'expiry', label:'Expiry date', type:'text' }]
+    ] }
+};
+
+const SETTINGS = {
+  profile: { title:'Gym Profile', sub:'Details, opening hours, social links and map — one page instead of three sheets.', sections:[
+    { label:'Details', fields:[{key:'gymName',label:'Gym name',type:'text',value:'Iron Peak Fitness'},{key:'phone',label:'Contact number',type:'text',value:'9848012345'},{key:'address',label:'Address',type:'text',value:'Plot 42, KPHB Phase 3, Hyderabad'}] },
+    { label:'Opening hours', fields:[{key:'weekday',label:'Mon–Sat',type:'text',value:'5:00 AM – 10:00 PM'},{key:'sunday',label:'Sunday',type:'text',value:'6:00 AM – 12:00 PM'},{key:'holiday',label:'Show holiday notice on public page',type:'toggle'}] },
+    { label:'Social & maps', fields:[{key:'insta',label:'Instagram',type:'text',value:'@ironpeak.hyd'},{key:'maps',label:'Google Maps link',type:'text',value:'maps.app.goo.gl/ironpeak'}] } ] },
+  gallery: { title:'Gym Gallery', sub:'Photos shown on your public page — its own route now, not an inline grid.', sections:[
+    { label:'Gallery', fields:[{key:'galleryOn',label:'Show gallery on public page',type:'toggle'},{key:'cover',label:'Cover photo caption',type:'text',value:'Main floor'},{key:'order',label:'Sort photos by',type:'select',options:['Newest first','Manual order']}] } ] },
+  numbering: { title:'Plan & Enrollment Numbering', sub:'How member IDs and receipt numbers are generated.', sections:[
+    { label:'Member IDs', fields:[{key:'prefix',label:'Prefix',type:'text',value:'IPF-'},{key:'next',label:'Next number',type:'text',value:'1125'},{key:'pad',label:'Pad with zeros',type:'toggle'}] },
+    { label:'Receipts', fields:[{key:'rprefix',label:'Receipt prefix',type:'text',value:'RC/26-27/'},{key:'reset',label:'Reset every',type:'select',options:['Financial year','Never','Calendar year']}] } ] },
+  card: { title:'Membership Card Design', sub:'Pick the design — the same card then shows on the member profile, the share link and the dashboard.', showCard:true, sections:[
+    { label:'Design', fields:[{key:'cardVariant',label:'Card design',type:'select',options:['Brand purple','Light','Dark'],value:'Brand purple'},{key:'showQr',label:'Show QR code',type:'toggle'},{key:'showExpiry',label:'Show expiry date',type:'toggle'},{key:'footer',label:'Footer line',type:'text',value:'Carry this on your phone — no plastic card needed.'}] } ] },
+  batches: { title:'Batches & Timings', sub:'Slots members can be assigned to, and how many fit in each.', sections:[
+    { label:'Batches', fields:[{key:'bMorning',label:'Morning batch',type:'text',value:'5:00 AM – 10:00 AM'},{key:'bEvening',label:'Evening batch',type:'text',value:'4:00 PM – 10:00 PM'},{key:'bCap',label:'Members per batch',type:'text',value:'60'},{key:'bLadies',label:'Ladies-only hour',type:'toggle'}] } ] },
+  announcements: { title:'Notices & Announcements', sub:'A short message shown to members in their app.', sections:[
+    { label:'Current notice', fields:[{key:'annOn',label:'Show notice to members',type:'toggle'},{key:'annText',label:'Notice',type:'text',value:'Gym closed on 15 Aug for Independence Day.'},{key:'annUntil',label:'Show until',type:'text',value:'16/08/2026'}] } ] },
+  workout: { title:'Diet & Workout Templates', sub:'Plans your trainers can assign to members.', sections:[
+    { label:'Templates', fields:[{key:'wtBeginner',label:'Beginner 3-day split',type:'toggle'},{key:'wtFatloss',label:'Fat-loss 6-day split',type:'toggle'},{key:'wtDiet',label:'Veg diet chart',type:'toggle'},{key:'wtOwner',label:'Only trainers can assign plans',type:'toggle'}] } ] },
+  discounts: { title:'Discounts & Offers', sub:'Standing discounts and coupon codes used at enrolment.', sections:[
+    { label:'Standing offers', fields:[{key:'dStudent',label:'Student discount (%)',type:'text',value:'10'},{key:'dCouple',label:'Couple discount (%)',type:'text',value:'15'},{key:'dRefer',label:'Referral reward (₹)',type:'text',value:'300'},{key:'dMax',label:'Staff may exceed these limits',type:'toggle'}] } ] },
+  gateway: { title:'Payment Methods & UPI', sub:'How money reaches you, and which methods staff can pick.', sections:[
+    { label:'Collection', fields:[{key:'upi',label:'UPI ID',type:'text',value:'ironpeak@okhdfcbank'},{key:'payCash',label:'Allow cash',type:'toggle'},{key:'payCard',label:'Allow card machine',type:'toggle'},{key:'payOnline',label:'Accept online payments from members',type:'toggle'}] } ] },
+  expenses: { title:'Expenses & Payroll', sub:'Monthly outgoings, so profit is real and not just collections.', sections:[
+    { label:'Recurring', fields:[{key:'eRent',label:'Rent (₹)',type:'text',value:'85000'},{key:'eSalary',label:'Salaries (₹)',type:'text',value:'86000'},{key:'ePower',label:'Electricity (₹)',type:'text',value:'22000'},{key:'eRemind',label:'Remind me on pay day',type:'toggle'}] } ] },
+  checkin: { title:'Attendance & Check-in Rules', sub:'How the scanner behaves at the door.', sections:[
+    { label:'Rules', fields:[{key:'ciOne',label:'One check-in per member per day',type:'toggle'},{key:'ciExpired',label:'Allow expired members to check in',type:'toggle'},{key:'ciGrace',label:'Grace days after expiry',type:'text',value:'3'},{key:'ciAlert',label:'Alert me when a dues member checks in',type:'toggle'}] } ] },
+  language: { title:'Language', sub:'Moved here from the top bar — it is a set-once choice, not a daily one.', sections:[
+    { label:'Language', fields:[{key:'appLang',label:'App language',type:'select',options:['English','తెలుగు','ಕನ್ನಡ'],value:'English'},{key:'msgLang',label:'Member message language',type:'select',options:['English','తెలుగు','ಕನ್ನಡ'],value:'English'}] } ] },
+  notifications: { title:'Notifications', sub:'What Gymloop pings you about.', sections:[
+    { label:'Push alerts', fields:[{key:'nExpiry',label:'Memberships expiring this week',type:'toggle'},{key:'nDues',label:'New dues added',type:'toggle'},{key:'nLead',label:'New enquiry received',type:'toggle'},{key:'nDaily',label:'Daily 9 PM summary',type:'toggle'}] } ] },
+  backup: { title:'Backup, Export & Restore', sub:'Your data, in your hands.', sections:[
+    { label:'Backups', fields:[{key:'autoExport',label:'Email me a monthly CSV backup',type:'toggle'},{key:'bWhen',label:'Backup frequency',type:'select',options:['Monthly','Weekly','Daily']},{key:'bMail',label:'Send backups to',type:'text',value:'ravi@ironpeak.in'}] } ] },
+  equipment: { title:'Gym Equipment', sub:'Inventory, quantities and service dates.', sections:[
+    { label:'Inventory', fields:[{key:'treadmills',label:'Treadmills',type:'text',value:'6'},{key:'benches',label:'Benches',type:'text',value:'8'},{key:'service',label:'Next service due',type:'text',value:'22 Sep 2026'},{key:'showEquip',label:'Show equipment list publicly',type:'toggle'}] } ] },
+  tax: { title:'Tax & Invoice Settings', sub:'GST details and what prints on every receipt.', sections:[
+    { label:'GST', fields:[{key:'gstin',label:'GSTIN',type:'text',value:'36AABCU9603R1ZX'},{key:'rate',label:'Default rate',type:'select',options:['18%','12%','5%','Exempt']},{key:'inclusive',label:'Prices include tax',type:'toggle'}] },
+    { label:'Receipt', fields:[{key:'invHeader',label:'Receipt header',type:'text',value:'Iron Peak Fitness, KPHB Phase 3'},{key:'invFooter',label:'Receipt footer',type:'text',value:'Fees once paid are not refundable.'},{key:'invSign',label:'Print signature line',type:'toggle'}] } ] },
+  landing: { title:'Landing Page / Public Profile', sub:'What people see when they open your gym link.', sections:[
+    { label:'Page', fields:[{key:'headline',label:'Headline',type:'text',value:'Train at Iron Peak, KPHB'},{key:'showPlans',label:'Show plans and prices',type:'toggle'},{key:'showEnq',label:'Show enquiry form',type:'toggle'}] } ] },
+  account: { title:'Account', sub:'Your login and password. Language has its own page now.', sections:[
+    { label:'You', fields:[{key:'ownerName',label:'Name',type:'text',value:'Ravi Teja'},{key:'ownerPhone',label:'Login number',type:'text',value:'9848011111'},{key:'ownerEmail',label:'Email',type:'text',value:'ravi@ironpeak.in'}] },
+    { label:'Security', fields:[{key:'pin',label:'Owner PIN (exits kiosk mode)',type:'text',value:'4821'},{key:'bio',label:'Unlock with fingerprint',type:'toggle'}] } ] },
+  data: { title:'Data & Privacy', sub:'How long we keep things, and closing the account.', sections:[
+    { label:'Data', fields:[{key:'retain',label:'Keep deleted members for',type:'select',options:['30 days','60 days','90 days']},{key:'shareAnon',label:'Share anonymous usage stats',type:'toggle'}] } ] },
+  metrics: { title:'Choose lead metrics', sub:'This replaces the old placeholder "Add Metric" button — pick which numbers sit at the top of Leads.', sections:[
+    { label:'Show on Leads', fields:[{key:'mNew',label:'New enquiries',type:'toggle'},{key:'mConv',label:'Conversion rate',type:'toggle'},{key:'mResp',label:'Average response time',type:'toggle'},{key:'mSource',label:'Top source',type:'toggle'}] } ] },
+  whatsappSettings: { title:'WhatsApp / Communications', sub:'Templates and when messages may go out.', sections:[
+    { label:'Sending', fields:[{key:'waOn',label:'Send renewal reminders automatically',type:'toggle'},{key:'waWindow',label:'Sending window',type:'select',options:['9 AM – 8 PM','10 AM – 6 PM','Any time']},{key:'waDays',label:'Remind this many days before expiry',type:'text',value:'5'}] } ] }
+};
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const members = buildMembers();
+    const rnd = mulberry(77);
+    this.state = {
+      view: 'both', route: 'dashboard', param: null, lang: 'en', role: 'owner',
+      members, q: '', gq: '', filter: 'all', sort: 'name', limit: 20, sel: [],
+      quickOpen: false, searchOpen: false, quickViewId: null, profileId: members[3].id,
+      toast: '', loading: false, leadTab: 'new', showSetup: true,
+      wizKey: null, wizStep: 0, wizData: {}, wizErrors: {}, wizDone: false,
+      settingsValues: { holiday:true, galleryOn:true, pad:true, showQr:true, showExpiry:true, inclusive:true, showPlans:true, showEnq:true, waOn:true, mNew:true, mConv:true, mResp:false, mSource:false, autoExport:false, showEquip:false,
+        bLadies:true, annOn:true, wtBeginner:true, wtFatloss:true, wtDiet:false, wtOwner:true, dMax:false,
+        payCash:true, payCard:true, payOnline:false, eRemind:true, ciOne:true, ciExpired:false, ciAlert:true,
+        nExpiry:true, nDues:true, nLead:true, nDaily:false, invSign:true, bio:true, shareAnon:false },
+      setup: [
+        { label:'Add your gym details', sub:'Name, address, opening hours', done:true },
+        { label:'Create membership plans', sub:'At least one plan to enrol members', done:true },
+        { label:'Add your first member', sub:'Or import from a spreadsheet', done:true },
+        { label:'Set up WhatsApp reminders', sub:'Renewals go out automatically', done:false },
+        { label:'Pair a check-in device', sub:'Tablet or phone at the front desk', done:false },
+        { label:'Publish your public page', sub:'Share the link on Instagram', done:false }
+      ],
+      revenue: Array.from({ length: 12 }, () => Math.floor(rnd() * 40000) + 55000),
+      heat: Array.from({ length: 84 }, (_, i) => { const h = i % 12; return (h < 3 || h > 9) ? rnd() * .9 : rnd() * .45; }),
+      leads: [
+        { id:1, name:'Sneha Nair', meta:'Walk-in · 2 days ago · Quarterly Gym', status:'New' },
+        { id:2, name:'Vikram Shetty', meta:'Instagram · 3 days ago · Personal Training', status:'New' },
+        { id:3, name:'Harika Rao', meta:'Referral · 4 days ago · Monthly Gym', status:'Contacted' },
+        { id:4, name:'Dinesh Kumar', meta:'Phone call · 6 days ago · Annual Gym', status:'Contacted' },
+        { id:5, name:'Meghana Bhat', meta:'Website · 8 days ago · Monthly + Cardio', status:'Joined' },
+        { id:6, name:'Tejas Patil', meta:'Walk-in · 9 days ago · Quarterly Gym', status:'Joined' }
+      ],
+      staff: [
+        { name:'Ganesh Rao', role:'Manager', phone:'9848022222' },
+        { name:'Swathi Naidu', role:'Receptionist', phone:'9848033333' },
+        { name:'Kiran Hegde', role:'Trainer', phone:'9848044444' },
+        { name:'Bhavani Devi', role:'Trainer', phone:'9848055555' },
+        { name:'Prashanth Iyer', role:'Receptionist', phone:'9848066666' }
+      ],
+      deleted: [
+        { name:'Anitha Sharma', sub:'Deleted 3 days ago · Monthly Gym' },
+        { name:'Raghu Varma', sub:'Deleted 11 days ago · Annual Gym' },
+        { name:'Pooja Kulkarni', sub:'Deleted 26 days ago · Quarterly Gym' }
+      ]
+    };
+  }
+
+  componentWillUnmount() { clearTimeout(this._t); clearTimeout(this._l); }
+
+  money(n) { return '₹' + Number(n).toLocaleString('en-IN'); }
+
+  toast(msg, haptic) {
+    if (haptic && navigator.vibrate) { try { navigator.vibrate(18); } catch (e) {} }
+    clearTimeout(this._t);
+    this.setState({ toast: msg });
+    this._t = setTimeout(() => this.setState({ toast: '' }), 2400);
+  }
+
+  go = (route, param, filter) => {
+    const next = { route, param: param != null ? param : null, quickOpen: false, searchOpen: false, quickViewId: null, loading: true, limit: 20 };
+    if (filter) next.filter = filter;
+    if (route === 'member' && param) next.profileId = param;
+    if (WIZ[route]) {
+      next.wizKey = route; next.wizStep = 0; next.wizErrors = {}; next.wizDone = false;
+      const m = this.state.members.find(x => x.id === this.state.profileId);
+      next.wizData = route === 'editMember' && m ? { name:m.name, phone:m.phone, plan:m.plan, expiry:m.expiry } : {};
+    }
+    clearTimeout(this._l);
+    this.setState(next);
+    this._l = setTimeout(() => this.setState({ loading: false }), 170);
+  };
+
+  csv(rows, name) {
+    const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  wizDef() { return WIZ[this.state.wizKey] || null; }
+
+  wizNext = () => {
+    const def = this.wizDef(); if (!def) return;
+    const fields = def.fields[this.state.wizStep] || [];
+    const errors = {};
+    fields.forEach(f => {
+      const v = (this.state.wizData[f.key] || '').trim();
+      if (f.required && !v) errors[f.key] = 'This is required.';
+      else if (f.phone && v && !/^[6-9]\d{9}$/.test(v)) errors[f.key] = 'Enter a valid 10-digit Indian mobile number.';
+    });
+    if (Object.keys(errors).length) { this.setState({ wizErrors: errors }); return; }
+    if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+    if (this.state.wizStep >= def.steps.length - 1) { this.setState({ wizDone: true, wizErrors: {} }); return; }
+    this.setState({ wizStep: this.state.wizStep + 1, wizErrors: {} });
+  };
+
+  render_() {}
+
+  renderVals() {
+    const s = this.state;
+    const P = this.props;
+    const members = s.members;
+    const money = n => this.money(n);
+
+    const active = members.filter(m => m.status === 'active').length;
+    const expiring = members.filter(m => m.status === 'expiring').length;
+    const dueMembers = members.filter(m => m.due > 0);
+    const stats = {
+      revenue: 386500, active, expiring, inGym: 24, checkins: 118,
+      dueCount: dueMembers.length, dueTotal: dueMembers.reduce((a, m) => a + m.due, 0)
+    };
+
+    // ---------- list screens
+    const tag = (label, bg, fg) => ({ tag: label, bg, fg });
+    let listScreen = null;
+    if (s.route === 'staff') {
+      const q = s.q.toLowerCase();
+      listScreen = { title: 'Staff', sub: s.staff ? '' : '', kpis: [
+        { label:'Team members', value: String(s.staff.length) },
+        { label:'Trainers', value: String(s.staff.filter(x => x.role === 'Trainer').length) },
+        { label:'Monthly payroll', value: money(86000) }
+      ], primary: { label:'+ Add staff', route:'addStaff' },
+      rows: s.staff.filter(x => !q || x.name.toLowerCase().indexOf(q) >= 0 || x.role.toLowerCase().indexOf(q) >= 0)
+        .map((x, i) => Object.assign({ title:x.name, sub:x.phone + ' · ' + x.role, initials:x.name.split(' ').map(w => w[0]).join(''), color:AVATAR[i % AVATAR.length] }, tag(x.role, '#F0EFFA', '#4A438F'))),
+      emptyTitle:'No staff match that', emptySub:'Try another name or role.' };
+      listScreen.sub = 'Grouped by role · ' + s.staff.length + ' people';
+    } else if (s.route === 'payments') {
+      const q = s.q.toLowerCase();
+      listScreen = { title: 'Payments', sub: 'Every rupee collected, newest first', chart: true, kpis: [
+        { label:'Collected this month', value: money(stats.revenue) },
+        { label:'Outstanding dues', value: money(stats.dueTotal) },
+        { label:'Payments today', value: '17' }
+      ], primary: { label:'+ Record payment', route:'addPayment' },
+      rows: members.slice(0, 24).filter(m => !q || m.name.toLowerCase().indexOf(q) >= 0)
+        .map(m => ({ title:m.name, sub:m.recent[0].date + ' · ' + m.recent[0].method + ' · ' + m.plan, amount: money(m.recent[0].amount), initials:m.initials, color:m.color, cta:'Details', route:'paymentDetail', param:m.id })),
+      emptyTitle:'No payments match that', emptySub:'Try a different member name.' };
+    } else if (s.route === 'paymentDetail' || s.route === 'memberPayments') {
+      const m = members.find(x => x.id === (s.param || s.profileId)) || members[0];
+      listScreen = { title: s.route === 'memberPayments' ? m.name + ' · payment history' : 'Payment detail',
+        sub: 'The full history — Member Profile links here instead of repeating it',
+        kpis: [{ label:'Lifetime value', value: money(9200) }, { label:'Payments', value:'7' }, { label:'Outstanding', value: money(m.due) }],
+        rows: m.recent.concat(m.recent.map(p => Object.assign({}, p, { date:'12 Oct 2025' })))
+          .map(p => ({ title:p.label, sub:p.date + ' · ' + p.method, amount: money(p.amount) })) };
+    } else if (s.route === 'whatsapp') {
+      listScreen = { title:'WhatsApp message log', sub:'What went out, to whom, and whether it landed',
+        kpis: [{ label:'Sent this month', value:'642' }, { label:'Delivered', value:'96%' }, { label:'Replies', value:'88' }],
+        primary: { label:'Message settings', route:'set:whatsappSettings' },
+        rows: members.slice(0, 14).map((m, i) => Object.assign({ title:m.name, sub:(i % 3 === 0 ? 'Renewal reminder' : i % 3 === 1 ? 'Payment receipt' : 'Welcome message') + ' · 8 Aug 2026', initials:m.initials, color:m.color }, tag(i % 5 === 0 ? 'Read' : 'Delivered', i % 5 === 0 ? '#EAF6EF' : '#F0EFFA', i % 5 === 0 ? '#0F5E3C' : '#4A438F'))) };
+    } else if (s.route === 'kiosk') {
+      listScreen = { title:'Kiosk devices', sub:'Tablets and phones paired for check-in',
+        kpis: [{ label:'Paired devices', value:'3' }, { label:'Check-ins today', value:'118' }, { label:'Offline', value:'1' }],
+        primary: { label:'+ Pair a device', route:'tablet' },
+        rows: [
+          Object.assign({ title:'Front desk tablet', sub:'Lenovo M10 · last seen 2 min ago' }, tag('Online', '#EAF6EF', '#0F5E3C')),
+          Object.assign({ title:'Entry gate phone', sub:'Redmi 12 · last seen 5 min ago' }, tag('Online', '#EAF6EF', '#0F5E3C')),
+          Object.assign({ title:'Studio tablet', sub:'Samsung A8 · last seen 2 days ago' }, tag('Offline', '#FBEBE9', '#A62C22'))
+        ] };
+    } else if (s.route === 'recycleBin') {
+      listScreen = { title:'Recycle bin', sub:'Deleted members, kept for 30 days — reachable on mobile from Members and from Settings',
+        rows: s.deleted.map((d, i) => ({ title:d.name, sub:d.sub, initials:d.name.split(' ').map(w => w[0]).join(''), color:AVATAR[i % AVATAR.length], cta:'Restore', route:'members' })),
+        emptyTitle:'Recycle bin is empty', emptySub:'Deleted members show up here for 30 days.' };
+    } else if (s.route === 'plans') {
+      listScreen = { title:'Membership plans', sub:'Six plans · used by Add Member and your public page',
+        primary: { label:'+ Create plan', route:'addPlan' },
+        rows: PLANS.map((p, i) => ({ title:p, sub:(i % 2 ? '3 months' : '1 month') + ' · ' + members.filter(m => m.plan === p).length + ' members', amount: money([1800, 4800, 8800, 15000, 2400, 6000][i]), cta:'Edit', route:'addPlan' })) };
+    }
+
+    // ---------- settings detail
+    let settingsDef = null;
+    if (s.route.indexOf('set:') === 0) settingsDef = SETTINGS[s.route.slice(4)] || SETTINGS.profile;
+
+    // ---------- global search
+    const gq = s.gq.trim().toLowerCase();
+    let globalResults = [];
+    if (gq) {
+      globalResults = members.filter(m => m.name.toLowerCase().indexOf(gq) >= 0 || m.phone.indexOf(gq) >= 0).slice(0, 5)
+        .map(m => ({ kind:'Member', title:m.name, sub:m.phone + ' · ' + m.plan, route:'member', param:m.id }));
+      s.staff.filter(x => x.name.toLowerCase().indexOf(gq) >= 0).slice(0, 3)
+        .forEach(x => globalResults.push({ kind:'Staff', title:x.name, sub:x.role, route:'staff' }));
+      if ('payments'.indexOf(gq) === 0) globalResults.push({ kind:'Page', title:'Payments', sub:'All collections', route:'payments' });
+    }
+
+    const wizDef = this.wizDef();
+    const wd = s.wizData;
+    const fill = k => (wd[k] || '').trim();
+    const nextEnroll = 'IPF-' + String(1000 + members.length + 1);
+    const row = (label, v, fb) => ({ label, value: v || fb, muted: !v });
+    const planPicked = fill('plan') && fill('plan') !== 'Not now' ? fill('plan') : '';
+    const methodPicked = fill('method') && fill('method') !== 'Not collected yet' ? fill('method') : '';
+    const summaryRows = [
+      row('Name', fill('name'), '—'),
+      row('Mobile number', fill('phone'), '—'),
+      row('Date of birth', fill('dob'), 'Not provided'),
+      { label:'Enrollment number', value: nextEnroll },
+      row('Plan', planPicked, 'No plan yet'),
+      row('Discount', fill('discount') ? money(Number(fill('discount')) || 0) : '', 'None'),
+      row('Payment method', methodPicked, 'Not collected yet'),
+      row('Amount collected', fill('amount') ? money(Number(fill('amount')) || 0) : '', '₹0')
+    ];
+    const wiz = wizDef ? {
+      title: wizDef.title, steps: wizDef.steps, step: s.wizStep,
+      stepTitle: wizDef.steps[s.wizStep], fields: wizDef.fields[s.wizStep] || [],
+      data: s.wizData, errors: s.wizErrors, done: s.wizDone,
+      isSummary: wizDef.summaryAt === s.wizStep,
+      summaryRows: wizDef.summaryAt === s.wizStep ? summaryRows : [],
+      nextLabel: s.wizStep >= wizDef.steps.length - 1 ? (wizDef.summaryAt != null ? 'Confirm & add member' : 'Confirm') : 'Next',
+      doneTitle: wizDef.done, doneSub: s.wizKey === 'addMember' ? 'Enrollment number ' + nextEnroll + ' · a WhatsApp welcome with their card link has gone out.' : 'A WhatsApp confirmation has gone out. You can undo this from the recycle bin.'
+    } : {};
+
+    const leadTabs = [{ id:'new', label:'New' }, { id:'contacted', label:'Contacted' }, { id:'joined', label:'Joined' }, { id:'all', label:'All' }];
+    const leadRows = s.leads.filter(l => s.leadTab === 'all' || l.status.toLowerCase() === s.leadTab).map(l => ({
+      id:l.id, name:l.name, meta:l.meta, status:l.status,
+      bg: l.status === 'New' ? '#F0EFFA' : l.status === 'Contacted' ? '#FDF1E2' : '#EAF6EF',
+      fg: l.status === 'New' ? '#4A438F' : l.status === 'Contacted' ? '#8A4B00' : '#0F5E3C',
+      cta: l.status === 'New' ? 'Mark contacted' : l.status === 'Contacted' ? 'Convert' : 'View member'
+    }));
+    const leadMetricDefs = [
+      { key:'mNew', label:'New enquiries', value:String(s.leads.filter(l => l.status === 'New').length) },
+      { key:'mConv', label:'Conversion rate', value:'34%' },
+      { key:'mResp', label:'Avg. response time', value:'4h' },
+      { key:'mSource', label:'Top source', value:'Walk-in' }
+    ];
+
+    const setupDone = s.setup.filter(x => x.done).length;
+
+    const actions = {
+      go: this.go,
+      setQ: v => this.setState({ q: v, limit: 20 }),
+      setGq: v => this.setState({ gq: v }),
+      setFilter: f => this.setState({ filter: f, limit: 20 }),
+      cycleSort: () => this.setState({ sort: s.sort === 'name' ? 'expiry' : s.sort === 'expiry' ? 'due' : 'name' }),
+      resetFilters: () => this.setState({ q: '', filter: 'all' }),
+      loadMore: () => this.setState({ limit: s.limit + 20 }),
+      toggleSel: id => this.setState({ sel: s.sel.indexOf(id) >= 0 ? s.sel.filter(x => x !== id) : s.sel.concat([id]) }),
+      clearSel: () => this.setState({ sel: [] }),
+      bulkRemind: () => { this.setState({ sel: [] }); this.toast('Reminder sent to ' + s.sel.length + ' members on WhatsApp', true); },
+      remind: name => this.toast('WhatsApp reminder sent to ' + name, true),
+      quickView: id => this.setState({ quickViewId: id }),
+      closeQuickView: () => this.setState({ quickViewId: null }),
+      openSearch: () => this.setState({ searchOpen: true }),
+      closeSearch: () => this.setState({ searchOpen: false, gq: '' }),
+      toggleQuick: () => this.setState({ quickOpen: !s.quickOpen }),
+      closeQuick: () => this.setState({ quickOpen: false }),
+      cycleLang: () => this.setState({ lang: s.lang === 'en' ? 'te' : s.lang === 'te' ? 'kn' : 'en' }),
+      exportCsv: which => {
+        const rows = which === 'members'
+          ? ['Name,Phone,Plan,Status,Expiry,Dues'].concat(members.map(m => [m.name, m.phone, m.plan, m.status, m.expiry, m.due].join(',')))
+          : ['Title,Detail'].concat((listScreen ? listScreen.rows : []).map(r => [r.title, r.sub].join(',')));
+        this.csv(rows, which + '-gymloop.csv');
+        this.toast('CSV downloaded');
+      },
+      dismissSetup: () => this.setState({ showSetup: false }),
+      toggleSetup: i => { const next = s.setup.slice(); next[i] = Object.assign({}, next[i], { done: !next[i].done }); this.setState({ setup: next }); },
+      setLeadTab: id => this.setState({ leadTab: id }),
+      advanceLead: id => {
+        const next = s.leads.map(l => l.id !== id ? l : Object.assign({}, l, { status: l.status === 'New' ? 'Contacted' : 'Joined' }));
+        this.setState({ leads: next }); this.toast('Lead updated', true);
+      },
+      openKpiPicker: () => this.go('set:metrics'),
+      wizSet: (k, v) => this.setState({ wizData: Object.assign({}, s.wizData, { [k]: v }), wizErrors: Object.assign({}, s.wizErrors, { [k]: '' }) }),
+      wizNext: this.wizNext,
+      wizBack: () => this.setState({ wizStep: Math.max(0, s.wizStep - 1), wizErrors: {} }),
+      cancelWizard: () => this.go(s.wizKey === 'addStaff' ? 'staff' : s.wizKey === 'editMember' ? 'member' : s.wizKey === 'addLead' ? 'leads' : s.wizKey === 'addPlan' ? 'plans' : 'members'),
+      finishWizard: () => { const k = s.wizKey; this.go(k === 'addStaff' ? 'staff' : k === 'addPayment' ? 'payments' : k === 'addLead' ? 'leads' : k === 'addPlan' ? 'plans' : 'members'); this.toast(WIZ[k].done, true); },
+      setSetting: (k, v) => {
+        const next = Object.assign({}, s.settingsValues, { [k]: v });
+        const patch = { settingsValues: next };
+        if (k === 'appLang') patch.lang = { 'English':'en', 'తెలుగు':'te', 'ಕನ್ನಡ':'kn' }[v] || 'en';
+        this.setState(patch);
+      },
+      toastMsg: msg => this.toast(msg, true),
+      shareCard: () => this.toast('Card link sent on WhatsApp', true),
+      saveSettings: () => { this.toast('Saved', true); },
+      deleteMember: () => { this.go('members'); this.toast('Member moved to recycle bin', true); },
+      simulateScan: () => this.toast('Kavya Reddy checked in · Annual Gym, valid', true),
+      overrideCheckin: () => this.toast('Manual check-in recorded', true),
+      launchTablet: () => this.toast('Tablet mode launched — exit with owner PIN'),
+      toastUpgrade: () => this.toast('Opening secure billing…')
+    };
+
+    const app = {
+      lang: s.lang, role: s.role, route: s.route, loading: s.loading, members,
+      q: s.q, gq: s.gq, filter: s.filter, sort: s.sort, limit: s.limit, sel: s.sel,
+      stats, revenue: s.revenue, heat: s.heat,
+      planMix: PLANS.slice(0, 5).map((p, i) => { const c = members.filter(m => m.plan === p).length; return { label:p, count:c, pct: Math.round(c / members.length * 100), color:['#6C63C7','#8A83D6','#3E7CB1','#2E8B6E','#B5643C'][i] }; }),
+      todayLine: 'Sunday, 9 August 2026 · Iron Peak Fitness, KPHB',
+      newLeads: s.leads.filter(l => l.status === 'New').length,
+      leadTab: s.leadTab, leadTabs, leadRows,
+      leadStats: leadMetricDefs.filter(m => s.settingsValues[m.key]).map(m => ({ label:m.label, value:m.value })),
+      showSetupCard: s.showSetup && setupDone < s.setup.length,
+      setupLine: setupDone + ' of ' + s.setup.length + ' steps done',
+      setupPct: Math.round(setupDone / s.setup.length * 100), setupItems: s.setup,
+      profileMember: members.find(m => m.id === s.profileId) || members[0],
+      quickViewMember: s.quickViewId ? members.find(m => m.id === s.quickViewId) : null,
+      quickOpen: s.quickOpen, searchOpen: s.searchOpen, globalResults, toast: s.toast,
+      listScreen, settingsDef, settingsValues: s.settingsValues,
+      analyticsKpis: s.route === 'attendance'
+        ? [{ label:'Check-ins today', value:'118' }, { label:'Peak hour', value:'7 PM' }, { label:'In gym now', value:'24' }, { label:'7-day streaks', value:'19' }]
+        : [{ label:'Revenue this month', value: money(stats.revenue) }, { label:'New members', value:'23' }, { label:'Retention', value:'87%' }, { label:'Avg. plan value', value: money(3120) }],
+      invoices: [
+        { date:'1 Aug 2026', id:'INV-2026-0142', amount:'₹2,499' },
+        { date:'1 Jul 2026', id:'INV-2026-0119', amount:'₹2,499' },
+        { date:'1 Jun 2026', id:'INV-2026-0097', amount:'₹2,499' },
+        { date:'1 May 2026', id:'INV-2026-0074', amount:'₹2,499' }
+      ],
+      wiz,
+      dashboardLayout: P.dashboardLayout || 'priority',
+      quickActionStyle: P.quickActionStyle || 'fab',
+      cardStyle: { 'Brand purple':'brand', 'Light':'light', 'Dark':'dark' }[s.settingsValues.cardVariant] || P.cardStyle || 'brand',
+      stepIndicator: P.stepIndicator || 'numbered',
+      profileLayout: P.profileLayout || 'split'
+    };
+
+    const seg = (list, cur, set) => list.map(([id, label]) => ({
+      label, go: () => set(id),
+      bg: cur === id ? '#6C63C7' : 'transparent', fg: cur === id ? '#fff' : '#3A3E55'
+    }));
+
+    return {
+      app, actions,
+      routeSlug: s.route.replace('set:', 'settings/'),
+      showDesktop: s.view !== 'mobile', showMobile: s.view !== 'desktop',
+      viewTabs: seg([['both','Both'],['desktop','Desktop'],['mobile','Mobile']], s.view, v => this.setState({ view: v })),
+      roleTabs: seg([['owner','Owner'],['manager','Manager'],['receptionist','Receptionist'],['trainer','Trainer']], s.role, v => this.setState({ role: v }))
+    };
+  }
+}
+</script>
+</body>
+</html>

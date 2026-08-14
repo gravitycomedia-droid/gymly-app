@@ -4,6 +4,7 @@ import { logout } from '../../firebase/auth';
 import { getInitials } from '../../utils/helpers';
 import BottomNav from '../BottomNav';
 import useNewLeadsCount from '../../hooks/useNewLeadsCount';
+import '../../styles/gymloop-theme.css';
 
 const OWNER_NAV = [
   { id: 'home',      label: 'Dashboard',  path: '/owner/dashboard',  icon: 'home' },
@@ -34,7 +35,7 @@ export default function OwnerLayout({ children, activeTab }) {
   };
 
   return (
-    <div className="layout-shell">
+    <div className="layout-shell owner-theme">
       {/* ── Sidebar (desktop only) ── */}
       <aside className="layout-sidebar">
         {/* Brand */}
@@ -70,6 +71,14 @@ export default function OwnerLayout({ children, activeTab }) {
           <button className="sidebar-quick-btn primary" onClick={() => navigate('/scan')}>
             <span className="material-symbols-outlined">qr_code_scanner</span>
             Scan QR
+          </button>
+          <button className="sidebar-quick-btn secondary" onClick={() => navigate('/owner/members/add')}>
+            <span className="material-symbols-outlined">person_add</span>
+            Add Member
+          </button>
+          <button className="sidebar-quick-btn secondary" onClick={() => navigate('/owner/payments/add')}>
+            <span className="material-symbols-outlined">payments</span>
+            Record Payment
           </button>
           <button className="sidebar-quick-btn secondary" onClick={() => navigate('/owner/leads')} style={{ position: 'relative' }}>
             <span className="material-symbols-outlined">edit_note</span>

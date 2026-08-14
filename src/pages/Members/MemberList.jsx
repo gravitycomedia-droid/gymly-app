@@ -272,7 +272,7 @@ const filteredMembers = useMemo(() => {
             {role === 'owner' && (
               <button
                 onClick={() => navigate('/owner/recycle-bin')}
-                className="w-9 h-9 rounded-full glass-panel border border-white/30 flex items-center justify-center text-on-surface-variant hover:text-error hover:border-error/30 transition-all"
+                className="w-9 h-9 rounded-full glass-panel border border-black/10 flex items-center justify-center text-on-surface-variant hover:text-error hover:border-error/30 transition-all"
                 title="Recycle Bin"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 18 }}>delete</span>
@@ -285,7 +285,7 @@ const filteredMembers = useMemo(() => {
               className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all ${
                 selectMode
                   ? 'bg-primary text-white border-primary'
-                  : 'glass-panel text-on-surface-variant border-white/30 hover:border-primary/40 hover:text-primary'
+                  : 'glass-panel text-on-surface-variant border-black/10 hover:border-primary/40 hover:text-primary'
               }`}
               title={selectMode ? 'Exit selection' : 'Select members'}
             >
@@ -299,7 +299,7 @@ const filteredMembers = useMemo(() => {
             )}
             <button
               onClick={() => navigate(`${basePath}/members/add`)}
-              className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-primary hover:backdrop-blur-xl hover:bg-white/10 transition-all duration-300 active:scale-95 hidden md:flex"
+              className="w-10 h-10 rounded-full glass-panel flex items-center justify-center text-primary hover:bg-primary/10 transition-all duration-300 active:scale-95 hidden md:flex"
             >
               <span className="material-symbols-outlined">add</span>
             </button>
@@ -349,7 +349,7 @@ const filteredMembers = useMemo(() => {
         {/* Filters & Search */}
         <div className="flex flex-col gap-3 mb-8 w-full">
           <div className="flex justify-start w-full">
-            <div className="flex bg-white/40 backdrop-blur-md rounded-lg p-1.5 border border-white/50 w-full max-w-md overflow-x-auto hide-scrollbar flex-nowrap shrink-0 shadow-sm">
+            <div className="flex bg-surface-container-low rounded-lg p-1.5 border border-black/5 w-full max-w-md overflow-x-auto hide-scrollbar flex-nowrap shrink-0 shadow-sm">
               {['all', 'active', 'expired'].map((t) => (
                 <button
                   key={t}
@@ -372,7 +372,7 @@ const filteredMembers = useMemo(() => {
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
                 activeFilter === 'expiring'
                   ? 'bg-warning/15 border-warning/40 text-warning'
-                  : 'bg-white/40 border-white/50 text-on-surface-variant hover:border-warning/40 hover:text-warning'
+                  : 'bg-white border-black/10 text-on-surface-variant hover:border-warning/40 hover:text-warning'
               }`}
             >
               <span className="material-symbols-outlined" style={{ fontSize: 14 }}>schedule</span>
@@ -381,7 +381,7 @@ const filteredMembers = useMemo(() => {
             {activeFilter === 'expiring' && (
               <button
                 onClick={() => setActiveFilter('')}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/40 border border-white/50 text-on-surface-variant hover:text-error transition-all"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold bg-white border border-black/10 text-on-surface-variant hover:text-error transition-all"
               >
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>close</span>
                 Clear
@@ -395,8 +395,8 @@ const filteredMembers = useMemo(() => {
                 <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
               </svg>
             </span>
-            <input 
-              className="w-full pl-11 pr-4 py-3 bg-white/40 backdrop-blur-md rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-body-md text-sm border border-white/50 shadow-sm placeholder-outline-variant" 
+            <input
+              className="w-full pl-11 pr-4 py-3 bg-white rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 text-on-surface font-body-md text-sm border border-black/10 shadow-sm placeholder-outline-variant"
               placeholder="Search members..." 
               type="text"
               value={search}
@@ -444,7 +444,7 @@ const filteredMembers = useMemo(() => {
           {!selectMode && (
             <div 
               ref={addCardRef}
-              className="glass-card rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-3 cursor-pointer border-dashed border-2 border-primary/30 hover:border-primary/60 bg-transparent hover:bg-white/20 min-h-[180px] sm:min-h-[220px]"
+              className="glass-card rounded-xl p-4 sm:p-6 flex flex-col items-center justify-center gap-3 cursor-pointer border-dashed border-2 border-primary/30 hover:border-primary/60 bg-transparent hover:bg-primary/5 min-h-[180px] sm:min-h-[220px]"
               onClick={() => navigate(`${basePath}/members/add`)}
             >
               <div className="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-2">

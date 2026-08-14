@@ -19,7 +19,7 @@
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--primary), #1D9E75);
+  background: linear-gradient(90deg, var(--primary), #1E7A4B);
 }
 
 .attendance-live-label {
@@ -93,7 +93,7 @@
 }
 
 .attendance-log-row.expired-entry {
-  border-left: 3px solid #E24B4A;
+  border-left: 3px solid #A62C22;
 }
 
 .attendance-log-avatar {
@@ -138,7 +138,7 @@
   font-size: 9px;
   font-weight: 600;
   background: rgba(226, 75, 74, 0.1);
-  color: #E24B4A;
+  color: #A62C22;
   margin-left: 6px;
 }
 

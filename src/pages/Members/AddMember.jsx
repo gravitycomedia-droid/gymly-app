@@ -382,9 +382,9 @@ const AddMember = ({ quickAddOnly = false }) => {
             </div>
           )}
           {newEnrollmentNumber && (
-            <div className="mt-2 px-4 py-2 rounded-xl bg-[#1D9E75]/10 border border-[#1D9E75]/20">
+            <div className="mt-2 px-4 py-2 rounded-xl bg-[#1E7A4B]/10 border border-[#1E7A4B]/20">
               <div className="text-[11px] text-on-surface-variant font-medium uppercase tracking-wider mb-1">Enrollment</div>
-              <div className="text-sm font-semibold text-[#1D9E75] font-mono tracking-wide">{newEnrollmentNumber}</div>
+              <div className="text-sm font-semibold text-[#1E7A4B] font-mono tracking-wide">{newEnrollmentNumber}</div>
             </div>
           )}
           
@@ -392,7 +392,7 @@ const AddMember = ({ quickAddOnly = false }) => {
             <button onClick={resetForm} className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-secondary text-white font-label-md hover:opacity-90 transition-opacity">
               Add Another Member
             </button>
-            <button onClick={() => navigate(`${base}/members/${newMemberId}`)} className="w-full py-3 rounded-xl glass-input text-primary font-label-md hover:bg-white/60 transition-colors">
+            <button onClick={() => navigate(`${base}/members/${newMemberId}`)} className="w-full py-3 rounded-xl glass-input text-primary font-label-md hover:bg-primary/5 transition-colors">
               View Profile
             </button>
           </div>
@@ -472,7 +472,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                   <button
                     type="button"
                     onClick={() => setShowPhotoPicker(true)}
-                    className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/50 shadow-lg bg-primary/10 flex items-center justify-center text-on-surface-variant hover:bg-primary/20 transition-colors group"
+                    className="w-24 h-24 rounded-full overflow-hidden border-4 border-white shadow-lg bg-primary/10 flex items-center justify-center text-on-surface-variant hover:bg-primary/20 transition-colors group"
                     title="Add photo"
                   >
                     {photoPreview ? (
@@ -553,7 +553,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                   </div>
                   <div className="flex gap-2">
                     <button onClick={() => navigate(`${base}/members/${duplicate.id}`)} className="px-4 py-2 bg-error text-white rounded-lg font-label-md text-sm hover:opacity-90">View Profile</button>
-                    <button onClick={() => setDuplicate(null)} className="px-4 py-2 glass-input text-on-surface rounded-lg font-label-md text-sm hover:bg-white/50">Use Anyway</button>
+                    <button onClick={() => setDuplicate(null)} className="px-4 py-2 glass-input text-on-surface rounded-lg font-label-md text-sm hover:bg-black/5">Use Anyway</button>
                   </div>
                 </div>
               )}
@@ -609,7 +609,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                           ✓ Fully Paid
                         </button>
                         <button 
-                          className={`flex-1 py-3 rounded-lg font-label-md border border-black/15 transition-all ${form.paymentStatus === 'pending' ? 'bg-error-container/40 border-[#d97706] text-[#d97706] shadow-sm' : 'glass-input text-on-surface-variant'}`}
+                          className={`flex-1 py-3 rounded-lg font-label-md border border-black/15 transition-all ${form.paymentStatus === 'pending' ? 'bg-[#8A4B00]/10 border-[#8A4B00] text-[#8A4B00] shadow-sm' : 'glass-input text-on-surface-variant'}`}
                           onClick={() => update('paymentStatus', 'pending')}
                           type="button"
                         >
@@ -627,7 +627,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                           <span className="absolute left-4 top-3 text-on-surface-variant">₹</span>
                           <input 
                             type="number"
-                            className="w-full rounded-lg pl-8 pr-4 py-3 glass-input text-on-surface font-body-md bg-white/50"
+                            className="w-full rounded-lg pl-8 pr-4 py-3 glass-input text-on-surface font-body-md"
                             placeholder="0"
                             value={paidNow}
                             onChange={(e) => setPaidNow(e.target.value)}
@@ -638,7 +638,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                         <label className="font-label-sm text-label-sm text-on-surface-variant uppercase">Due Date</label>
                         <input 
                           type="date"
-                          className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md bg-white/50"
+                          className="w-full rounded-lg px-4 py-3 glass-input text-on-surface font-body-md"
                           value={dueDate}
                           onChange={(e) => setDueDate(e.target.value)}
                         />
@@ -768,7 +768,7 @@ const AddMember = ({ quickAddOnly = false }) => {
                 )}
                 
                 {form.paymentStatus === 'pending' && pendingAmount > 0 && (
-                  <div className="flex items-center gap-3 text-[#EF9F27] pt-2 font-semibold">
+                  <div className="flex items-center gap-3 text-[#8A4B00] pt-2 font-semibold">
                     <span className="material-symbols-outlined text-sm">warning</span>
                     <span className="font-label-md text-label-md">Pending: ₹{pendingAmount.toLocaleString('en-IN')}</span>
                   </div>

@@ -145,7 +145,7 @@ const Analytics = () => {
         datasets: [{
           label: 'Total members',
           data,
-          borderColor: '#1D9E75',
+          borderColor: '#1E7A4B',
           backgroundColor: 'rgba(29, 158, 117, 0.08)',
           fill: true,
           tension: 0.4,
@@ -180,7 +180,7 @@ const Analytics = () => {
       }
     });
 
-    const colors = ['var(--primary)', '#1D9E75', '#EF9F27', 'var(--error)', '#378ADD', '#9333ea', '#f97316'];
+    const colors = ['var(--primary)', '#8A83D6', '#3E7CB1', '#2E8B6E', '#B5643C', '#4A438F', '#9089D8'];
     const labels = Object.keys(planCounts);
     const data = Object.values(planCounts);
     const total = data.reduce((s, v) => s + v, 0);
@@ -210,12 +210,12 @@ const Analytics = () => {
           const { ctx, width, height } = chart;
           ctx.save();
           ctx.font = '600 18px Inter';
-          ctx.fillStyle = '#1a1a2e';
+          ctx.fillStyle = '#14152B';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(`${total}`, width / 2, height / 2 - 6);
           ctx.font = '400 10px Inter';
-          ctx.fillStyle = '#7a7a9a';
+          ctx.fillStyle = '#5A5E76';
           ctx.fillText('active', width / 2, height / 2 + 10);
           ctx.restore();
         },
@@ -250,7 +250,7 @@ const Analytics = () => {
         labels: ['Renewed', 'Churned'],
         datasets: [{
           data: [renewedMembers, Math.max(0, totalMembers - renewedMembers)],
-          backgroundColor: ['#1D9E75', 'var(--error)'],
+          backgroundColor: ['#1E7A4B', 'var(--error)'],
           borderWidth: 0,
         }],
       },

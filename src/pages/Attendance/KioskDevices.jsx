@@ -134,9 +134,9 @@ const DeviceCard = ({ device, onDelete, onRegenerate }) => {
   const [regenCode, setRegenCode] = useState(null);
 
   const statusColors = {
-    active: { bg: '#e1f5ee', color: '#1D9E75', dot: '#1D9E75' },
+    active: { bg: '#E7F5EE', color: '#1E7A4B', dot: '#1E7A4B' },
     pairing: { bg: '#fff3d6', color: '#EF9F27', dot: '#EF9F27' },
-    inactive: { bg: '#f0edef', color: '#787584', dot: '#787584' },
+    inactive: { bg: '#F5F6FA', color: '#5A5E76', dot: '#5A5E76' },
   };
   const s = statusColors[device.status] || statusColors.inactive;
 

@@ -474,9 +474,9 @@ const MemberProfile = ({ readOnly = false }) => {
   const cs = { ...DEFAULT_CS, ...(gym?.card_settings || {}) };
 
   const statusColors = {
-    active:   { bg: 'rgba(29,158,117,0.15)',  color: '#006e28',  dot: '#006e28' },
-    expiring: { bg: 'rgba(239,159,39,0.15)',  color: '#EF9F27',  dot: '#EF9F27' },
-    expired:  { bg: 'rgba(186,26,26,0.15)',   color: '#ba1a1a',  dot: '#ba1a1a' },
+    active:   { bg: 'rgba(30,122,75,0.15)',   color: '#1E7A4B',  dot: '#1E7A4B' },
+    expiring: { bg: 'rgba(138,75,0,0.15)',    color: '#8A4B00',  dot: '#8A4B00' },
+    expired:  { bg: 'rgba(166,44,34,0.15)',   color: '#A62C22',  dot: '#A62C22' },
   };
   const sc = statusColors[type] || statusColors.active;
 
@@ -540,7 +540,7 @@ const MemberProfile = ({ readOnly = false }) => {
           {/* Avatar with camera overlay */}
           <div className="flex-shrink-0 flex flex-col items-center md:items-start gap-4 z-10">
             <div className="relative group">
-              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white/50 shadow-lg flex items-center justify-center font-display-lg text-4xl relative" style={{ background: avatarColor.bg, color: avatarColor.text }}>
+              <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-lg flex items-center justify-center font-display-lg text-4xl relative" style={{ background: avatarColor.bg, color: avatarColor.text }}>
                 {member.profile_photo ? (
                   <img src={member.profile_photo} alt={member.name} className="w-full h-full object-cover" />
                 ) : (
@@ -597,11 +597,11 @@ const MemberProfile = ({ readOnly = false }) => {
                   <div className="flex flex-col gap-1">
                     {member.latestEnrollmentNumber && (
                       <p className="font-body-md text-body-md text-on-surface-variant flex items-center justify-center md:justify-start gap-1">
-                        <span className="material-symbols-outlined text-sm text-[#1D9E75]">confirmation_number</span>
-                        <span className="font-mono tracking-wide text-[#1D9E75] font-semibold">{member.latestEnrollmentNumber}</span>
+                        <span className="material-symbols-outlined text-sm text-[#1E7A4B]">confirmation_number</span>
+                        <span className="font-mono tracking-wide text-[#1E7A4B] font-semibold">{member.latestEnrollmentNumber}</span>
                         <button
                           onClick={() => { navigator.clipboard.writeText(member.latestEnrollmentNumber); showToast('Enrollment ID copied!', 'success'); }}
-                          className="ml-1 text-[#1D9E75]/50 hover:text-[#1D9E75] inline-flex"
+                          className="ml-1 text-[#1E7A4B]/50 hover:text-[#1E7A4B] inline-flex"
                           title="Copy enrollment ID"
                         >
                           <span className="material-symbols-outlined" style={{ fontSize: 13 }}>content_copy</span>
@@ -665,28 +665,28 @@ const MemberProfile = ({ readOnly = false }) => {
             {/* Quick Actions Bento */}
             {!readOnly && (
               <div className="grid grid-cols-4 gap-2 md:gap-3 mt-auto">
-                <button onClick={() => setShowRenew(true)} className="bg-white/30 backdrop-blur-md border border-white/60 hover:bg-white/50 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
+                <button onClick={() => setShowRenew(true)} className="bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
                   <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">autorenew</span>
                   <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Renew</span>
                 </button>
                 {cs.card_enabled !== false && (
-                  <button onClick={() => setShowQRModal(true)} className="bg-white/30 backdrop-blur-md border border-white/60 hover:bg-white/50 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
+                  <button onClick={() => setShowQRModal(true)} className="bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
                     <span className="material-symbols-outlined text-tertiary group-hover:scale-110 transition-transform">qr_code_scanner</span>
                     <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Access QR</span>
                   </button>
                 )}
-                <a href={member.phone ? `https://wa.me/${String(member.phone).replace(/[^0-9]/g, '')}` : '#'} target="_blank" rel="noreferrer" className="bg-white/30 backdrop-blur-md border border-white/60 hover:bg-white/50 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
-                  <span className="material-symbols-outlined text-[#1D9E75] group-hover:scale-110 transition-transform">chat</span>
+                <a href={member.phone ? `https://wa.me/${String(member.phone).replace(/[^0-9]/g, '')}` : '#'} target="_blank" rel="noreferrer" className="bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
+                  <span className="material-symbols-outlined text-[#1E7A4B] group-hover:scale-110 transition-transform">chat</span>
                   <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Message</span>
                 </a>
                 <div className="relative">
-                  <button onClick={() => setShowMoreActions(!showMoreActions)} className="w-full h-full bg-white/30 backdrop-blur-md border border-white/60 hover:bg-white/50 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
+                  <button onClick={() => setShowMoreActions(!showMoreActions)} className="w-full h-full bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
                     <span className="material-symbols-outlined text-on-surface-variant group-hover:scale-110 transition-transform">more_horiz</span>
                     <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">More</span>
                   </button>
                   {showMoreActions && (
                     <div className="absolute top-full right-0 mt-2 w-36 glass-panel rounded-xl shadow-lg flex flex-col overflow-hidden z-20 border border-black/10">
-                      <button onClick={() => { navigate(`${base}/members/${id}/edit`); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-white/50 font-label-md flex items-center gap-2">
+                      <button onClick={() => { navigate(`${base}/members/${id}/edit`); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-black/5 font-label-md flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm text-secondary">edit</span> Edit Member
                       </button>
                       {canDeleteMember && (
@@ -714,7 +714,7 @@ const MemberProfile = ({ readOnly = false }) => {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="bg-surface/50 rounded-2xl p-5 border border-white/40">
+              <div className="bg-surface/50 rounded-2xl p-5 border border-black/5">
                 <div className="font-label-sm text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Current Plan</div>
                 <div className="font-headline-md text-headline-md text-on-surface mb-4">{planName}</div>
                 <div className="space-y-2">
@@ -728,7 +728,7 @@ const MemberProfile = ({ readOnly = false }) => {
                 </div>
               </div>
               
-              <div className="bg-surface/50 rounded-2xl p-5 border border-white/40 flex flex-col justify-between">
+              <div className="bg-surface/50 rounded-2xl p-5 border border-black/5 flex flex-col justify-between">
                 <div>
                   <div className="font-label-sm text-label-sm text-on-surface-variant mb-1 uppercase tracking-wider">Payment Status</div>
                   <div className="font-headline-md text-headline-md text-on-surface mt-2">
@@ -742,7 +742,7 @@ const MemberProfile = ({ readOnly = false }) => {
                     <span className="font-label-sm text-label-sm">All clear</span>
                   </div>
                 ) : (
-                  <div className="mt-4 flex items-center gap-2 text-[#EF9F27] bg-[#EF9F27]/10 p-2 rounded-lg border border-[#EF9F27]/20 w-fit">
+                  <div className="mt-4 flex items-center gap-2 text-[#8A4B00] bg-[#8A4B00]/10 p-2 rounded-lg border border-[#8A4B00]/20 w-fit">
                     <span className="material-symbols-outlined text-sm">warning</span>
                     <span className="font-label-sm text-label-sm">Payment pending</span>
                   </div>
@@ -797,7 +797,7 @@ const MemberProfile = ({ readOnly = false }) => {
                 const isPendingOrPartial = p.status === 'pending' || p.status === 'partial';
                 const d = p.payment_date?.toDate ? p.payment_date.toDate() : new Date(p.payment_date);
                 return (
-                  <div key={p.id} className="bg-white/40 border border-white/60 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div key={p.id} className="bg-white border border-black/10 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
                       <div className="font-label-md text-on-surface font-semibold">{p.plan_name}</div>
                       <div className="font-body-md text-sm text-on-surface-variant mt-1">
@@ -809,14 +809,14 @@ const MemberProfile = ({ readOnly = false }) => {
                         </div>
                       )}
                       {isPendingOrPartial && (
-                        <div className="text-[#EF9F27] text-xs font-bold mt-1">₹{(p.pending_amount || 0).toLocaleString('en-IN')} pending</div>
+                        <div className="text-[#8A4B00] text-xs font-bold mt-1">₹{(p.pending_amount || 0).toLocaleString('en-IN')} pending</div>
                       )}
                     </div>
                     <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
                       <div className="font-headline-md text-primary">₹{(p.final_amount || 0).toLocaleString('en-IN')}</div>
                       
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${p.status === 'paid' ? 'bg-tertiary/10 text-tertiary border border-tertiary/20' : p.status === 'partial' ? 'bg-[#EF9F27]/10 text-[#EF9F27] border border-[#EF9F27]/20' : 'bg-error/10 text-error border border-error/20'}`}>
+                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${p.status === 'paid' ? 'bg-tertiary/10 text-tertiary border border-tertiary/20' : p.status === 'partial' ? 'bg-[#8A4B00]/10 text-[#8A4B00] border border-[#8A4B00]/20' : 'bg-error/10 text-error border border-error/20'}`}>
                           {p.status}
                         </span>
                         
@@ -854,9 +854,9 @@ const MemberProfile = ({ readOnly = false }) => {
 
           <section className="glass-panel rounded-3xl p-6 flex flex-col">
             <h3 className="font-headline-md text-headline-md text-on-surface mb-4 flex items-center gap-2">
-              <span className="material-symbols-outlined text-[#1D9E75]">health_and_safety</span> Medical Notes
+              <span className="material-symbols-outlined text-[#1E7A4B]">health_and_safety</span> Medical Notes
             </h3>
-            <div className="flex-1 bg-surface/50 rounded-2xl p-4 border border-white/40 font-body-md text-on-surface-variant italic">
+            <div className="flex-1 bg-surface/50 rounded-2xl p-4 border border-black/5 font-body-md text-on-surface-variant italic">
               {member.medical_notes || 'No medical notes or conditions reported.'}
             </div>
           </section>
@@ -923,7 +923,7 @@ const MemberProfile = ({ readOnly = false }) => {
       {/* ── Membership Card / Access QR Modal ── */}
       {showQRModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4" onClick={() => setShowQRModal(false)}>
-          <div className="glass-panel p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-white/20" onClick={e => e.stopPropagation()}>
+          <div className="glass-panel p-6 rounded-3xl max-w-sm w-full shadow-2xl border border-black/10" onClick={e => e.stopPropagation()}>
             
             {/* The membership card respecting card_settings */}
             <div
