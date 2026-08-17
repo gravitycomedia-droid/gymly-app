@@ -323,7 +323,7 @@ export default function MemberProfile() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gap: 14, gridTemplateColumns: '1.4fr 1fr', alignItems: 'start' }} className="gl2-grid-2">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div className="gl2-card">
           <div style={{ display: 'flex', alignItems: 'center', gap: 13, marginBottom: 14 }}>
             <div style={{ position: 'relative' }}>
@@ -364,10 +364,18 @@ export default function MemberProfile() {
           </div>
         </div>
 
-        <div className="gl2-card">
-          <p className="gl2-card-title" style={{ marginBottom: 12 }}>Membership card</p>
-          <MembershipCard member={member} gym={gym} cardSettings={cs} statusColor={sc} statusLabel={label} planName={planName} publicUrl={publicUrl} />
-          <button type="button" className="gl2-btn gl2-btn-secondary" style={{ width: '100%', marginTop: 12 }} onClick={() => setShowCardModal(true)}>Download / share card</button>
+        <div className="gl2-card" style={{ background: 'linear-gradient(180deg, var(--gl2-primary-tint-2) 0%, var(--gl2-surface) 130px)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+            <p className="gl2-card-title" style={{ marginBottom: 2 }}>Membership card</p>
+            <p style={{ margin: '0 0 18px', fontSize: 12.5, color: 'var(--gl2-muted)' }}>Their digital ID — shown automatically in the member app</p>
+            <div style={{ width: '100%', maxWidth: 380 }}>
+              <MembershipCard member={member} gym={gym} cardSettings={cs} statusColor={sc} statusLabel={label} planName={planName} publicUrl={publicUrl} />
+            </div>
+            <button type="button" className="gl2-btn gl2-btn-primary" style={{ width: '100%', maxWidth: 380, marginTop: 18 }} onClick={() => setShowCardModal(true)}>
+              <span className="material-symbols-outlined" style={{ fontSize: 17 }}>download</span>
+              Download / share card
+            </button>
+          </div>
         </div>
       </div>
 

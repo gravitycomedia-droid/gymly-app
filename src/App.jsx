@@ -76,22 +76,14 @@ const OwnerAddPlanV2       = lazy(() => import('./owner/screens/Plans/AddPlan'))
 const OwnerSubscriptionV2  = lazy(() => import('./owner/screens/Subscription'));
 
 import WorkoutGate from './components/WorkoutGate';
-
-// ── Loading Spinner (shown while lazy chunks load) ──
-const PageSpinner = () => (
-  <div className="screen" style={{ background: 'var(--grad-role)' }}>
-    <div className="screen-content" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-      <div className="spinner spinner-primary" style={{ width: 32, height: 32 }} />
-    </div>
-  </div>
-);
+import AppLoader from './components/AppLoader';
 
 // ── Animated Routes (needs useLocation inside BrowserRouter) ──
 function AnimatedRoutes() {
   const location = useLocation();
 
   return (
-    <Suspense fallback={<PageSpinner />}>
+    <Suspense fallback={<AppLoader />}>
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
           {/* Auto-redirect based on auth state */}
@@ -311,8 +303,8 @@ function AnimatedRoutes() {
           <Route path="/tablet" element={<ProtectedRoute><PageTransition><TabletMode /></PageTransition></ProtectedRoute>} />
 
           {/* Phase 5 — Kiosk (public, no auth required) */}
-          <Route path="/kiosk/entry" element={<Suspense fallback={<PageSpinner />}><EntryKiosk /></Suspense>} />
-          <Route path="/kiosk/exit" element={<Suspense fallback={<PageSpinner />}><ExitKiosk /></Suspense>} />
+          <Route path="/kiosk/entry" element={<Suspense fallback={<AppLoader />}><EntryKiosk /></Suspense>} />
+          <Route path="/kiosk/exit" element={<Suspense fallback={<AppLoader />}><ExitKiosk /></Suspense>} />
 
           {/* Phase 5 — Kiosk Device Management (protected, Gymloop v2 shell) */}
           <Route
