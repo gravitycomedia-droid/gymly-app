@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
 import { linkMemberships } from '../../firebase/firestore';
@@ -6,19 +6,13 @@ import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { capPhoneDigits } from '../../utils/helpers';
-import './Login.css';
+import AuthShell from './AuthShell';
+import OtpInput from './OtpInput';
 
-const COUNTRY_CODES = [
-  { code: '+91', label: '🇮🇳 +91' },
-  { code: '+1', label: '🇺🇸 +1' },
-  { code: '+44', label: '🇬🇧 +44' },
-  { code: '+971', label: '🇦🇪 +971' },
-  { code: '+61', label: '🇦🇺 +61' },
-  { code: '+65', label: '🇸🇬 +65' },
-  { code: '+966', label: '🇸🇦 +966' },
-  { code: '+974', label: '🇶🇦 +974' },
-  { code: '+60', label: '🇲🇾 +60' },
-  { code: '+49', label: '🇩🇪 +49' },
+const PANEL_POINTS = [
+  'See your plan, dues and renewal date at a glance',
+  'Your workout plan and progress, always up to date',
+  'Digital membership card — no more paper receipts',
 ];
 
 const MemberLogin = () => {
@@ -26,10 +20,9 @@ const MemberLogin = () => {
   const { setActiveMembership } = useAuth();
   const { showToast } = useToast();
 
-  const [step, setStep] = useState('phone'); // 'phone' | 'otp' | 'select-gym' | 'not-registered'
+  const [screen, setScreen] = useState('phone'); // 'phone' | 'otp' | 'select-gym' | 'not-registered'
   const [memberships, setMemberships] = useState([]);
   const [selecting, setSelecting] = useState(false);
-  const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [confirmationResult, setConfirmationResult] = useState(null);
@@ -37,10 +30,9 @@ const MemberLogin = () => {
   const [error, setError] = useState('');
   const [resendTimer, setResendTimer] = useState(0);
 
-  const otpRefs = useRef([]);
+  const fullPhone = `+91${phone}`;
+  const phoneMasked = phone.length === 10 ? `${phone.slice(0, 5)} ${phone.slice(5)}` : phone;
 
-  // Pre-initialise reCAPTCHA on mount so it's ready before the button click.
-  // Destroying on unmount prevents stale widget errors on remount.
   useEffect(() => {
     setupRecaptcha('member-recaptcha-container');
     return () => destroyRecaptcha();
@@ -48,27 +40,22 @@ const MemberLogin = () => {
 
   useEffect(() => {
     if (resendTimer <= 0) return;
-    const timer = setInterval(() => {
-      setResendTimer((prev) => prev - 1);
-    }, 1000);
+    const timer = setInterval(() => setResendTimer((t) => t - 1), 1000);
     return () => clearInterval(timer);
   }, [resendTimer]);
 
-  const handleSendOTP = async () => {
-    if (!phone.trim()) {
-      setError('Please enter your phone number');
+  const handleSendOtp = async () => {
+    if (phone.length !== 10) {
+      setError('Enter a valid 10-digit number');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
-      const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
-      const fullPhone = `${countryCode}${cleaned}`;
       const result = await sendOTP(fullPhone, 'member-recaptcha-container');
       setConfirmationResult(result);
-      setStep('otp');
+      setOtp(['', '', '', '', '', '']);
+      setScreen('otp');
       setResendTimer(30);
     } catch (err) {
       console.error('OTP send error:', err.code, err.message);
@@ -84,55 +71,16 @@ const MemberLogin = () => {
     }
   };
 
-  const handleOtpChange = (index, value) => {
-    if (value.length > 1) {
-      const digits = value.replace(/\D/g, '').slice(0, 6);
-      const newOtp = [...otp];
-      digits.split('').forEach((digit, i) => {
-        if (index + i < 6) newOtp[index + i] = digit;
-      });
-      setOtp(newOtp);
-      const nextIndex = Math.min(index + digits.length, 5);
-      otpRefs.current[nextIndex]?.focus();
-      return;
-    }
-
-    if (!/^\d?$/.test(value)) return;
-
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-    setError('');
-
-    if (value && index < 5) {
-      otpRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleOtpKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-  };
-
   const handleVerify = async () => {
     const code = otp.join('');
     if (code.length !== 6) {
       setError('Please enter the full 6-digit code');
       return;
     }
-
     setLoading(true);
     setError('');
-
     try {
-      // Step 1: Verify OTP with Firebase Auth
-      const user = await verifyOTP(confirmationResult, code);
-
-      // Step 2: Link every gym membership registered to this phone to the Auth
-      // UID and get the list back (one entry per gym).
-      const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
-      const fullPhone = `${countryCode}${cleaned}`;
+      const { user } = await verifyOTP(confirmationResult, code);
       let list = [];
       try {
         list = await linkMemberships(user.uid, fullPhone);
@@ -141,18 +89,14 @@ const MemberLogin = () => {
       }
 
       if (!list || list.length === 0) {
-        console.warn(`[Debug] No membership found for phone: ${fullPhone}`);
-        setStep('not-registered');
+        setScreen('not-registered');
       } else if (list.length === 1) {
-        // Single gym — activate it and go straight in.
         await setActiveMembership(user.uid, list[0].id);
         navigate('/', { replace: true });
       } else {
-        // Registered in multiple gyms — let the member choose which to enter.
-        // Active (subscription live) memberships first.
         const sorted = [...list].sort((a, b) => (b.active === true) - (a.active === true));
         setMemberships(sorted);
-        setStep('select-gym');
+        setScreen('select-gym');
       }
     } catch (err) {
       console.error('OTP verify error:', err.code, err.message);
@@ -168,7 +112,6 @@ const MemberLogin = () => {
         showToast(`Verification failed: ${err.code || err.message}`, 'error');
       }
       setOtp(['', '', '', '', '', '']);
-      otpRefs.current[0]?.focus();
     } finally {
       setLoading(false);
     }
@@ -187,190 +130,113 @@ const MemberLogin = () => {
     }
   };
 
-  const handleResend = async () => {
-    if (resendTimer > 0) return;
-    setOtp(['', '', '', '', '', '']);
-    setError('');
-    // Stay on OTP step — don't reset to phone step (causes React batching issues)
-    setLoading(true);
-    try {
-      const cleaned = phone.replace(/\s/g, '').replace(/^0+/, '');
-      const fullPhone = `${countryCode}${cleaned}`;
-      const result = await sendOTP(fullPhone, 'member-recaptcha-container');
-      setConfirmationResult(result);
-      setResendTimer(30);
-    } catch (err) {
-      console.error('Resend error:', err);
-      setError('Failed to resend OTP. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const help = () => showToast('Ask your gym’s front desk for help signing in.', 'info');
 
   return (
-    <div className="screen login-screen member">
-      <div className="screen-content">
-        <button className="back-btn" onClick={() => navigate('/select-role')}>
-          ← Back
-        </button>
+    <AuthShell
+      headline="Your gym membership, on your phone."
+      sub="Renewals, workouts and your membership card — all in one place."
+      points={PANEL_POINTS}
+      onHelp={help}
+      variant="member"
+    >
+      {screen === 'phone' && (
+        <section data-screen-label="Member sign in">
+          <h1 className="gla-title">Sign in as a member</h1>
 
-        {step === 'phone' || step === 'otp' ? (
-          <div className="login-form-card glass-card">
-            <h2 className="login-heading">Member login</h2>
-            <p className="login-subtext">
-              We&apos;ll send a verification code to your phone
-            </p>
-
-            {step === 'phone' && (
-              <>
-                <div className="input-group">
-                  <label className="input-label">Phone number</label>
-                  <div className="phone-input-wrapper">
-                    <select
-                      className="country-select"
-                      value={countryCode}
-                      onChange={(e) => setCountryCode(e.target.value)}
-                      id="member-country-code"
-                    >
-                      {COUNTRY_CODES.map((c) => (
-                        <option key={c.code} value={c.code}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="tel"
-                      inputMode="numeric"
-                      maxLength={10}
-                      className={`input-field phone-number-input ${error ? 'error' : ''}`}
-                      placeholder="98765 43210"
-                      value={phone}
-                      onChange={(e) => {
-                        setPhone(capPhoneDigits(e.target.value));
-                        setError('');
-                      }}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendOTP()}
-                      id="member-phone-input"
-                    />
-                  </div>
-                  {error && <p className="input-error">{error}</p>}
-                </div>
-
-                <button
-                  className="btn-primary btn-member"
-                  onClick={handleSendOTP}
-                  disabled={loading}
-                  id="member-send-otp"
-                >
-                  {loading ? <div className="spinner" /> : 'Send OTP'}
-                </button>
-              </>
-            )}
-
-            {step === 'otp' && (
-              <>
-                <div className="input-group">
-                  <label className="input-label">Enter 6-digit code</label>
-                  <div className="otp-container">
-                    {otp.map((digit, i) => (
-                      <input
-                        key={i}
-                        ref={(el) => (otpRefs.current[i] = el)}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        className={`otp-box member-accent ${error ? 'error' : ''}`}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(i, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                        onPaste={(e) => {
-                          e.preventDefault();
-                          const pastedData = e.clipboardData.getData('text');
-                          handleOtpChange(0, pastedData);
-                        }}
-                        autoFocus={i === 0}
-                        id={`member-otp-${i}`}
-                      />
-                    ))}
-                  </div>
-                  {error && <p className="input-error" style={{ textAlign: 'center' }}>{error}</p>}
-                </div>
-
-                <button
-                  className="btn-primary btn-member"
-                  onClick={handleVerify}
-                  disabled={loading}
-                  id="member-verify-otp"
-                >
-                  {loading ? <div className="spinner" /> : 'Verify & continue'}
-                </button>
-
-                <div className="resend-row" style={{ marginTop: 16 }}>
-                  {resendTimer > 0 ? (
-                    <span>Resend OTP in {resendTimer}s</span>
-                  ) : (
-                    <button className="resend-btn member-accent" onClick={handleResend}>
-                      Resend OTP
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
+          <label htmlFor="member-phone" className="gla-label">Mobile number</label>
+          <div className="gla-phone-field">
+            <span className="gla-phone-affix">+91</span>
+            <input
+              id="member-phone"
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              className="gla-phone-input"
+              placeholder="10-digit number"
+              value={phone}
+              onChange={(e) => { setPhone(capPhoneDigits(e.target.value)); setError(''); }}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendOtp()}
+            />
           </div>
-        ) : step === 'select-gym' ? (
-          /* Multi-gym picker — member is registered in more than one gym */
-          <div className="login-form-card glass-card gym-picker">
-            <h2 className="login-heading">Choose your gym</h2>
-            <p className="login-subtext">
-              You&apos;re a member at {memberships.length} gyms. Pick one to continue.
-            </p>
-            <div className="gym-picker-list">
-              {memberships.map((m) => (
-                <button
-                  key={m.id}
-                  className="gym-picker-item"
-                  onClick={() => handleSelectGym(m.id)}
-                  disabled={selecting}
-                >
-                  <div className="gym-picker-info">
-                    <span className="gym-picker-name">{m.gym_name}</span>
-                    {m.plan_name && <span className="gym-picker-plan">{m.plan_name}</span>}
-                  </div>
-                  <span className={`gym-picker-badge ${m.active ? 'active' : 'inactive'}`}>
-                    {m.active ? 'Active' : 'Expired'}
-                  </span>
-                </button>
-              ))}
-            </div>
-            {selecting && (
-              <div className="gym-picker-loading">
-                <div className="spinner" /> Opening…
-              </div>
-            )}
-          </div>
-        ) : (
-          /* Not registered message */
-          <div className="login-form-card glass-card not-registered">
-            <div className="not-registered-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-2h2v2h-2zm0-4V7h2v6h-2z" fill="#E8A838"/>
-              </svg>
-            </div>
-            <h3>You&apos;re not registered yet</h3>
-            <p>Ask your gym owner to add you as a member.</p>
+          {error && <p className="gla-error-text">{error}</p>}
+          <p className="gla-hint-text">We send a 6-digit code on WhatsApp, and by SMS if WhatsApp fails.</p>
+
+          <button type="button" className="gla-btn-primary member" onClick={handleSendOtp} disabled={loading}>
+            {loading ? <span className="gla-spinner" /> : 'Send code'}
+          </button>
+        </section>
+      )}
+
+      {screen === 'otp' && (
+        <section data-screen-label="Verify code">
+          <button type="button" className="gla-back-link" onClick={() => setScreen('phone')}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><path d="m14 6-6 6 6 6" /></svg>
+            <span>Change number</span>
+          </button>
+          <h1 className="gla-title-tight">Enter the 6-digit code</h1>
+          <p className="gla-subtitle">Sent on WhatsApp to <strong style={{ color: '#14152B' }}>+91 {phoneMasked}</strong>.</p>
+
+          <OtpInput value={otp} onChange={setOtp} length={6} variant="otp" accent="member" error={!!error} />
+
+          <div className="gla-resend-row">
+            <span className="gla-resend-label">
+              {resendTimer > 0 ? `You can ask again in ${resendTimer}s` : 'Didn’t get the code?'}
+            </span>
             <button
-              className="btn-primary btn-member"
-              onClick={() => navigate('/select-role', { replace: true })}
-              id="go-back-btn"
+              type="button"
+              className="gla-resend-btn"
+              onClick={handleSendOtp}
+              disabled={resendTimer > 0}
+              style={{ color: resendTimer > 0 ? '#A3A8BD' : '#0F5E3C', cursor: resendTimer > 0 ? 'default' : 'pointer' }}
             >
-              Go back
+              Resend code
             </button>
           </div>
-        )}
-      </div>
+          {error && <p className="gla-error-text">{error}</p>}
+
+          <button type="button" className="gla-btn-primary member" onClick={handleVerify} disabled={loading}>
+            {loading ? <span className="gla-spinner" /> : 'Verify and sign in'}
+          </button>
+        </section>
+      )}
+
+      {screen === 'select-gym' && (
+        <section data-screen-label="Choose your gym">
+          <h1 className="gla-title-tight">Choose your gym</h1>
+          <p className="gla-subtitle">You&apos;re a member at {memberships.length} gyms. Pick one to continue.</p>
+          <div className="gla-gym-list">
+            {memberships.map((m) => (
+              <button key={m.id} className="gla-gym-card" onClick={() => handleSelectGym(m.id)} disabled={selecting}>
+                <div className="gla-gym-info">
+                  <span className="gla-gym-name">{m.gym_name}</span>
+                  {m.plan_name && <span className="gla-gym-plan">{m.plan_name}</span>}
+                </div>
+                <span className={`gla-gym-badge ${m.active ? 'active' : 'inactive'}`}>{m.active ? 'Active' : 'Expired'}</span>
+              </button>
+            ))}
+          </div>
+          {selecting && <div className="gla-gym-loading"><span className="gla-spinner dark" /> Opening…</div>}
+        </section>
+      )}
+
+      {screen === 'not-registered' && (
+        <section data-screen-label="Not registered" className="gla-empty-state">
+          <div className="gla-empty-icon">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15v-2h2v2h-2zm0-4V7h2v6h-2z" fill="#8A4B00" />
+            </svg>
+          </div>
+          <h3 className="gla-empty-title">You&apos;re not registered yet</h3>
+          <p className="gla-empty-sub">Ask your gym owner to add you as a member.</p>
+          <button type="button" className="gla-btn-primary member" onClick={() => navigate('/select-role', { replace: true })}>
+            Go back
+          </button>
+        </section>
+      )}
 
       <div id="member-recaptcha-container"></div>
-    </div>
+    </AuthShell>
   );
 };
 

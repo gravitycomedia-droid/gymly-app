@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#E9EAF0;font-family:Manrope,system-ui,sans-serif}
+a{color:#4A438F}a:hover{color:#332D6E}
+button,input,select{font-family:inherit}
+::-webkit-scrollbar{width:9px;height:9px}::-webkit-scrollbar-thumb{background:#CFD2E0;border-radius:5px}
+</style>
+</helmet>
+
+<div style="min-height:100vh;padding:20px 22px 40px">
+
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px">
+    <div style="display:flex;align-items:baseline;gap:9px">
+      <h1 style="margin:0;font-size:17px;font-weight:800;letter-spacing:-.3px;color:#14152B">Gymloop · Sign in &amp; onboarding</h1>
+      <span style="font-size:12.5px;color:#5A5E76;font-weight:600">clickable prototype</span>
+    </div>
+    <div style="display:flex;gap:6px;padding:3px;border-radius:11px;background:#fff;border:1px solid #D9DCE8;flex-wrap:wrap">
+      <sc-for list="{{ screenTabs }}" as="s" hint-placeholder-count="6">
+        <button type="button" onClick="{{ s.go }}" style="min-height:36px;padding:0 12px;border-radius:8px;border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:700;background:{{ s.bg }};color:{{ s.fg }}">{{ s.label }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;gap:6px;padding:3px;border-radius:11px;background:#fff;border:1px solid #D9DCE8">
+      <sc-for list="{{ viewTabs }}" as="v" hint-placeholder-count="3">
+        <button type="button" onClick="{{ v.go }}" style="min-height:36px;padding:0 13px;border-radius:8px;border:0;cursor:pointer;font:inherit;font-size:13px;font-weight:700;background:{{ v.bg }};color:{{ v.fg }}">{{ v.label }}</button>
+      </sc-for>
+    </div>
+    <p style="margin:0;font-size:12.5px;color:#5A5E76;max-width:430px;line-height:1.4">The flow runs end to end: any code verifies, so sign-in leads into the four setup steps and then the dashboard handoff.</p>
+  </div>
+
+  <div style="display:flex;gap:26px;align-items:flex-start;flex-wrap:wrap">
+
+    <sc-if value="{{ showDesktop }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#8A8FA6">Desktop · ≥1024px · split shell</p>
+        <div style="width:1180px;border-radius:14px;overflow:hidden;background:#fff;border:1px solid #CFD2E0;box-shadow:0 6px 24px rgba(20,21,43,.09)">
+          <div style="display:flex;align-items:center;gap:8px;height:38px;padding:0 13px;background:#F1F2F7;border-bottom:1px solid #E3E5EE">
+            <span style="width:11px;height:11px;border-radius:6px;background:#E0808A"></span>
+            <span style="width:11px;height:11px;border-radius:6px;background:#E5C069"></span>
+            <span style="width:11px;height:11px;border-radius:6px;background:#8FC79D"></span>
+            <span style="margin-left:10px;font-size:12px;font-weight:600;color:#5A5E76">app.gymloop.in/{{ routeSlug }}</span>
+          </div>
+          <div style="height:772px;position:relative;overflow:hidden">
+            <dc-import name="GymloopAuth" mode="desktop" auth="{{ auth }}" actions="{{ actions }}" style="position:absolute;inset:0" hint-size="100%,772px"></dc-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ showMobile }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:none">
+        <p style="margin:0 0 8px;font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#8A8FA6">Mobile · &lt;1024px · single column</p>
+        <div style="width:393px;border-radius:34px;padding:11px;background:#14152B;box-shadow:0 8px 28px rgba(20,21,43,.22)">
+          <div style="height:812px;border-radius:25px;overflow:hidden;background:#fff;position:relative">
+            <dc-import name="GymloopAuth" mode="mobile" auth="{{ auth }}" actions="{{ actions }}" style="position:absolute;inset:0" hint-size="100%,812px"></dc-import>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const AV = ['#3E7CB1', '#2E8B6E', '#B5643C', '#8A5AA8'];
+const SCREENS = [
+  { id: 'login', label: 'Sign in' },
+  { id: 'pin', label: 'PIN' },
+  { id: 'otp', label: 'Verify code' },
+  { id: 'signup', label: 'Sign up' },
+  { id: 'onb', label: 'Onboarding' },
+  { id: 'done', label: 'Setup done' }
+];
+
+class Component extends DCLogic {
+  state = {
+    view: 'both', screen: 'login', flow: 'signin', step: 1,
+    phone: '9848012345', otp: ['', '', '', '', '', ''], pin: ['', '', '', ''], otpLeft: 0,
+    ownerName: '', gymName: 'Iron Peak Fitness', city: 'Hyderabad',
+    address: '', openTime: '5:00 AM', closeTime: '10:00 PM',
+    planPick: 0, planName: '', planPrice: '',
+    importPick: '', doneSteps: {}, error: '', toast: '',
+    invites: [
+      { name: 'Reception desk', sub: 'Can enrol members and collect payments', initials: 'RD', color: AV[0], sent: false },
+      { name: 'Trainer', sub: 'Sees members and workouts, not money', initials: 'TR', color: AV[1], sent: false }
+    ]
+  };
+
+  componentWillUnmount() { clearInterval(this._t); clearTimeout(this._toast); }
+
+  toast(msg) {
+    this.setState({ toast: msg });
+    clearTimeout(this._toast);
+    this._toast = setTimeout(() => this.setState({ toast: '' }), 2200);
+  }
+
+  tick() {
+    clearInterval(this._t);
+    this._t = setInterval(() => {
+      const left = this.state.otpLeft - 1;
+      if (left <= 0) { clearInterval(this._t); this.setState({ otpLeft: 0 }); }
+      else this.setState({ otpLeft: left });
+    }, 1000);
+  }
+
+  renderVals() {
+    const s = this.state;
+    const set = (k, v) => this.setState({ [k]: v, error: '' });
+
+    const actions = {
+      set,
+      go: screen => this.setState({ screen, error: '' }),
+      goStep: n => this.setState({ screen: 'onb', step: n, error: '' }),
+      setOtp: (i, v) => { const o = s.otp.slice(); o[i] = v; this.setState({ otp: o, error: '' }); },
+      setPin: (i, v) => { const p = s.pin.slice(); p[i] = v; this.setState({ pin: p, error: '' }); },
+      sendOtp: again => {
+        if (s.phone.length !== 10) { this.setState({ error: 'Enter all 10 digits of the mobile number.' }); return; }
+        this.setState({
+          screen: 'otp', otpLeft: 30, otp: ['', '', '', '', '', ''],
+          flow: s.screen === 'signup' ? 'signup' : 'signin', error: ''
+        });
+        this.tick();
+        this.toast(again ? 'New code sent on WhatsApp' : 'Code sent on WhatsApp');
+      },
+      verify: () => {
+        if (s.flow === 'signup') { this.setState({ screen: 'onb', step: 1 }); this.toast('Number verified'); }
+        else { this.setState({ screen: 'done', doneSteps: { 1: true, 2: true, 3: true, 4: true } }); this.toast('Signed in'); }
+      },
+      finishSignIn: () => {
+        if (s.pin.filter(Boolean).length < 4) { this.setState({ error: 'Enter all four digits.' }); return; }
+        this.setState({ screen: 'done', doneSteps: { 1: true, 2: true, 3: true, 4: true } });
+      },
+      back: () => {
+        if (s.screen === 'otp') this.setState({ screen: s.flow === 'signup' ? 'signup' : 'login' });
+        else if (s.screen === 'onb' && s.step > 1) this.setState({ step: s.step - 1 });
+      },
+      next: () => {
+        const d = Object.assign({}, s.doneSteps); d[s.step] = true;
+        if (s.step === 4) { this.setState({ doneSteps: d, screen: 'done' }); this.toast('Setup saved'); }
+        else { this.setState({ doneSteps: d, step: s.step + 1 }); this.toast('Saved'); }
+      },
+      skip: () => {
+        if (s.step === 4) this.setState({ screen: 'done' });
+        else this.setState({ step: s.step + 1 });
+        this.toast('Skipped — it stays on your dashboard checklist');
+      },
+      pickPlan: i => this.setState({ planPick: i }),
+      toggleInvite: i => {
+        const inv = s.invites.slice();
+        inv[i] = Object.assign({}, inv[i], { sent: !inv[i].sent });
+        this.setState({ invites: inv });
+        this.toast(inv[i].sent ? 'Invite sent on WhatsApp' : 'Invite cancelled');
+      },
+      pickImport: key => this.setState({ importPick: key }),
+      finish: () => { this.setState({ screen: 'login', step: 1, doneSteps: {} }); this.toast('Prototype ends here — the dashboard is in the owner prototype'); },
+      help: () => this.toast('Prototype — not wired up')
+    };
+
+    const tab = (on) => ({ bg: on ? '#6C63C7' : 'transparent', fg: on ? '#fff' : '#5A5E76' });
+
+    return {
+      auth: {
+        screen: s.screen, flow: s.flow, step: s.step, phone: s.phone, otp: s.otp, pin: s.pin,
+        otpLeft: s.otpLeft, ownerName: s.ownerName, gymName: s.gymName, city: s.city,
+        address: s.address, openTime: s.openTime, closeTime: s.closeTime,
+        planPick: s.planPick, planName: s.planName, planPrice: s.planPrice,
+        importPick: s.importPick, invites: s.invites, doneSteps: s.doneSteps,
+        error: s.error, toast: s.toast
+      },
+      actions,
+      screenTabs: SCREENS.map(x => Object.assign({ label: x.label, go: () => actions.go(x.id) }, tab(s.screen === x.id))),
+      viewTabs: [['both', 'Both'], ['desktop', 'Desktop'], ['mobile', 'Mobile']].map(v =>
+        Object.assign({ label: v[1], go: () => this.setState({ view: v[0] }) }, tab(s.view === v[0]))),
+      showDesktop: s.view !== 'mobile', showMobile: s.view !== 'desktop',
+      routeSlug: s.screen === 'onb' ? 'setup/step-' + s.step : s.screen === 'done' ? 'setup/done' : s.screen
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -297,6 +297,13 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // PIN sign-in hashes — server-only; setPin/verifyPin Cloud Functions use
+    // the Admin SDK, which bypasses these rules. No client (including the
+    // owning user) can ever read a hash.
+    match /pins/{uid} {
+      allow read, write: if false;
+    }
+
     // Recycle bin — owner and manager in same gym can read; all writes server-only
     match /deleted_members/{gymId}/bin/{memberId} {
       allow read: if request.auth != null

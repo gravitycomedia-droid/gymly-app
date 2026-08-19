@@ -466,3 +466,245 @@
 @media (min-width: 1024px) {
   .gl2-mobile-dock { display: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════════
+   Auth & onboarding (`gla-*`) — sign in, PIN, OTP, sign up, setup wizard.
+   Ported from handoff/src/GymloopAuth.dc.html. Lives inside the same
+   `.gl2-app` root as the dashboard (font/scrollbar/link rules included) so
+   it matches the rest of the redesign. Reuses `.gl2-wizard-*`, `.gl2-field*`,
+   `.gl2-input`, `.gl2-btn*`, `.gl2-progress-*` and `.gl2-toast*` directly
+   where the prototype's spec is identical — only genuinely new patterns
+   (split panel, phone affix, OTP/PIN cells, plan/import/invite pickers, the
+   done recap) get new classes below.
+   ════════════════════════════════════════════════════════════════════════ */
+
+/* App.jsx wraps auth routes in <PageTransition>, whose motion.div sets
+   min-height:100dvh (not height:100%) — so .gl2-app's `height:100%` has no
+   definite ancestor height to resolve against and collapses to content
+   height. Override with the same min-height strategy here so the flex row
+   still stretches to fill the viewport. */
+.gla-shell { flex-direction: row; height: 100dvh; }
+.gla-shell.member a { color: var(--gl2-success-fg); }
+.gla-shell.member .gla-panel { background: #17392B; }
+.gla-shell.member .gla-brand-mark,
+.gla-shell.member .gla-mobile-brand-mark { background: var(--gl2-success-fg); }
+
+/* ── Brand panel (desktop only) ── */
+.gla-panel {
+  flex: none; width: 430px; background: #332D6E; color: #fff; padding: 38px 36px;
+  display: flex; flex-direction: column; position: relative; overflow: hidden;
+}
+.gla-panel-decor { position: absolute; right: -140px; bottom: -120px; opacity: .09; pointer-events: none; }
+.gla-brand { display: flex; align-items: center; gap: 10px; position: relative; }
+.gla-brand-mark {
+  width: 38px; height: 38px; border-radius: 12px; background: var(--gl2-primary);
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.gla-brand-name { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
+.gla-panel-headline { margin: 44px 0 0; font-size: 30px; line-height: 1.22; font-weight: 800; letter-spacing: -.7px; position: relative; }
+.gla-panel-sub { margin: 14px 0 0; font-size: 15px; line-height: 1.55; color: #C9C5EC; position: relative; }
+.gla-panel-points { margin-top: 30px; display: flex; flex-direction: column; gap: 13px; position: relative; }
+.gla-panel-point { display: flex; align-items: flex-start; gap: 10px; }
+.gla-panel-point-check {
+  flex: none; width: 21px; height: 21px; border-radius: 11px; background: rgba(255,255,255,.14);
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.gla-panel-point-text { font-size: 14.5px; line-height: 1.45; color: #EDEBF8; }
+.gla-panel-footnote { margin-top: auto; padding-top: 28px; position: relative; font-size: 13px; line-height: 1.5; color: #A9A3D9; }
+
+/* ── Form column ── */
+.gla-form-col {
+  flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column;
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; background: #fff;
+}
+.gla-mobile-header { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 16px 20px 4px; }
+.gla-mobile-brand { display: flex; align-items: center; gap: 9px; }
+.gla-mobile-brand-mark {
+  width: 32px; height: 32px; border-radius: 10px; background: var(--gl2-primary);
+  display: flex; align-items: center; justify-content: center; flex: none;
+}
+.gla-mobile-brand-name { font-size: 16px; font-weight: 800; letter-spacing: -.2px; }
+
+.gla-main { flex: 1; width: 100%; margin: 0 auto; display: flex; flex-direction: column; animation: gl2FadeUp .22s ease-out; }
+@media (min-width: 1024px) { .gla-main { max-width: 460px; padding: 54px 40px 48px; } }
+@media (max-width: 1023px) { .gla-main { max-width: 100%; padding: 18px 20px 34px; } }
+
+.gla-title { margin: 0 0 24px; font-size: 26px; font-weight: 800; letter-spacing: -.6px; }
+.gla-title-tight { margin: 0 0 6px; font-size: 26px; font-weight: 800; letter-spacing: -.6px; }
+.gla-subtitle { margin: 0 0 22px; font-size: 15px; line-height: 1.5; color: var(--gl2-muted); }
+.gla-label { display: block; font-size: 13px; font-weight: 800; color: var(--gl2-ink); margin-bottom: 7px; }
+
+/* ── Phone field with +91 affix ── */
+.gla-phone-field { display: flex; align-items: stretch; border: 1px solid var(--gl2-border); border-radius: 12px; overflow: hidden; background: #fff; }
+.gla-phone-affix { flex: none; display: flex; align-items: center; padding: 0 13px; background: #F5F6FA; border-right: 1px solid var(--gl2-border); font-size: 15px; font-weight: 700; color: var(--gl2-muted); }
+.gla-phone-input { flex: 1; min-width: 0; height: 52px; padding: 0 14px; border: 0; font-size: 17px; font-weight: 600; letter-spacing: .4px; color: var(--gl2-ink); background: transparent; }
+.gla-phone-input:focus-visible { outline: 2px solid var(--gl2-primary); outline-offset: -2px; }
+
+.gla-error-text { margin: 8px 0 0; font-size: 13px; font-weight: 700; color: var(--gl2-danger-strong); }
+.gla-hint-text { margin: 9px 0 0; font-size: 13px; color: var(--gl2-muted-2); }
+
+/* ── Buttons (52px primary, matches design notes — gl2-btn tops out at 48px) ── */
+.gla-btn-primary {
+  width: 100%; min-height: 52px; margin-top: 20px; border: 0; border-radius: 12px;
+  background: var(--gl2-primary); color: #fff; font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+}
+.gla-btn-primary:hover { background: var(--gl2-primary-hover); }
+.gla-btn-primary:disabled { opacity: .6; cursor: default; }
+.gla-btn-primary.member { background: var(--gl2-success-fg); }
+.gla-btn-primary.member:hover { background: #0C4C31; }
+.gla-btn-secondary {
+  width: 100%; min-height: 52px; border: 1px solid var(--gl2-divider); border-radius: 12px; background: #fff;
+  color: var(--gl2-ink); font: inherit; font-size: 15.5px; font-weight: 800; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+}
+.gla-btn-secondary:hover { border-color: var(--gl2-primary); background: var(--gl2-primary-tint-2); }
+
+.gla-divider-row { display: flex; align-items: center; gap: 12px; margin: 20px 0; }
+.gla-divider-line { flex: 1; height: 1px; background: var(--gl2-border); }
+.gla-divider-text { font-size: 12px; font-weight: 700; color: var(--gl2-muted-2); }
+
+.gla-promo-card { margin-top: 26px; padding: 15px 16px; border-radius: 12px; background: var(--gl2-primary-tint-2); border: 1px solid #E3E1F5; }
+.gla-promo-title { margin: 0 0 3px; font-size: 14px; font-weight: 800; }
+.gla-promo-sub { margin: 0 0 11px; font-size: 13.5px; line-height: 1.5; color: var(--gl2-muted); }
+.gla-promo-btn {
+  min-height: 44px; padding: 0 15px; border: 1px solid var(--gl2-primary); border-radius: 10px; background: #fff;
+  color: var(--gl2-primary-deep); font: inherit; font-size: 14px; font-weight: 800; cursor: pointer;
+}
+.gla-promo-btn:hover { background: #EFEDFB; }
+
+/* ── OTP / PIN digit cells ── */
+.gla-code-row { display: flex; gap: 8px; }
+.gla-code-row.pin { gap: 10px; margin-bottom: 14px; }
+.gla-code-cell {
+  flex: 1; min-width: 0; height: 58px; border-radius: 12px; text-align: center;
+  font-size: 22px; font-weight: 800; color: var(--gl2-ink); border: 1px solid var(--gl2-border); background: #fff;
+}
+.gla-code-cell.pin { height: 60px; font-size: 24px; }
+.gla-code-cell:focus-visible { outline: 2px solid var(--gl2-primary); outline-offset: 1px; }
+
+.gla-resend-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; }
+.gla-resend-label { font-size: 13.5px; color: var(--gl2-muted-2); }
+.gla-resend-btn { min-height: 40px; padding: 0 12px; border: 1px solid var(--gl2-divider); border-radius: 9px; background: #fff; font: inherit; font-size: 13.5px; font-weight: 800; }
+.gla-note { margin: 16px 0 0; font-size: 13px; line-height: 1.5; color: var(--gl2-muted-2); }
+
+.gla-back-link {
+  display: flex; align-items: center; gap: 6px; min-height: 44px; margin: 0 0 8px -6px; padding: 0 8px;
+  border: 0; border-radius: 9px; background: none; font: inherit; font-size: 14px; font-weight: 700;
+  color: var(--gl2-primary-deep); cursor: pointer;
+}
+
+.gla-field-group { display: flex; flex-direction: column; gap: 15px; }
+
+/* ── First-plan preset radio cards ── */
+.gla-plan-card {
+  display: flex; align-items: center; gap: 13px; padding: 14px; border: 1.5px solid var(--gl2-border);
+  border-radius: 14px; background: #fff; text-align: left; font: inherit; cursor: pointer; width: 100%;
+}
+.gla-plan-card:hover { border-color: var(--gl2-primary); }
+.gla-plan-card.selected { border-color: var(--gl2-primary); background: var(--gl2-primary-tint-2); }
+.gla-plan-radio { flex: none; width: 20px; height: 20px; border-radius: 11px; border: 2px solid var(--gl2-divider); background: #fff; display: flex; align-items: center; justify-content: center; }
+.gla-plan-card.selected .gla-plan-radio { border-color: var(--gl2-primary); background: var(--gl2-primary); }
+.gla-plan-radio-dot { width: 8px; height: 8px; border-radius: 5px; background: transparent; }
+.gla-plan-card.selected .gla-plan-radio-dot { background: #fff; }
+.gla-plan-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gla-plan-name { font-size: 15px; font-weight: 800; }
+.gla-plan-detail { font-size: 13px; color: var(--gl2-muted); }
+.gla-plan-price { flex: none; font-size: 16px; font-weight: 800; color: var(--gl2-ink); }
+.gla-custom-plan-card { margin-top: 6px; padding: 15px; border: 1px solid var(--gl2-border); border-radius: 14px; background: #fff; }
+
+/* ── Team invite rows ── */
+.gla-invite-row { display: flex; align-items: center; gap: 11px; padding: 12px 13px; border: 1px solid var(--gl2-border); border-radius: 13px; background: #fff; }
+.gla-invite-avatar { flex: none; width: 38px; height: 38px; border-radius: 11px; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; }
+.gla-invite-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.gla-invite-name { font-size: 14.5px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gla-invite-sub { font-size: 13px; color: var(--gl2-muted); }
+.gla-invite-btn { flex: none; min-height: 40px; padding: 0 13px; border: 1px solid var(--gl2-divider); border-radius: 10px; background: #fff; font: inherit; font-size: 13.5px; font-weight: 800; color: var(--gl2-ink); cursor: pointer; }
+.gla-invite-btn.sent { background: var(--gl2-success-bg); border-color: #BFE3CE; color: var(--gl2-success-fg); }
+.gla-invite-add {
+  display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; width: 100%;
+  border: 1px dashed var(--gl2-divider); border-radius: 13px; background: var(--gl2-bg-soft);
+  font: inherit; font-size: 14.5px; font-weight: 800; color: var(--gl2-primary-deep); cursor: pointer;
+}
+.gla-invite-add:hover { border-color: var(--gl2-primary); background: var(--gl2-primary-tint-2); }
+
+/* ── Members step import tiles ── */
+.gla-import-tile {
+  display: flex; align-items: flex-start; gap: 13px; padding: 15px; border: 1.5px solid var(--gl2-border);
+  border-radius: 14px; background: #fff; text-align: left; font: inherit; cursor: pointer; width: 100%;
+}
+.gla-import-tile:hover { border-color: var(--gl2-primary); }
+.gla-import-tile.selected { border-color: var(--gl2-primary); background: var(--gl2-primary-tint-2); }
+.gla-import-badge { flex: none; width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 800; }
+.gla-import-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.gla-import-title { font-size: 15.5px; font-weight: 800; }
+.gla-import-sub { font-size: 13.5px; line-height: 1.45; color: var(--gl2-muted); }
+
+/* ── Wizard footer ── */
+.gla-wizard-actions { display: flex; align-items: center; gap: 10px; margin-top: 26px; flex-wrap: wrap; }
+.gla-wizard-actions .gla-btn-primary { flex: 1; min-width: 180px; margin-top: 0; }
+.gla-skip-btn { flex: none; min-height: 52px; padding: 0 16px; border: 1px solid var(--gl2-divider); border-radius: 12px; background: #fff; font: inherit; font-size: 14.5px; font-weight: 800; color: var(--gl2-muted); cursor: pointer; }
+.gla-skip-btn:hover { border-color: var(--gl2-primary); color: var(--gl2-primary-deep); }
+
+/* ── Done screen ── */
+.gla-done-icon { width: 62px; height: 62px; border-radius: 20px; background: var(--gl2-success-bg); display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+.gla-recap-list { border: 1px solid var(--gl2-border); border-radius: 14px; background: #fff; overflow: hidden; margin-bottom: 18px; }
+.gla-recap-row { display: flex; align-items: center; gap: 11px; padding: 13px 14px; border-bottom: 1px solid var(--gl2-divider); }
+.gla-recap-row:last-child { border-bottom: none; }
+.gla-recap-icon { flex: none; width: 22px; height: 22px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.gla-recap-label { flex: 1; min-width: 0; font-size: 14.5px; font-weight: 700; }
+.gla-recap-state { flex: none; font-size: 13px; font-weight: 700; }
+
+/* ── Multi-gym picker (member login / select-gym) ── */
+.gla-gym-list { display: flex; flex-direction: column; gap: 12px; margin-top: 20px; }
+.gla-gym-card {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; padding: 16px;
+  border-radius: 14px; border: 1px solid var(--gl2-border); background: #fff; text-align: left; font: inherit; cursor: pointer;
+}
+.gla-gym-card:hover:not(:disabled) { border-color: var(--gl2-primary); background: var(--gl2-primary-tint-2); }
+.gla-gym-card:disabled { opacity: .6; cursor: default; }
+.gla-gym-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.gla-gym-name { font-size: 15px; font-weight: 800; color: var(--gl2-ink); }
+.gla-gym-plan { font-size: 12px; color: var(--gl2-muted); }
+.gla-gym-badge { flex: none; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: 5px 10px; border-radius: 999px; }
+.gla-gym-badge.active { background: var(--gl2-success-bg); color: var(--gl2-success-fg); }
+.gla-gym-badge.inactive { background: var(--gl2-danger-bg); color: var(--gl2-danger-fg); }
+.gla-gym-loading { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 18px; font-size: 13px; color: var(--gl2-muted); }
+
+/* ── Onboarding wizard chrome (desktop-only step chips) ── */
+.gla-onb-topline { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.gla-onb-step-label { margin: 0; font-size: 12px; font-weight: 800; letter-spacing: .7px; text-transform: uppercase; color: var(--gl2-muted-2); }
+.gla-onb-progress-label { margin: 0; font-size: 12.5px; font-weight: 700; color: var(--gl2-muted); }
+.gla-onb-chips { display: none; margin-bottom: 20px; flex-wrap: wrap; }
+@media (min-width: 1024px) { .gla-onb-chips { display: flex; } }
+
+/* ── Role selection cards ── */
+.gla-role-card {
+  display: flex; align-items: center; gap: 14px; width: 100%; padding: 16px; margin-bottom: 12px;
+  border: 1px solid var(--gl2-border); border-radius: 14px; background: #fff; text-align: left;
+  font: inherit; cursor: pointer;
+}
+.gla-role-card:hover { border-color: var(--gl2-primary); background: var(--gl2-primary-tint-2); }
+.gla-role-icon { flex: none; width: 44px; height: 44px; border-radius: 12px; background: var(--gl2-primary-tint); display: flex; align-items: center; justify-content: center; }
+.gla-role-icon.member { background: var(--gl2-success-bg); }
+.gla-role-text { flex: 1; min-width: 0; }
+.gla-role-title { font-size: 15.5px; font-weight: 800; color: var(--gl2-ink); }
+.gla-role-sub { margin-top: 2px; font-size: 13px; color: var(--gl2-muted); }
+.gla-role-arrow { flex: none; color: var(--gl2-muted-2); }
+
+/* ── Not-registered state ── */
+.gla-empty-state { text-align: center; padding: 32px 20px; }
+.gla-empty-icon { width: 56px; height: 56px; border-radius: 50%; background: var(--gl2-warning-bg); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
+.gla-empty-title { margin: 0 0 8px; font-size: 18px; font-weight: 800; }
+.gla-empty-sub { margin: 0 0 24px; font-size: 13.5px; color: var(--gl2-muted); line-height: 1.5; }
+
+/* ── Spinner ── */
+.gla-spinner { width: 18px; height: 18px; border-radius: 50%; border: 2.5px solid rgba(255,255,255,.4); border-top-color: #fff; animation: gla-spin .7s linear infinite; display: inline-block; }
+.gla-spinner.dark { border-color: rgba(20,21,43,.15); border-top-color: var(--gl2-primary); }
+@keyframes gla-spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 1023px) {
+  .gla-panel { display: none; }
+}
+@media (min-width: 1024px) {
+  .gla-mobile-header { display: none; }
+}

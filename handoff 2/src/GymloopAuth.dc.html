@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+*{box-sizing:border-box}
+a{color:#4A438F}a:hover{color:#332D6E}
+button,input,select{font-family:inherit}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid #6C63C7;outline-offset:2px}
+input::placeholder{color:#A3A8BD}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:#CFD2E0;border-radius:5px}
+@keyframes authIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes ringIn{from{stroke-dashoffset:120}to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</helmet>
+
+<div style="height:100%;min-height:0;display:flex;background:#FFFFFF;color:#14152B;font-family:Manrope,system-ui,sans-serif;font-size:16px;overflow:hidden">
+
+  <!-- BRAND PANEL (desktop only) -->
+  <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+    <aside style="flex:none;width:430px;background:#332D6E;color:#fff;padding:38px 36px;display:flex;flex-direction:column;gap:0;position:relative;overflow:hidden">
+      <svg width="420" height="420" viewBox="0 0 44 44" fill="none" style="position:absolute;right:-140px;bottom:-120px;opacity:.09" aria-hidden="true">
+        <path d="M26.8 8.8A14 14 0 1 1 17.2 8.8" stroke="#fff" stroke-width="3" stroke-linecap="round"></path>
+        <path d="M21 7.4 18.3 11.8 16.1 5.8Z" fill="#fff"></path>
+        <rect x="15" y="20" width="14" height="4" rx="2" fill="#fff"></rect>
+        <rect x="12.4" y="17.5" width="4" height="9" rx="2" fill="#fff"></rect>
+        <rect x="27.6" y="17.5" width="4" height="9" rx="2" fill="#fff"></rect>
+      </svg>
+
+      <div style="display:flex;align-items:center;gap:10px;position:relative">
+        <span style="width:38px;height:38px;border-radius:12px;background:#6C63C7;display:flex;align-items:center;justify-content:center;flex:none">
+          <svg width="28" height="28" viewBox="0 0 44 44" fill="none" aria-label="Gymloop">
+            <path d="M26.8 8.8A14 14 0 1 1 17.2 8.8" stroke="#fff" stroke-width="4.2" stroke-linecap="round"></path>
+            <path d="M21 7.4 18.3 11.8 16.1 5.8Z" fill="#fff"></path>
+            <rect x="15" y="20" width="14" height="4" rx="2" fill="#fff"></rect>
+            <rect x="12.4" y="17.5" width="4" height="9" rx="2" fill="#fff"></rect>
+            <rect x="27.6" y="17.5" width="4" height="9" rx="2" fill="#fff"></rect>
+          </svg>
+        </span>
+        <span style="font-size:18px;font-weight:800;letter-spacing:-.3px">Gymloop</span>
+      </div>
+
+      <p style="margin:44px 0 0;font-size:30px;line-height:1.22;font-weight:800;letter-spacing:-.7px;text-wrap:pretty;position:relative">{{ panelHeadline }}</p>
+      <p style="margin:14px 0 0;font-size:15px;line-height:1.55;color:#C9C5EC;text-wrap:pretty;position:relative">{{ panelSub }}</p>
+
+      <div style="margin-top:30px;display:flex;flex-direction:column;gap:13px;position:relative">
+        <sc-for list="{{ panelPoints }}" as="p" hint-placeholder-count="3">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <span style="flex:none;width:21px;height:21px;border-radius:11px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;margin-top:1px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4"><path d="m5 13 4.5 4.5L19 7"></path></svg>
+            </span>
+            <span style="font-size:14.5px;line-height:1.45;color:#EDEBF8">{{ p }}</span>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="margin-top:auto;padding-top:28px;position:relative">
+        <p style="margin:0;font-size:13px;line-height:1.5;color:#A9A3D9">Used by 400+ gyms across Telangana and Karnataka. Your data stays in India.</p>
+      </div>
+    </aside>
+  </sc-if>
+
+  <!-- FORM COLUMN -->
+  <div style="flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:#FFFFFF">
+
+    <sc-if value="{{ isMobile }}" hint-placeholder-val="{{ false }}">
+      <header style="flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px 20px 4px">
+        <div style="display:flex;align-items:center;gap:9px">
+          <span style="width:32px;height:32px;border-radius:10px;background:#6C63C7;display:flex;align-items:center;justify-content:center;flex:none">
+            <svg width="24" height="24" viewBox="0 0 44 44" fill="none" aria-label="Gymloop">
+              <path d="M26.8 8.8A14 14 0 1 1 17.2 8.8" stroke="#fff" stroke-width="4.2" stroke-linecap="round"></path>
+              <path d="M21 7.4 18.3 11.8 16.1 5.8Z" fill="#fff"></path>
+              <rect x="15" y="20" width="14" height="4" rx="2" fill="#fff"></rect>
+              <rect x="12.4" y="17.5" width="4" height="9" rx="2" fill="#fff"></rect>
+              <rect x="27.6" y="17.5" width="4" height="9" rx="2" fill="#fff"></rect>
+            </svg>
+          </span>
+          <span style="font-size:16px;font-weight:800;letter-spacing:-.2px">Gymloop</span>
+        </div>
+        <a href="#" onClick="{{ help }}" style="font-size:13.5px;font-weight:700;text-decoration:none">Need help?</a>
+      </header>
+    </sc-if>
+
+    <main style="flex:1;width:100%;max-width:{{ colMax }};margin:0 auto;padding:{{ colPad }};display:flex;flex-direction:column;animation:authIn .22s ease-out">
+
+      <!-- SIGN IN -->
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+        <section data-screen-label="Sign in">
+          <h1 style="margin:0 0 24px;font-size:26px;font-weight:800;letter-spacing:-.6px">Sign in to your gym</h1>
+
+          <label for="ga-phone" style="display:block;font-size:13px;font-weight:800;color:#14152B;margin-bottom:7px">Mobile number</label>
+          <div style="display:flex;align-items:stretch;gap:0;border:1px solid #E3E5EE;border-radius:12px;overflow:hidden;background:#fff">
+            <span style="flex:none;display:flex;align-items:center;padding:0 13px;background:#F5F6FA;border-right:1px solid #E3E5EE;font-size:15px;font-weight:700;color:#5A5E76">+91</span>
+            <input id="ga-phone" type="tel" inputmode="numeric" maxlength="10" value="{{ phone }}" onChange="{{ setPhone }}" placeholder="10-digit number" style="flex:1;min-width:0;height:52px;padding:0 14px;border:0;font-size:17px;font-weight:600;letter-spacing:.4px;color:#14152B;background:transparent">
+          </div>
+          <sc-if value="{{ phoneError }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:8px 0 0;font-size:13px;font-weight:700;color:#A62C22">{{ phoneError }}</p>
+          </sc-if>
+          <p style="margin:9px 0 0;font-size:13px;color:#8A8FA6">We send a 6-digit code on WhatsApp, and by SMS if WhatsApp fails.</p>
+
+          <button type="button" onClick="{{ sendOtp }}" style="width:100%;min-height:52px;margin-top:20px;border:0;border-radius:12px;background:#6C63C7;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#5A52B5">Send code</button>
+
+          <div style="display:flex;align-items:center;gap:12px;margin:20px 0">
+            <span style="flex:1;height:1px;background:#E3E5EE"></span>
+            <span style="font-size:12px;font-weight:700;color:#8A8FA6">OR</span>
+            <span style="flex:1;height:1px;background:#E3E5EE"></span>
+          </div>
+
+          <button type="button" onClick="{{ goPin }}" style="width:100%;min-height:52px;border:1px solid #C9CCDC;border-radius:12px;background:#fff;color:#14152B;font:inherit;font-size:15.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px" style-hover="border-color:#6C63C7;background:#F7F6FD">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6C63C7" stroke-width="2"><rect x="4" y="10" width="16" height="10" rx="2.5"></rect><path d="M8 10V7.5a4 4 0 0 1 8 0V10"></path></svg>
+            <span>Sign in with PIN instead</span>
+          </button>
+
+          <div style="margin-top:26px;padding:15px 16px;border-radius:12px;background:#F7F6FD;border:1px solid #E3E1F5">
+            <p style="margin:0 0 3px;font-size:14px;font-weight:800">New to Gymloop?</p>
+            <p style="margin:0 0 11px;font-size:13.5px;line-height:1.5;color:#5A5E76">Set your gym up in about five minutes — plans, members and payments all in one place.</p>
+            <button type="button" onClick="{{ goSignup }}" style="min-height:44px;padding:0 15px;border:1px solid #6C63C7;border-radius:10px;background:#fff;color:#4A438F;font:inherit;font-size:14px;font-weight:800;cursor:pointer" style-hover="background:#EFEDFB">Create your gym</button>
+          </div>
+        </section>
+      </sc-if>
+
+      <!-- PIN SIGN IN -->
+      <sc-if value="{{ isPin }}" hint-placeholder-val="{{ false }}">
+        <section data-screen-label="PIN sign in">
+          <button type="button" onClick="{{ goLogin }}" style="display:flex;align-items:center;gap:6px;min-height:44px;margin:0 0 8px -6px;padding:0 8px;border:0;border-radius:9px;background:none;font:inherit;font-size:14px;font-weight:700;color:#4A438F;cursor:pointer">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m14 6-6 6 6 6"></path></svg>
+            <span>All sign-in options</span>
+          </button>
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:-.6px">Enter your PIN</h1>
+          <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#5A5E76">Signing in as <strong style="color:#14152B">+91 {{ phoneMasked }}</strong>. The PIN is the same one that unlocks kiosk mode.</p>
+
+          <div style="display:flex;gap:10px;margin-bottom:14px">
+            <sc-for list="{{ pinCells }}" as="c" hint-placeholder-count="4">
+              <input type="password" inputmode="numeric" maxlength="1" value="{{ c.value }}" onChange="{{ c.set }}" aria-label="PIN digit" style="flex:1;height:60px;border:1px solid {{ c.border }};border-radius:12px;background:{{ c.bg }};text-align:center;font-size:24px;font-weight:800;color:#14152B">
+            </sc-for>
+          </div>
+          <a href="#" onClick="{{ sendOtp }}" style="font-size:13.5px;font-weight:700;text-decoration:none">Forgot PIN? Sign in with a code instead</a>
+
+          <button type="button" onClick="{{ finishSignIn }}" style="width:100%;min-height:52px;margin-top:22px;border:0;border-radius:12px;background:#6C63C7;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#5A52B5">Sign in</button>
+        </section>
+      </sc-if>
+
+      <!-- OTP -->
+      <sc-if value="{{ isOtp }}" hint-placeholder-val="{{ false }}">
+        <section data-screen-label="Verify code">
+          <button type="button" onClick="{{ back }}" style="display:flex;align-items:center;gap:6px;min-height:44px;margin:0 0 8px -6px;padding:0 8px;border:0;border-radius:9px;background:none;font:inherit;font-size:14px;font-weight:700;color:#4A438F;cursor:pointer">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m14 6-6 6 6 6"></path></svg>
+            <span>Change number</span>
+          </button>
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:-.6px">Enter the 6-digit code</h1>
+          <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#5A5E76">Sent on WhatsApp to <strong style="color:#14152B">+91 {{ phoneMasked }}</strong>.</p>
+
+          <div style="display:flex;gap:8px">
+            <sc-for list="{{ otpCells }}" as="c" hint-placeholder-count="6">
+              <input type="text" inputmode="numeric" maxlength="1" value="{{ c.value }}" onChange="{{ c.set }}" aria-label="Code digit" style="flex:1;min-width:0;height:58px;border:1px solid {{ c.border }};border-radius:12px;background:{{ c.bg }};text-align:center;font-size:22px;font-weight:800;color:#14152B">
+            </sc-for>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px">
+            <span style="font-size:13.5px;color:#8A8FA6">{{ resendLabel }}</span>
+            <button type="button" onClick="{{ resend }}" disabled="{{ resendDisabled }}" style="min-height:40px;padding:0 12px;border:1px solid #C9CCDC;border-radius:9px;background:#fff;font:inherit;font-size:13.5px;font-weight:800;color:{{ resendColor }};cursor:{{ resendCursor }}">Resend code</button>
+          </div>
+
+          <button type="button" onClick="{{ verify }}" style="width:100%;min-height:52px;margin-top:22px;border:0;border-radius:12px;background:#6C63C7;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#5A52B5">{{ verifyLabel }}</button>
+          <p style="margin:16px 0 0;font-size:13px;line-height:1.5;color:#8A8FA6">Code not arriving? Check that WhatsApp is installed on this number, or <a href="#" onClick="{{ help }}" style="font-weight:700;text-decoration:none">call support on 1800 200 4141</a>.</p>
+        </section>
+      </sc-if>
+
+      <!-- SIGN UP -->
+      <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+        <section data-screen-label="Sign up">
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:-.6px">Create your gym</h1>
+          <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#5A5E76;text-wrap:pretty">Four details now. Plans, members and payments come next, and you can change any of it later.</p>
+
+          <div style="display:flex;flex-direction:column;gap:15px">
+            <div>
+              <label for="ga-name" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Your name</label>
+              <input id="ga-name" type="text" value="{{ ownerName }}" onChange="{{ setOwnerName }}" placeholder="e.g. Ravi Teja" style="width:100%;height:52px;padding:0 14px;border:1px solid #E3E5EE;border-radius:12px;font-size:15.5px;font-weight:600;color:#14152B;background:#fff">
+            </div>
+            <div>
+              <label for="ga-gym" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Gym name</label>
+              <input id="ga-gym" type="text" value="{{ gymName }}" onChange="{{ setGymName }}" placeholder="e.g. Iron Peak Fitness" style="width:100%;height:52px;padding:0 14px;border:1px solid #E3E5EE;border-radius:12px;font-size:15.5px;font-weight:600;color:#14152B;background:#fff">
+            </div>
+            <div>
+              <label for="ga-phone2" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Mobile number</label>
+              <div style="display:flex;align-items:stretch;border:1px solid #E3E5EE;border-radius:12px;overflow:hidden;background:#fff">
+                <span style="flex:none;display:flex;align-items:center;padding:0 13px;background:#F5F6FA;border-right:1px solid #E3E5EE;font-size:15px;font-weight:700;color:#5A5E76">+91</span>
+                <input id="ga-phone2" type="tel" inputmode="numeric" maxlength="10" value="{{ phone }}" onChange="{{ setPhone }}" placeholder="10-digit number" style="flex:1;min-width:0;height:52px;padding:0 14px;border:0;font-size:17px;font-weight:600;letter-spacing:.4px;color:#14152B;background:transparent">
+              </div>
+              <p style="margin:7px 0 0;font-size:13px;color:#8A8FA6">This becomes your login and the number members see.</p>
+            </div>
+            <div>
+              <label for="ga-city" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">City</label>
+              <select id="ga-city" value="{{ city }}" onChange="{{ setCity }}" style="width:100%;height:52px;padding:0 12px;border:1px solid #E3E5EE;border-radius:12px;font-size:15.5px;font-weight:600;color:#14152B;background:#fff">
+                <sc-for list="{{ cities }}" as="c" hint-placeholder-count="5">
+                  <option value="{{ c }}">{{ c }}</option>
+                </sc-for>
+              </select>
+            </div>
+          </div>
+
+          <sc-if value="{{ phoneError }}" hint-placeholder-val="{{ false }}">
+            <p style="margin:12px 0 0;font-size:13px;font-weight:700;color:#A62C22">{{ phoneError }}</p>
+          </sc-if>
+
+          <button type="button" onClick="{{ sendOtp }}" style="width:100%;min-height:52px;margin-top:20px;border:0;border-radius:12px;background:#6C63C7;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#5A52B5">Send code to verify</button>
+          <p style="margin:13px 0 0;font-size:12.5px;line-height:1.55;color:#8A8FA6">By continuing you agree to the <a href="#" onClick="{{ help }}" style="text-decoration:none;font-weight:700">terms</a> and <a href="#" onClick="{{ help }}" style="text-decoration:none;font-weight:700">privacy policy</a>. First 14 days are free — no card needed.</p>
+
+          <p style="margin:22px 0 0;font-size:14px;font-weight:700;color:#5A5E76">Already have a gym here? <a href="#" onClick="{{ goLogin }}" style="text-decoration:none">Sign in</a></p>
+        </section>
+      </sc-if>
+
+      <!-- ONBOARDING -->
+      <sc-if value="{{ isOnb }}" hint-placeholder-val="{{ false }}">
+        <section data-screen-label="Onboarding step {{ stepNo }}">
+
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:8px">
+            <p style="margin:0;font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;color:#8A8FA6">Step {{ stepNo }} of 4</p>
+            <p style="margin:0;font-size:12.5px;font-weight:700;color:#5A5E76">{{ progressLabel }}</p>
+          </div>
+          <div style="height:6px;border-radius:4px;background:#EDEEF5;overflow:hidden;margin-bottom:18px">
+            <div style="height:100%;width:{{ progressPct }};background:#6C63C7;border-radius:4px;transition:width .3s ease"></div>
+          </div>
+
+          <sc-if value="{{ isDesktop }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+              <sc-for list="{{ stepChips }}" as="s" hint-placeholder-count="4">
+                <button type="button" onClick="{{ s.go }}" style="display:flex;align-items:center;gap:7px;min-height:38px;padding:0 12px;border:1px solid {{ s.border }};border-radius:20px;background:{{ s.bg }};font:inherit;font-size:13px;font-weight:800;color:{{ s.fg }};cursor:pointer">
+                  <span style="width:18px;height:18px;border-radius:10px;background:{{ s.dotBg }};color:{{ s.dotFg }};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">{{ s.n }}</span>
+                  <span>{{ s.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <h1 style="margin:0 0 6px;font-size:25px;font-weight:800;letter-spacing:-.6px">{{ stepTitle }}</h1>
+          <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#5A5E76;text-wrap:pretty">{{ stepSub }}</p>
+
+          <!-- Step 1 · gym details -->
+          <sc-if value="{{ isStep1 }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:15px">
+              <div>
+                <label for="ga-o-gym" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Gym name</label>
+                <input id="ga-o-gym" type="text" value="{{ gymName }}" onChange="{{ setGymName }}" placeholder="Iron Peak Fitness" style="width:100%;height:52px;padding:0 14px;border:1px solid #E3E5EE;border-radius:12px;font-size:15.5px;font-weight:600;background:#fff">
+              </div>
+              <div>
+                <label for="ga-o-addr" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Address <span style="font-weight:700;color:#8A8FA6">· shown on receipts</span></label>
+                <input id="ga-o-addr" type="text" value="{{ address }}" onChange="{{ setAddress }}" placeholder="Plot 42, KPHB Phase 3" style="width:100%;height:52px;padding:0 14px;border:1px solid #E3E5EE;border-radius:12px;font-size:15.5px;font-weight:600;background:#fff">
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label for="ga-o-w1" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Opens</label>
+                  <input id="ga-o-w1" type="text" value="{{ openTime }}" onChange="{{ setOpenTime }}" placeholder="5:00 AM" style="width:100%;height:52px;padding:0 14px;border:1px solid #E3E5EE;border-radius:12px;font-size:15.5px;font-weight:600;background:#fff">
+                </div>
+                <div>
+                  <label for="ga-o-w2" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Closes</label>
+                  <input id="ga-o-w2" type="text" value="{{ closeTime }}" onChange="{{ setCloseTime }}" placeholder="10:00 PM" style="width:100%;height:52px;padding:0 14px;border:1px solid #E3E5EE;border-radius:12px;font-size:15.5px;font-weight:600;background:#fff">
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:13px;padding:13px 14px;border:1px dashed #C9CCDC;border-radius:12px;background:#FAFAFD">
+                <span style="flex:none;width:46px;height:46px;border-radius:11px;background:#EFEDFB;display:flex;align-items:center;justify-content:center">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6C63C7" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><circle cx="9" cy="10.5" r="1.8"></circle><path d="m4 17 5-4.5 4 3.5 3-2.5 4 3.5"></path></svg>
+                </span>
+                <div style="flex:1;min-width:0">
+                  <p style="margin:0 0 2px;font-size:14px;font-weight:800">Gym logo</p>
+                  <p style="margin:0;font-size:13px;color:#8A8FA6">Used on receipts and membership cards. Optional.</p>
+                </div>
+                <button type="button" onClick="{{ help }}" style="flex:none;min-height:40px;padding:0 13px;border:1px solid #C9CCDC;border-radius:10px;background:#fff;font:inherit;font-size:13.5px;font-weight:800;cursor:pointer" style-hover="border-color:#6C63C7">Upload</button>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Step 2 · first plan -->
+          <sc-if value="{{ isStep2 }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ planPresets }}" as="p" hint-placeholder-count="3">
+                <button type="button" onClick="{{ p.pick }}" style="display:flex;align-items:center;gap:13px;padding:14px;border:1.5px solid {{ p.border }};border-radius:14px;background:{{ p.bg }};text-align:left;font:inherit;cursor:pointer" style-hover="border-color:#6C63C7">
+                  <span style="flex:none;width:20px;height:20px;border-radius:11px;border:2px solid {{ p.dot }};background:{{ p.dotFill }};display:flex;align-items:center;justify-content:center">
+                    <span style="width:8px;height:8px;border-radius:5px;background:{{ p.dotInner }}"></span>
+                  </span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:15px;font-weight:800">{{ p.name }}</span>
+                    <span style="font-size:13px;color:#5A5E76">{{ p.detail }}</span>
+                  </span>
+                  <span style="flex:none;font-size:16px;font-weight:800;color:#14152B">{{ p.price }}</span>
+                </button>
+              </sc-for>
+
+              <div style="margin-top:6px;padding:15px;border:1px solid #E3E5EE;border-radius:14px;background:#fff">
+                <p style="margin:0 0 12px;font-size:14px;font-weight:800">Or set your own</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                  <div>
+                    <label for="ga-p-name" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Plan name</label>
+                    <input id="ga-p-name" type="text" value="{{ planName }}" onChange="{{ setPlanName }}" placeholder="Monthly Gym" style="width:100%;height:48px;padding:0 13px;border:1px solid #E3E5EE;border-radius:11px;font-size:15px;font-weight:600;background:#fff">
+                  </div>
+                  <div>
+                    <label for="ga-p-price" style="display:block;font-size:13px;font-weight:800;margin-bottom:7px">Price (₹)</label>
+                    <input id="ga-p-price" type="text" inputmode="numeric" value="{{ planPrice }}" onChange="{{ setPlanPrice }}" placeholder="1200" style="width:100%;height:48px;padding:0 13px;border:1px solid #E3E5EE;border-radius:11px;font-size:15px;font-weight:600;background:#fff">
+                  </div>
+                </div>
+              </div>
+              <p style="margin:4px 0 0;font-size:13px;color:#8A8FA6">You can add more plans any time from Settings → Membership Plans.</p>
+            </div>
+          </sc-if>
+
+          <!-- Step 3 · team -->
+          <sc-if value="{{ isStep3 }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ inviteRows }}" as="r" hint-placeholder-count="2">
+                <div style="display:flex;align-items:center;gap:11px;padding:12px 13px;border:1px solid #E3E5EE;border-radius:13px;background:#fff">
+                  <span style="flex:none;width:38px;height:38px;border-radius:11px;background:{{ r.color }};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800">{{ r.initials }}</span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px">
+                    <span style="font-size:14.5px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span>
+                    <span style="font-size:13px;color:#5A5E76">{{ r.sub }}</span>
+                  </span>
+                  <button type="button" onClick="{{ r.toggle }}" style="flex:none;min-height:40px;padding:0 13px;border:1px solid {{ r.btnBorder }};border-radius:10px;background:{{ r.btnBg }};font:inherit;font-size:13.5px;font-weight:800;color:{{ r.btnFg }};cursor:pointer">{{ r.btnLabel }}</button>
+                </div>
+              </sc-for>
+              <button type="button" onClick="{{ help }}" style="display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1px dashed #C9CCDC;border-radius:13px;background:#FAFAFD;font:inherit;font-size:14.5px;font-weight:800;color:#4A438F;cursor:pointer" style-hover="border-color:#6C63C7;background:#F7F6FD">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"></path></svg>
+                <span>Invite someone else</span>
+              </button>
+              <p style="margin:4px 0 0;font-size:13px;line-height:1.5;color:#8A8FA6">Each person gets a WhatsApp link to set their own PIN. Trainers see members but not money; reception can collect payments.</p>
+            </div>
+          </sc-if>
+
+          <!-- Step 4 · first members -->
+          <sc-if value="{{ isStep4 }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-direction:column;gap:11px">
+              <sc-for list="{{ importChoices }}" as="c" hint-placeholder-count="3">
+                <button type="button" onClick="{{ c.pick }}" style="display:flex;align-items:flex-start;gap:13px;padding:15px;border:1.5px solid {{ c.border }};border-radius:14px;background:{{ c.bg }};text-align:left;font:inherit;cursor:pointer" style-hover="border-color:#6C63C7">
+                  <span style="flex:none;width:42px;height:42px;border-radius:12px;background:{{ c.iconBg }};display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:{{ c.iconFg }}">{{ c.badge }}</span>
+                  <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                    <span style="font-size:15.5px;font-weight:800">{{ c.title }}</span>
+                    <span style="font-size:13.5px;line-height:1.45;color:#5A5E76">{{ c.sub }}</span>
+                  </span>
+                </button>
+              </sc-for>
+              <p style="margin:4px 0 0;font-size:13px;line-height:1.5;color:#8A8FA6">Importing keeps the joining dates and expiry dates from your sheet, so renewal reminders start working straight away.</p>
+            </div>
+          </sc-if>
+
+          <div style="display:flex;align-items:center;gap:10px;margin-top:26px;flex-wrap:wrap">
+            <button type="button" onClick="{{ next }}" style="flex:1;min-width:180px;min-height:52px;border:0;border-radius:12px;background:#6C63C7;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#5A52B5">{{ nextLabel }}</button>
+            <button type="button" onClick="{{ skip }}" style="flex:none;min-height:52px;padding:0 16px;border:1px solid #C9CCDC;border-radius:12px;background:#fff;font:inherit;font-size:14.5px;font-weight:800;color:#5A5E76;cursor:pointer" style-hover="border-color:#6C63C7;color:#4A438F">Skip for now</button>
+          </div>
+          <sc-if value="{{ canGoBack }}" hint-placeholder-val="{{ false }}">
+            <button type="button" onClick="{{ back }}" style="align-self:flex-start;display:flex;align-items:center;gap:6px;min-height:44px;margin:8px 0 0 -6px;padding:0 8px;border:0;border-radius:9px;background:none;font:inherit;font-size:14px;font-weight:700;color:#5A5E76;cursor:pointer">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m14 6-6 6 6 6"></path></svg>
+              <span>Back</span>
+            </button>
+          </sc-if>
+          <p style="margin:14px 0 0;font-size:13px;color:#8A8FA6">Nothing here is final — skipped steps wait for you on the dashboard checklist.</p>
+        </section>
+      </sc-if>
+
+      <!-- DONE -->
+      <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+        <section data-screen-label="Setup complete">
+          <span style="width:62px;height:62px;border-radius:20px;background:#E7F5EE;display:flex;align-items:center;justify-content:center;margin-bottom:18px">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#1E7A4B" stroke-width="2.8"><path d="m5 13 4.5 4.5L19 7" style="stroke-dasharray:120;animation:ringIn .5s ease-out"></path></svg>
+          </span>
+          <h1 style="margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:-.6px">{{ doneTitle }}</h1>
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.5;color:#5A5E76;text-wrap:pretty">Your gym is live. Members can be enrolled right away and every renewal reminder goes out on its own from now on.</p>
+
+          <div style="border:1px solid #E3E5EE;border-radius:14px;background:#fff;overflow:hidden;margin-bottom:18px">
+            <sc-for list="{{ recap }}" as="r" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:11px;padding:13px 14px;border-bottom:1px solid #EDEEF5">
+                <span style="flex:none;width:22px;height:22px;border-radius:12px;background:{{ r.iconBg }};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:{{ r.iconFg }}">{{ r.mark }}</span>
+                <span style="flex:1;min-width:0;font-size:14.5px;font-weight:700">{{ r.label }}</span>
+                <span style="flex:none;font-size:13px;font-weight:700;color:{{ r.stateFg }}">{{ r.state }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <button type="button" onClick="{{ finish }}" style="width:100%;min-height:52px;border:0;border-radius:12px;background:#6C63C7;color:#fff;font:inherit;font-size:16px;font-weight:800;cursor:pointer" style-hover="background:#5A52B5">Go to dashboard</button>
+          <button type="button" onClick="{{ goStep1 }}" style="width:100%;min-height:48px;margin-top:10px;border:1px solid #C9CCDC;border-radius:12px;background:#fff;font:inherit;font-size:15px;font-weight:800;color:#14152B;cursor:pointer" style-hover="border-color:#6C63C7">Finish the remaining steps</button>
+        </section>
+      </sc-if>
+
+    </main>
+
+    <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;left:50%;bottom:22px;transform:translateX(-50%);z-index:40;max-width:88%;padding:11px 16px;border-radius:11px;background:#14152B;color:#fff;font-size:13.5px;font-weight:700;box-shadow:0 8px 22px rgba(20,21,43,.28)">{{ toast }}</div>
+    </sc-if>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:760}}">
+const CITIES = ['Hyderabad','Bengaluru','Vijayawada','Warangal','Mysuru','Other'];
+const PRESETS = [
+  { name: 'Monthly Gym', detail: '1 month · the plan most gyms start with', price: '₹1,200' },
+  { name: 'Quarterly Gym', detail: '3 months · usually priced at a small discount', price: '₹3,200' },
+  { name: 'Annual Gym', detail: '12 months · best for cash flow', price: '₹11,000' }
+];
+const STEPS = [
+  { label: 'Gym details', title: 'Tell us about the gym', sub: 'This shows on receipts, the membership card and your public page.' },
+  { label: 'First plan', title: 'Add your first plan', sub: 'Pick one to start with — you can add the rest later. Nothing enrols a member without a plan.' },
+  { label: 'Your team', title: 'Bring your team in', sub: 'Give reception and trainers their own sign-in so payments and check-ins are traceable.' },
+  { label: 'Members', title: 'Get your members in', sub: 'Already keeping a register or an Excel sheet? Import it and skip the typing.' }
+];
+
+class Component extends DCLogic {
+  renderVals() {
+    const P = this.props, a = P.auth || {}, A = P.actions || {};
+    const mode = P.mode || 'desktop', isDesktop = mode === 'desktop';
+    const screen = a.screen || 'login';
+    const step = a.step || 1;
+    const digits = (a.phone || '');
+    const masked = digits.length === 10 ? digits.slice(0, 5) + ' ' + digits.slice(5) : (digits || '—');
+
+    const cell = (v, i, set) => ({
+      value: v || '', set: e => set(i, e.target.value.replace(/[^0-9]/g, '').slice(-1)),
+      border: v ? '#6C63C7' : '#E3E5EE', bg: v ? '#F7F6FD' : '#fff'
+    });
+
+    const done = a.doneSteps || {};
+    const recapState = n => done[n] ? { state: 'Done', stateFg: '#1E7A4B', mark: '✓', iconBg: '#E7F5EE', iconFg: '#1E7A4B' }
+      : { state: 'Later', stateFg: '#8A4B00', mark: '•', iconBg: '#FDF3E2', iconFg: '#8A4B00' };
+    const doneCount = [1, 2, 3, 4].filter(n => done[n]).length;
+
+    return {
+      isDesktop, isMobile: !isDesktop,
+      colMax: isDesktop ? '460px' : '100%',
+      colPad: isDesktop ? '54px 40px 48px' : '18px 20px 34px',
+
+      isLogin: screen === 'login', isPin: screen === 'pin', isOtp: screen === 'otp',
+      isSignup: screen === 'signup', isOnb: screen === 'onb', isDone: screen === 'done',
+
+      panelHeadline: screen === 'signup' ? 'Run the gym from your phone, not a register.'
+        : screen === 'onb' ? 'Five minutes now saves an hour every week.'
+        : screen === 'done' ? 'You are set. Now go enrol someone.'
+        : 'Welcome back to Gymloop.',
+      panelSub: screen === 'signup'
+        ? 'Members, renewals, payments and reminders in one place — built for gyms in India.'
+        : screen === 'onb' ? 'Your gym details, one plan, your team, your members. Skip anything and finish it later.'
+        : screen === 'done' ? 'Everything you skipped is waiting on the dashboard checklist.'
+        : 'Renewals due, dues pending and today’s check-ins are waiting on your dashboard.',
+      panelPoints: screen === 'onb' || screen === 'done'
+        ? ['Renewal reminders go out on WhatsApp without you touching them', 'Every payment gets a receipt with your gym name on it', 'Reception and trainers get their own limited sign-in']
+        : ['Enrol a member in under a minute', 'Automatic renewal and dues reminders on WhatsApp', 'Works offline at the desk and syncs later'],
+
+      phone: digits, phoneMasked: masked, phoneError: a.error || '',
+      ownerName: a.ownerName || '', gymName: a.gymName || '', city: a.city || CITIES[0], cities: CITIES,
+      address: a.address || '', openTime: a.openTime || '', closeTime: a.closeTime || '',
+      planName: a.planName || '', planPrice: a.planPrice || '',
+
+      setPhone: e => A.set('phone', e.target.value.replace(/[^0-9]/g, '').slice(0, 10)),
+      setOwnerName: e => A.set('ownerName', e.target.value),
+      setGymName: e => A.set('gymName', e.target.value),
+      setCity: e => A.set('city', e.target.value),
+      setAddress: e => A.set('address', e.target.value),
+      setOpenTime: e => A.set('openTime', e.target.value),
+      setCloseTime: e => A.set('closeTime', e.target.value),
+      setPlanName: e => A.set('planName', e.target.value),
+      setPlanPrice: e => A.set('planPrice', e.target.value.replace(/[^0-9]/g, '')),
+
+      otpCells: (a.otp || ['', '', '', '', '', '']).map((v, i) => cell(v, i, A.setOtp)),
+      pinCells: (a.pin || ['', '', '', '']).map((v, i) => cell(v, i, A.setPin)),
+      resendLabel: a.otpLeft > 0 ? 'You can ask again in ' + a.otpLeft + 's' : 'Didn’t get the code?',
+      resendDisabled: a.otpLeft > 0,
+      resendColor: a.otpLeft > 0 ? '#A3A8BD' : '#4A438F',
+      resendCursor: a.otpLeft > 0 ? 'default' : 'pointer',
+      verifyLabel: a.flow === 'signup' ? 'Verify and start setup' : 'Verify and sign in',
+
+      stepNo: step, isStep1: step === 1, isStep2: step === 2, isStep3: step === 3, isStep4: step === 4,
+      stepTitle: STEPS[step - 1].title, stepSub: STEPS[step - 1].sub,
+      progressPct: Math.round((step - 1) / 4 * 100) + '%',
+      progressLabel: doneCount + ' of 4 done',
+      nextLabel: step === 4 ? 'Finish setup' : 'Save and continue',
+      canGoBack: step > 1,
+      stepChips: STEPS.map((s, i) => {
+        const n = i + 1, active = n === step, isDone = done[n];
+        return {
+          n: isDone ? '✓' : String(n), label: s.label, go: () => A.goStep(n),
+          bg: active ? '#EFEDFB' : '#fff', border: active ? '#6C63C7' : '#E3E5EE',
+          fg: active ? '#4A438F' : '#5A5E76',
+          dotBg: active ? '#6C63C7' : isDone ? '#1E7A4B' : '#EDEEF5',
+          dotFg: active || isDone ? '#fff' : '#5A5E76'
+        };
+      }),
+
+      planPresets: PRESETS.map((p, i) => {
+        const on = a.planPick === i;
+        return Object.assign({}, p, {
+          pick: () => A.pickPlan(i),
+          border: on ? '#6C63C7' : '#E3E5EE', bg: on ? '#F7F6FD' : '#fff',
+          dot: on ? '#6C63C7' : '#C9CCDC', dotFill: on ? '#6C63C7' : '#fff',
+          dotInner: on ? '#fff' : 'transparent'
+        });
+      }),
+
+      inviteRows: (a.invites || []).map((v, i) => ({
+        name: v.name, sub: v.sub, initials: v.initials, color: v.color,
+        toggle: () => A.toggleInvite(i),
+        btnLabel: v.sent ? 'Invited' : 'Invite',
+        btnBg: v.sent ? '#E7F5EE' : '#fff',
+        btnBorder: v.sent ? '#BFE3CE' : '#C9CCDC',
+        btnFg: v.sent ? '#1E7A4B' : '#14152B'
+      })),
+
+      importChoices: [
+        { key: 'import', badge: 'XLS', title: 'Import from Excel or Google Sheets', sub: 'Name, phone, plan and expiry — we map the columns for you.', iconBg: '#E7F5EE', iconFg: '#1E7A4B' },
+        { key: 'manual', badge: '＋', title: 'Add the first member myself', sub: 'Takes about a minute. Good if you have only a few to start.', iconBg: '#EFEDFB', iconFg: '#4A438F' },
+        { key: 'later', badge: '⏱', title: 'I’ll do this later', sub: 'The dashboard will keep reminding you until members are in.', iconBg: '#FDF3E2', iconFg: '#8A4B00' }
+      ].map(c => ({
+        badge: c.badge, title: c.title, sub: c.sub, iconBg: c.iconBg, iconFg: c.iconFg,
+        pick: () => A.pickImport(c.key),
+        border: a.importPick === c.key ? '#6C63C7' : '#E3E5EE',
+        bg: a.importPick === c.key ? '#F7F6FD' : '#fff'
+      })),
+
+      doneTitle: (a.gymName || 'Your gym') + ' is ready',
+      recap: STEPS.map((s, i) => Object.assign({ label: s.label }, recapState(i + 1))),
+
+      goLogin: () => A.go('login'), goPin: () => A.go('pin'), goSignup: () => A.go('signup'),
+      goStep1: () => A.goStep(1), sendOtp: () => A.sendOtp(), resend: () => A.sendOtp(true),
+      verify: () => A.verify(), finishSignIn: () => A.finishSignIn(), back: () => A.back(),
+      next: () => A.next(), skip: () => A.skip(), finish: () => A.finish(), help: () => A.help(),
+      toast: a.toast || ''
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { logout } from '../../firebase/auth';
-import './Login.css';
+import AuthShell from './AuthShell';
 
 // Standalone gym picker for a multi-gym member who is authenticated but hasn't
 // selected a gym this session (new device, cleared storage, or an interrupted
@@ -35,46 +35,32 @@ const SelectGym = () => {
   };
 
   return (
-    <div className="screen login-screen member">
-      <div className="screen-content">
-        <div className="login-form-card glass-card gym-picker">
-          <h2 className="login-heading">Choose your gym</h2>
-          <p className="login-subtext">
-            You&apos;re a member at {memberships.length} gyms. Pick one to continue.
-          </p>
-          <div className="gym-picker-list">
-            {memberships.map((m) => (
-              <button
-                key={m.id}
-                className="gym-picker-item"
-                onClick={() => handleSelect(m.id)}
-                disabled={selecting}
-              >
-                <div className="gym-picker-info">
-                  <span className="gym-picker-name">{m.gym_name}</span>
-                  {m.plan_name && <span className="gym-picker-plan">{m.plan_name}</span>}
-                </div>
-                <span className={`gym-picker-badge ${m.active ? 'active' : 'inactive'}`}>
-                  {m.active ? 'Active' : 'Expired'}
-                </span>
-              </button>
-            ))}
-          </div>
-          {selecting && (
-            <div className="gym-picker-loading">
-              <div className="spinner" /> Opening…
-            </div>
-          )}
-          <button
-            className="resend-btn member-accent"
-            style={{ marginTop: 20 }}
-            onClick={handleSignOut}
-          >
-            Sign out
-          </button>
+    <AuthShell
+      headline="Your gym membership, on your phone."
+      sub="Pick the gym you'd like to open."
+      points={[]}
+      variant="member"
+    >
+      <section data-screen-label="Choose your gym">
+        <h1 className="gla-title-tight">Choose your gym</h1>
+        <p className="gla-subtitle">You&apos;re a member at {memberships.length} gyms. Pick one to continue.</p>
+        <div className="gla-gym-list">
+          {memberships.map((m) => (
+            <button key={m.id} className="gla-gym-card" onClick={() => handleSelect(m.id)} disabled={selecting}>
+              <div className="gla-gym-info">
+                <span className="gla-gym-name">{m.gym_name}</span>
+                {m.plan_name && <span className="gla-gym-plan">{m.plan_name}</span>}
+              </div>
+              <span className={`gla-gym-badge ${m.active ? 'active' : 'inactive'}`}>{m.active ? 'Active' : 'Expired'}</span>
+            </button>
+          ))}
         </div>
-      </div>
-    </div>
+        {selecting && <div className="gla-gym-loading"><span className="gla-spinner dark" /> Opening…</div>}
+        <button type="button" className="gla-back-link" style={{ marginTop: 20 }} onClick={handleSignOut}>
+          Sign out
+        </button>
+      </section>
+    </AuthShell>
   );
 };
 

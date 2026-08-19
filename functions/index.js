@@ -725,6 +725,12 @@ exports.resolveStaffLogin = staffClaims.resolveStaffLogin;
 const processScanModule = require("./src/processScan");
 exports.processScan = processScanModule.processScan;
 
+// PIN sign-in — set/verify a 4-digit PIN as an OTP alternative for returning
+// owners/staff (Gymloop redesign, handoff/AUTH-ONBOARDING.md).
+const pinAuth = require("./src/pinAuth");
+exports.setPin = pinAuth.setPin;
+exports.verifyPin = pinAuth.verifyPin;
+
 // ─── 4. Trial Expiry Check (Daily 6 AM IST) ───
 exports.checkTrialExpiry = functions.pubsub
   .schedule("0 6 * * *")

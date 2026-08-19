@@ -16,8 +16,8 @@ const RoleSelection        = lazy(() => import('./pages/RoleSelection/RoleSelect
 const OwnerLogin           = lazy(() => import('./pages/Login/OwnerLogin'));
 const MemberLogin          = lazy(() => import('./pages/Login/MemberLogin'));
 const SelectGym            = lazy(() => import('./pages/Login/SelectGym'));
-const GymRegistration      = lazy(() => import('./pages/GymRegistration/GymRegistration'));
-const SetupChecklist       = lazy(() => import('./pages/SetupChecklist/SetupChecklist'));
+const Signup                = lazy(() => import('./pages/Signup/Signup'));
+const Onboarding            = lazy(() => import('./pages/Onboarding/Onboarding'));
 const MemberHome           = lazy(() => import('./pages/MemberHome/MemberHome'));
 const MemberList           = lazy(() => import('./pages/Members/MemberList'));
 const AddMember            = lazy(() => import('./pages/Members/AddMember'));
@@ -99,10 +99,10 @@ function AnimatedRoutes() {
           <Route path="/gym/:gymId/plans" element={<PageTransition><SubscriptionPlans /></PageTransition>} />
 
           {/* Owner registration */}
-          <Route path="/owner/register" element={<PageTransition><GymRegistration /></PageTransition>} />
+          <Route path="/owner/register" element={<PageTransition><Signup /></PageTransition>} />
           <Route
             path="/owner/setup"
-            element={<ProtectedRoute><PageTransition><SetupChecklist /></PageTransition></ProtectedRoute>}
+            element={<ProtectedRoute><PageTransition><Onboarding /></PageTransition></ProtectedRoute>}
           />
 
           {/* Owner dashboard — Gymloop v2 shell */}

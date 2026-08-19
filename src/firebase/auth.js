@@ -1,5 +1,6 @@
-import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from 'firebase/auth';
-import { auth } from './config';
+import { RecaptchaVerifier, signInWithPhoneNumber, signInWithCustomToken, signOut, getAdditionalUserInfo } from 'firebase/auth';
+import { httpsCallable } from 'firebase/functions';
+import { auth, functions } from './config';
 
 /**
  * Initialise an invisible reCAPTCHA verifier anchored to `containerId`.
@@ -64,12 +65,41 @@ export const sendOTP = async (phoneNumber, containerId = 'recaptcha-container') 
   }
 };
 
+// Returns both the signed-in user and whether this was their first-ever sign
+// in (Firebase's own isNewUser flag) — Signup uses isNewUser to decide
+// whether to create a gym or treat this as a returning owner.
 export const verifyOTP = async (confirmationResult, code) => {
   const result = await confirmationResult.confirm(code);
-  return result.user;
+  const info = getAdditionalUserInfo(result);
+  return { user: result.user, isNewUser: !!info?.isNewUser };
 };
 
 export const logout = async () => {
   if (!auth) return;
   await signOut(auth);
+};
+
+/**
+ * Sets (or replaces) the signed-in user's 4-digit PIN. Call right after OTP
+ * verification during signup — the PIN screen there is the only place a PIN
+ * gets created (see functions/src/pinAuth.js for storage/hashing).
+ */
+export const setPin = async (pin) => {
+  const call = httpsCallable(functions, 'setPin');
+  await call({ pin });
+};
+
+/**
+ * Verifies phone + PIN for a signed-out device and signs the client in on
+ * success, via a Cloud-Function-minted custom token. This re-enters the same
+ * onAuthStateChanged path a normal OTP sign-in takes — no AuthContext changes
+ * needed. Throws a FirebaseError whose `.code` is one of:
+ *   'not-found'          — no PIN set for this number, fall back to OTP
+ *   'resource-exhausted' — locked out (details.lockedUntilMs)
+ *   'permission-denied'  — wrong PIN (details.attemptsLeft)
+ */
+export const verifyPin = async (phone, pin) => {
+  const call = httpsCallable(functions, 'verifyPin');
+  const { data } = await call({ phone, pin });
+  await signInWithCustomToken(auth, data.token);
 };
