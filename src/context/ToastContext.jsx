@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { haptic } from '../utils/haptics';
 
 const ToastContext = createContext();
 
@@ -13,6 +14,7 @@ export const ToastProvider = ({ children }) => {
   const counter = useRef(0);
 
   const showToast = useCallback((message, type = 'error') => {
+    if (type === 'success' || type === 'error' || type === 'warning') haptic(type);
     const id = `toast_${Date.now()}_${++counter.current}`;
     setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {

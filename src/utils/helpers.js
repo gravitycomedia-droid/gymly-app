@@ -1,3 +1,5 @@
+import { haptic } from './haptics';
+
 /**
  * Get initials from a name string (max 2 chars).
  */
@@ -152,7 +154,7 @@ export function playHapticSound(type = 'success') {
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.5);
-        if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        haptic('success');
       } else {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(300, ctx.currentTime);
@@ -164,7 +166,7 @@ export function playHapticSound(type = 'success') {
         gain.connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.5);
-        if (navigator.vibrate) navigator.vibrate([200, 100, 200, 100, 200]);
+        haptic('error');
       }
     }
   } catch (e) {

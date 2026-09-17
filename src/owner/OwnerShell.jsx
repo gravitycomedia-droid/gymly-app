@@ -8,6 +8,7 @@ import { getGymMembers, getGymStaff } from '../firebase/firestore';
 import { getAvatarColor } from './lib/avatarColor';
 import { OwnerShellContext } from './OwnerShellContext';
 import Toast from './primitives/Toast';
+import { haptic } from '../utils/haptics';
 import './theme.css';
 
 // `activeTab` passed in from App.jsx routes must be one of these ids — each
@@ -44,6 +45,7 @@ export default function OwnerShell({ children, activeTab }) {
 
   const toast = useCallback((msg) => {
     clearTimeout(toastTimer.current);
+    haptic('success');
     setToastMsg(msg);
     toastTimer.current = setTimeout(() => setToastMsg(''), 2400);
   }, []);
