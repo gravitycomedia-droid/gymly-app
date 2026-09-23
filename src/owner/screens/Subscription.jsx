@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGymSubscription, getBillingHistory } from '../../utils/subscriptionService';
 import { initiateRazorpayPayment } from '../../utils/razorpay';
+import { trackEvent } from '../../lib/analytics';
 import PageSkeleton from '../primitives/PageSkeleton';
 
 const PLANS = {
@@ -53,6 +54,12 @@ export default function Subscription() {
   const handleConfirmUpgrade = async () => {
     if (!upgradeModal) return;
     setProcessing(true);
+    // Fired before checkout opens, so an abandoned checkout is still counted.
+    trackEvent('checkout_started', {
+      plan_tier: upgradeModal.planKey,
+      value: upgradeModal.plan.price,
+      currency: 'INR',
+    });
     try {
       await initiateRazorpayPayment({
         amount: upgradeModal.plan.price * 100, gymName: userDoc?.name || 'Gymly', planName: upgradeModal.plan.name,

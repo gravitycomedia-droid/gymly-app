@@ -7,7 +7,6 @@ import { createPayment, getNextInvoiceNumber, formatDateKey, Timestamp } from '.
 import { updateDoc, doc } from '../../firebase/firestore-payments';
 import { db, storage } from '../../firebase/config';
 import { generateInvoicePDF, uploadInvoice } from '../../utils/invoiceGenerator';
-import { sendWhatsApp, buildReceiptParams } from '../../utils/whatsapp';
 import { generateEnrollmentNumber, initializeNumberingSettings } from '../../utils/numberingService';
 import { initiateRazorpayPayment } from '../../utils/razorpay';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -41,7 +40,6 @@ const AddPayment = () => {
   const [upiScreenshot, setUpiScreenshot] = useState(null);
 
   // Smart Features
-  const [sendWaReceipt, setSendWaReceipt] = useState(true);
   const [generatePdf, setGeneratePdf] = useState(true);
 
   // Success
@@ -172,21 +170,6 @@ const AddPayment = () => {
           await updateDoc(doc(db, 'payments', paymentId), { invoice_url: invoiceUrl });
         } catch (pdfErr) {
           console.error('Invoice error (non-critical):', pdfErr);
-        }
-      }
-
-      if (statusToSave === 'paid' && sendWaReceipt) {
-        try {
-          await sendWhatsApp({
-            phone: selectedMember.phone,
-            templateName: 'payment_receipt',
-            params: buildReceiptParams(gym, selectedMember, paymentData),
-            gymId: userDoc.gym_id,
-            memberId: selectedMember.id,
-          });
-          await updateDoc(doc(db, 'payments', paymentId), { whatsapp_sent: true });
-        } catch (waErr) {
-          console.error('WhatsApp error:', waErr);
         }
       }
 
@@ -476,10 +459,6 @@ const AddPayment = () => {
 
                 {/* Smart Features */}
                 <div className="space-y-3 pt-5 border-t border-white/20">
-                  <label className="flex items-center gap-3 cursor-pointer group">
-                    <input type="checkbox" checked={sendWaReceipt} onChange={(e) => setSendWaReceipt(e.target.checked)} className="w-5 h-5 rounded border-white/60 text-secondary focus:ring-secondary/50 bg-white/50" />
-                    <span className="font-body-md text-sm text-on-surface group-hover:text-secondary transition-colors">Send WhatsApp Receipt</span>
-                  </label>
                   <label className="flex items-center gap-3 cursor-pointer group">
                     <input type="checkbox" checked={generatePdf} onChange={(e) => setGeneratePdf(e.target.checked)} className="w-5 h-5 rounded border-white/60 text-secondary focus:ring-secondary/50 bg-white/50" />
                     <span className="font-body-md text-sm text-on-surface group-hover:text-secondary transition-colors">Generate Invoice PDF</span>

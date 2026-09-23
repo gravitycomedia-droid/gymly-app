@@ -11,6 +11,10 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  // GA4 stream for Firebase Analytics. Absent here, initializeAnalytics()
+  // throws — src/lib/analytics.js also gates on the same env var so a
+  // missing value degrades to "analytics off", never a broken app.
+  measurementId: import.meta.env.VITE_GA_MEASUREMENT_ID,
 };
 
 let app = null;

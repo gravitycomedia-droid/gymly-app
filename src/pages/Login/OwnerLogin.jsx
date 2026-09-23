@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha, verifyPin } from '../../firebase/auth';
+import { trackEvent } from '../../lib/analytics';
 import { useToast } from '../../context/ToastContext';
 import { capPhoneDigits } from '../../utils/helpers';
 import { importOwnerDashboard } from '../../routePreload';
@@ -78,6 +79,7 @@ const OwnerLogin = () => {
     setError('');
     try {
       await verifyOTP(confirmationResult, code);
+      trackEvent('login', { method: 'phone_otp' });
       importOwnerDashboard();
       navigate('/', { replace: true });
     } catch (err) {
@@ -109,6 +111,7 @@ const OwnerLogin = () => {
     setPinError('');
     try {
       await verifyPin(fullPhone, code);
+      trackEvent('login', { method: 'pin' });
       importOwnerDashboard();
       navigate('/', { replace: true });
     } catch (err) {

@@ -1,7 +1,14 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import {
+  initAnalytics,
+  setAnalyticsUser,
+  setKioskSession,
+  clearAnalyticsUser,
+  trackPageView,
+} from './lib/analytics';
 import { ToastProvider } from './context/ToastContext';
 import AutoRedirect from './components/AutoRedirect';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -77,6 +84,65 @@ const OwnerSubscriptionV2  = lazy(() => import('./owner/screens/Subscription'));
 
 import WorkoutGate from './components/WorkoutGate';
 import AppLoader from './components/AppLoader';
+
+// ── Analytics (GA4 via Firebase Analytics) ──
+// The single wiring point for telemetry: boots the SDK, reports every route
+// change as a redacted page_view, and keeps GA4 user properties in step with
+// auth state. Renders nothing.
+//
+// Kiosk routes are handled on their own branch. They sign in ANONYMOUSLY (see
+// useKioskAuth), so `user` is truthy there — auth state alone cannot tell a
+// kiosk apart from a real account, and route prefix is the only safe signal.
+// Kiosks must never be given a user identity.
+function AnalyticsTracker() {
+  const location = useLocation();
+  const { user, userDoc, loading } = useAuth();
+  const isKiosk = location.pathname.startsWith('/kiosk');
+
+  useEffect(() => { initAnalytics(); }, []);
+
+  // Identity. analytics.js holds events in a queue until one of these calls
+  // lands, so gym_id / user_role are always attached to the session before the
+  // first page_view is delivered — GA4 never applies user properties
+  // retroactively.
+  useEffect(() => {
+    if (isKiosk) return;
+    if (loading) return; // auth still resolving — keep events queued
+
+    if (!user) {
+      clearAnalyticsUser();
+      return;
+    }
+
+    // uid is the Firebase Auth UID. userDoc.id is an addDoc() random string for
+    // staff and member documents and is NOT an identity — it never goes to GA4.
+    setAnalyticsUser({
+      uid: user.uid,
+      gym_id: userDoc?.gym_id,
+      user_role: userDoc?.role,
+    });
+  }, [isKiosk, loading, user, userDoc]);
+
+  // Kiosk sessions: tenant + traffic_type only, and no setUserId anywhere in
+  // the path. useKioskAuth re-reports gym_id once pairing completes; this
+  // covers the unpaired first render so traffic_type is tagged immediately.
+  useEffect(() => {
+    if (!isKiosk) return;
+    let gym_id;
+    try {
+      gym_id = localStorage.getItem('gymly_kiosk_gym_id') || undefined;
+    } catch { /* private mode — non-critical */ }
+    setKioskSession({ gym_id });
+  }, [isKiosk, location.pathname]);
+
+  // One page_view per route change. Redaction is applied inside trackPageView,
+  // so a dynamic member ID can never reach GA4 from here.
+  useEffect(() => {
+    trackPageView(location.pathname);
+  }, [location.pathname]);
+
+  return null;
+}
 
 // ── Animated Routes (needs useLocation inside BrowserRouter) ──
 function AnimatedRoutes() {
@@ -384,6 +450,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
+          <AnalyticsTracker />
           <AnimatedRoutes />
           <PWAInstallPrompt />
         </ToastProvider>

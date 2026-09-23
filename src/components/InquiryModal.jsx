@@ -3,36 +3,7 @@ import { addDoc, collection, serverTimestamp, doc, getDoc } from 'firebase/fires
 import { db } from '../firebase/config';
 import { capPhoneDigits } from '../utils/helpers';
 
-const CLEOMITRA_API_KEY = import.meta.env.VITE_CLEOMITRA_API_KEY;
-
-// Send Cleomitra WhatsApp notification to gym owner about new inquiry
-async function notifyOwnerNewInquiry({ gymPhone, gymName, leadName, leadPhone, leadGoal }) {
-  if (!CLEOMITRA_API_KEY || !gymPhone) return;
-  const cleanPhone = gymPhone.replace(/[^0-9]/g, '');
-  const toPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
-  try {
-    await fetch('https://api.cleomitra.app/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': CLEOMITRA_API_KEY,
-      },
-      body: JSON.stringify({
-        channel: 'whatsapp',
-        toId: toPhone,
-        type: 'template',
-        templateName: 'gymly_new_inquiry',
-        components: {
-          body_parameters: [gymName, leadName, leadPhone, leadGoal || 'General Fitness'],
-        },
-      }),
-    });
-  } catch (err) {
-    console.error('Failed to notify owner via Cleomitra:', err);
-  }
-}
-
-const InquiryModal = ({ gymId, gymPhone, gymName, onClose }) => {
+const InquiryModal = ({ gymId, gymName, onClose }) => {
   const [formData, setFormData] = useState({ name: '', phone: '', goal: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -51,15 +22,6 @@ const InquiryModal = ({ gymId, gymPhone, gymName, onClose }) => {
         status: 'new',
         agreement_status: 'pending',
         created_at: serverTimestamp(),
-      });
-
-      // Notify gym owner via Cleomitra WhatsApp
-      await notifyOwnerNewInquiry({
-        gymPhone,
-        gymName,
-        leadName: formData.name,
-        leadPhone: formData.phone,
-        leadGoal: formData.goal,
       });
 
       setSuccess(true);
@@ -141,7 +103,7 @@ const InquiryModal = ({ gymId, gymPhone, gymName, onClose }) => {
                 Inquiry Submitted! 🎉
               </h3>
               <p style={{ color: '#6b7280', fontSize: 14, lineHeight: 1.6 }}>
-                We've notified {gymName}. They'll reach out to you shortly to get you started!
+                Your enquiry has reached {gymName}. They'll get in touch with you shortly!
               </p>
             </div>
           ) : (

@@ -29,9 +29,6 @@ export default function SettingsHub() {
   const [taxConfig, setTaxConfig] = useState({ enabled: false, rate: 0 });
   const [social, setSocial] = useState({ instagram: '', facebook: '', google_maps: '' });
   const [landingConfig, setLandingConfig] = useState({ isPublished: false, facilities: [] });
-  const [messagingConfig, setMessagingConfig] = useState({
-    welcome_messages: true, expiry_alerts: true, payment_confirmations: true, equipment_alerts: true, inactivity_alerts: false,
-  });
   const [requireAgreement, setRequireAgreement] = useState(true);
   const [workoutEnabled, setWorkoutEnabled] = useState(false);
   const [photos, setPhotos] = useState([]);
@@ -55,7 +52,6 @@ export default function SettingsHub() {
       setTaxConfig({ enabled: g.settings?.taxEnabled || false, rate: g.settings?.taxRate || 0 });
       setSocial(g.social || { instagram: '', facebook: '', google_maps: '' });
       setLandingConfig({ isPublished: g.landingConfig?.isPublished || false, facilities: g.landingConfig?.facilities || [] });
-      setMessagingConfig(g.messaging_config || { welcome_messages: true, expiry_alerts: true, payment_confirmations: true, equipment_alerts: true, inactivity_alerts: false });
       setPhotos(g.photos || []);
       setRequireAgreement(g.settings?.require_agreement !== false);
       setWorkoutEnabled(g.settings?.workout_enabled === true);
@@ -113,16 +109,6 @@ export default function SettingsHub() {
       await updateGym(userDoc.gym_id, { landingConfig });
       setGym((prev) => ({ ...prev, landingConfig }));
       showToast('Landing page settings updated!', 'success');
-      setActiveSheet(null);
-    } catch (e) { showToast(`Failed to save: ${e.message}`, 'error'); } finally { setSaving(false); }
-  };
-
-  const saveMessagingConfig = async () => {
-    setSaving(true);
-    try {
-      await updateGym(userDoc.gym_id, { messaging_config: messagingConfig });
-      setGym((prev) => ({ ...prev, messaging_config: messagingConfig }));
-      showToast('Messaging settings updated!', 'success');
       setActiveSheet(null);
     } catch (e) { showToast(`Failed to save: ${e.message}`, 'error'); } finally { setSaving(false); }
   };
@@ -304,7 +290,6 @@ export default function SettingsHub() {
       <div className="gl2-settings-group">
         <p className="gl2-eyebrow">Communications</p>
         <div className="gl2-list">
-          <SettingsRow icon="💬" label="WhatsApp messaging" desc="Manage automated alerts & notifications" onClick={() => setActiveSheet('messaging')} />
         </div>
       </div>
 
@@ -403,19 +388,6 @@ export default function SettingsHub() {
             ))}
           </div>
           <button type="button" className="gl2-btn gl2-btn-primary gl2-btn-lg" style={{ width: '100%', marginTop: 16 }} onClick={saveLandingConfig} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</button>
-        </EditSheet>
-      )}
-
-      {activeSheet === 'messaging' && (
-        <EditSheet title="WhatsApp settings" onClose={() => setActiveSheet(null)}>
-          <p className="gl2-eyebrow">Core notifications</p>
-          <ToggleRow label="Welcome messages" description="Sent automatically when a new member is added." value={messagingConfig.welcome_messages} onChange={(v) => setMessagingConfig((p) => ({ ...p, welcome_messages: v }))} />
-          <ToggleRow label="Expiry alerts" description="Reminders sent 7d, 3d, and 1d before expiry." value={messagingConfig.expiry_alerts} onChange={(v) => setMessagingConfig((p) => ({ ...p, expiry_alerts: v }))} />
-          <ToggleRow label="Payment confirmations" description="Receipts and due reminders." value={messagingConfig.payment_confirmations} onChange={(v) => setMessagingConfig((p) => ({ ...p, payment_confirmations: v }))} />
-          <ToggleRow label="Equipment alerts" description="Notify members when equipment is under maintenance." value={messagingConfig.equipment_alerts} onChange={(v) => setMessagingConfig((p) => ({ ...p, equipment_alerts: v }))} />
-          <p className="gl2-eyebrow" style={{ marginTop: 10 }}>Engagement</p>
-          <ToggleRow label="Inactivity alerts" description={'Send a "we miss you" text after 3+ days away.'} value={messagingConfig.inactivity_alerts} onChange={(v) => setMessagingConfig((p) => ({ ...p, inactivity_alerts: v }))} />
-          <button type="button" className="gl2-btn gl2-btn-primary gl2-btn-lg" style={{ width: '100%', marginTop: 16 }} onClick={saveMessagingConfig} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</button>
         </EditSheet>
       )}
 

@@ -5,7 +5,6 @@ import { getGym, getGymMembersRealtime } from '../../firebase/firestore';
 import { getAttendanceRange, formatDateKey } from '../../firebase/firestore-payments';
 import { collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebase/config';
-import { sendWhatsApp } from '../../utils/whatsapp';
 import { formatDate, getDaysRemaining, getPlanName } from '../../utils/helpers';
 import { Chart, registerables } from 'chart.js';
 import BottomNav from '../../components/BottomNav';

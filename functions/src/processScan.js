@@ -22,6 +22,7 @@ const { verifyToken } = require("./attendanceAuth");
 
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
+const { sendGa4Events } = require("../lib/ga4");
 const HttpsError = functions.https.HttpsError;
 const FV = admin.firestore.FieldValue;
 
@@ -32,6 +33,29 @@ const DAY = 24 * 60 * 60 * 1000;
 // otherwise post-midnight IST check-ins would be grouped under the wrong day.
 function formatDateKey(date) {
   return (date || new Date()).toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
+
+// GA4 (server): scan_processed. Wraps a scan handler so the outcome is
+// reported AFTER its transaction settles — never inside it, since Firestore
+// transactions retry and would double-count. Only the status and the mode are
+// sent; the handler's result also carries member_name and photo, which must
+// never reach GA4.
+function reportScan(resultPromise, meta) {
+  return resultPromise.then((result) => {
+    try {
+      sendGa4Events({
+        gym_id: meta.gym_id,
+        events: [{
+          name: "scan_processed",
+          params: {
+            scan_status: (result && result.status) || "unknown",
+            scan_mode: meta.scan_mode,
+          },
+        }],
+      });
+    } catch (_) { /* analytics must never affect a scan */ }
+    return result;
+  });
 }
 
 // O(1) streak update — no history scan. Deduped so it only writes once per day.
@@ -312,12 +336,12 @@ exports.processScan = functions
     // Manual staff check-in (no QR) — staff only.
     if (data && data.manualMemberId) {
       if (isKiosk) throw new HttpsError("permission-denied", "Manual check-in is staff only");
-      return handleStaffScan({
+      return reportScan(handleStaffScan({
         uid: data.manualMemberId,
         callerGymId,
         scannedByUid: context.auth.uid,
         source: "manual_verified",
-      });
+      }), { gym_id: callerGymId, scan_mode: "manual" });
     }
 
     // QR scan.
@@ -340,14 +364,17 @@ exports.processScan = functions
         throw new HttpsError("permission-denied", "Expired or invalid check-in code");
       }
       if (isKiosk) {
-        return handleKioskScan({ uid, callerGymId, deviceId, deviceDoc, intent: data && data.intent });
+        return reportScan(
+          handleKioskScan({ uid, callerGymId, deviceId, deviceDoc, intent: data && data.intent }),
+          { gym_id: callerGymId, scan_mode: "kiosk" }
+        );
       }
-      return handleStaffScan({
+      return reportScan(handleStaffScan({
         uid,
         callerGymId,
         scannedByUid: context.auth.uid,
         source: "qr_staff_verified",
-      });
+      }), { gym_id: callerGymId, scan_mode: "staff" });
     }
 
     throw new HttpsError("invalid-argument", `Unknown action: ${action}`);

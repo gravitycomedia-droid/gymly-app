@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSubscription } from '../hooks/useSubscription';
 import { checkFeatureAccess, PLAN_PRICES, PLAN_HIERARCHY } from '../utils/featureCheck';
+import { trackEvent } from '../lib/analytics';
 
 /**
  * Usage in App.jsx:
@@ -11,7 +13,7 @@ import { checkFeatureAccess, PLAN_PRICES, PLAN_HIERARCHY } from '../utils/featur
  */
 export default function SubscriptionGate({ feature, children }) {
   const { plan, loading } = useSubscription();
-  const { gymDoc } = useAuth();
+  const { gymDoc, userDoc } = useAuth();
   const navigate = useNavigate();
 
   // Check coupon subscription from context gym doc (loaded at login — no extra Firestore read)
@@ -22,6 +24,25 @@ export default function SubscriptionGate({ feature, children }) {
       : new Date(gymDoc.subscription_valid_until);
     return until > new Date();
   })();
+
+  // GA4: feature_first_use — the first time this gym is actually let through
+  // this gate. Deduped per gym per feature in localStorage; a second device
+  // re-reports at most once, which is acceptable for an activation signal.
+  // Hook stays above every early return so call order is unconditional.
+  const accessGranted =
+    !loading && (couponActive || checkFeatureAccess(plan, feature).hasAccess);
+  const gymId = userDoc?.gym_id;
+  useEffect(() => {
+    if (!accessGranted || !gymId) return;
+    const key = `gymly_feat_${gymId}_${feature}`;
+    try {
+      if (localStorage.getItem(key)) return;
+      localStorage.setItem(key, '1');
+    } catch {
+      return; // private mode — skip rather than report on every mount
+    }
+    trackEvent('feature_first_use', { feature_name: feature });
+  }, [accessGranted, gymId, feature]);
 
   if (loading) {
     return (

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym, updateGym, createStaffMember } from '../../firebase/firestore';
+import { trackEvent } from '../../lib/analytics';
 import { uploadLogo } from '../../firebase/storage';
 import { capPhoneDigits } from '../../utils/helpers';
 import AuthShell from '../Login/AuthShell';
@@ -98,6 +99,8 @@ const Onboarding = () => {
 
   const advanceAfter = (next) => {
     if (step === 4) {
+      // Last wizard step cleared — the only place onboarding reaches 'done'.
+      trackEvent('gym_setup_completed', {});
       setScreen('done');
     } else {
       setStep(step + 1);

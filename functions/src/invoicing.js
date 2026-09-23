@@ -178,41 +178,6 @@ async function createZohoInvoice(paymentData) {
   }
 }
 
-// Cleomitra Delivery Logic
-async function sendInvoiceWhatsApp(phone, invoiceUrl, name, amount) {
-  const token = functions.config().cleomitra?.apikey || process.env.VITE_CLEOMITRA_API_KEY || "cmk_c6e22d2cd37d7e9f861459879fa388f8";
-  const cleanPhone = phone.replace(/[^0-9]/g, "");
-  
-  const payload = {
-    channel: "whatsapp",
-    toId: cleanPhone.startsWith("91") ? cleanPhone : `91${cleanPhone}`,
-    type: "template",
-    templateName: "gymly_payment_confirmation", // Uses approved payment receipt template
-    components: {
-      body_parameters: ["GYMLY Studio", String(name), String(amount), "918008008000"], // Mapping: gymName, memberName, amount, gymPhone
-      header_parameters: [
-         { type: "document", url: invoiceUrl, filename: "Invoice_Receipt.pdf" }
-      ]
-    }
-  };
-
-  try {
-    const response = await fetch("https://api.cleomitra.app/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-Key": token,
-      },
-      body: JSON.stringify(payload),
-    });
-    const result = await response.json();
-    return { success: response.ok, result };
-  } catch (error) {
-    console.error("Cleomitra Send Error:", error);
-    return { success: false, error: error.message };
-  }
-}
-
 // Cloud Function Trigger: onPaymentCreate
 exports.processNewPayment = functions.firestore
   .document("payments/{paymentId}")
@@ -250,48 +215,6 @@ exports.processNewPayment = functions.firestore
         invoice_pdf_url: invoiceData.pdf_url
       });
 
-      // 3. Send via Cleomitra
-      if (paymentData.member_phone) {
-        const waResult = await sendInvoiceWhatsApp(
-          paymentData.member_phone,
-          invoiceData.pdf_url,
-          paymentData.member_name,
-          paymentData.amount
-        );
-
-        if (waResult.success) {
-          await newInvoiceDoc.update({
-            status: "sent_via_wa",
-            whatsapp_message_id: waResult.result?.messageId || "sent"
-          });
-
-          await db.collection("payments").doc(paymentId).update({
-            invoice_status: "sent_via_wa"
-          });
-          
-          // Log explicitly into message_logs
-          await db.collection("message_logs").add({
-            message_type: "invoice_delivery",
-            payment_id: paymentId,
-            phone: paymentData.member_phone,
-            attachment: {
-              type: "invoice",
-              pdf_url: invoiceData.pdf_url
-            },
-            status: "sent",
-            sent_at: admin.firestore.FieldValue.serverTimestamp()
-          });
-        } else {
-          await newInvoiceDoc.update({
-             status: "wa_failed"
-          });
-          await db.collection("payments").doc(paymentId).update({
-            invoice_status: "wa_failed"
-          });
-          console.error("WhatsApp delivery failed payload:", waResult);
-        }
-      }
-
     } catch (error) {
       console.error(`Failed executing billing flow for ${paymentId}:`, error);
       // We don't crash, we just let it fail gracefully. Owner can trigger a manual retry later.
@@ -299,33 +222,6 @@ exports.processNewPayment = functions.firestore
 
     return null;
   });
-
-// Callable: Resend Invoice via WhatsApp
-exports.resendInvoice = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be logged in.");
-  
-  const paymentId = data.paymentId;
-  const paymentDoc = await db.collection("payments").doc(paymentId).get();
-  if (!paymentDoc.exists) throw new functions.https.HttpsError("not-found", "Payment not found.");
-  
-  const pData = paymentDoc.data();
-  if (!pData.invoice_pdf_url) throw new functions.https.HttpsError("failed-precondition", "Invoice PDF not generated yet.");
-  if (!pData.member_phone) throw new functions.https.HttpsError("failed-precondition", "Member phone number is missing.");
-
-  const waResult = await sendInvoiceWhatsApp(
-    pData.member_phone,
-    pData.invoice_pdf_url,
-    pData.member_name,
-    pData.amount
-  );
-
-  if (waResult.success) {
-    await db.collection("payments").doc(paymentId).update({ invoice_status: "sent_via_wa" });
-    return { success: true };
-  } else {
-    throw new functions.https.HttpsError("internal", "WhatsApp delivery failed via Cleomitra.");
-  }
-});
 
 // Callable: Force Generate Zoho Invoice
 exports.generateInvoice = functions.https.onCall(async (data, context) => {

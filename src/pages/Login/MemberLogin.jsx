@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha } from '../../firebase/auth';
+import { trackEvent } from '../../lib/analytics';
 import { linkMemberships } from '../../firebase/firestore';
 import { auth } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
@@ -81,6 +82,7 @@ const MemberLogin = () => {
     setError('');
     try {
       const { user } = await verifyOTP(confirmationResult, code);
+      trackEvent('login', { method: 'phone_otp' });
       let list = [];
       try {
         list = await linkMemberships(user.uid, fullPhone);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { sendOTP, verifyOTP, setupRecaptcha, destroyRecaptcha, setPin } from '../../firebase/auth';
 import { createGym, createUser } from '../../firebase/firestore';
+import { trackEvent } from '../../lib/analytics';
 import { createFreeSubscription } from '../../utils/subscriptionService';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -146,6 +147,7 @@ const Signup = () => {
       setLoading(true);
       setScreen('creating');
       await createGymAccount(user);
+      trackEvent('sign_up', { method: 'phone_otp' });
       setAuthedUser(user);
       setScreen('pin');
     } catch (err) {

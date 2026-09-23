@@ -6,7 +6,7 @@ import {
   createMember, getMemberByPhone, getGym, getTrainers,
   getPlanByName, assignWorkoutPlanToMember
 } from '../../firebase/firestore';
-import { Timestamp, updateDoc, doc } from 'firebase/firestore';
+import { Timestamp, updateDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { createPayment, getNextInvoiceNumber } from '../../firebase/firestore-payments';
 import { addDays, formatDate, calculateBMI, capPhoneDigits } from '../../utils/helpers';
@@ -18,6 +18,7 @@ import {
   generateMemberId, initializeNumberingSettings
 } from '../../utils/numberingService';
 import { uploadMemberPhoto } from '../../firebase/storage';
+import { trackEvent, toBucket } from '../../lib/analytics';
 import BottomNav from '../../components/BottomNav';
 
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -333,6 +334,22 @@ const AddMember = ({ quickAddOnly = false }) => {
       setNewEnrollmentNumber(enrollmentNumber);
       setShowSuccess(true);
       showToast('Member added successfully', 'success');
+
+      // GA4: member_added. Fired after the member exists and the user has been
+      // told, so nothing here can affect the outcome of the add. The cohort
+      // read is best-effort — stats are recomputed by a debounced Cloud
+      // Function, so this returns the count BEFORE this member.
+      try {
+        const statsSnap = await getDoc(doc(db, 'gyms', userDoc.gym_id, 'stats', 'summary'));
+        const before = statsSnap.exists() ? (statsSnap.data().total_members || 0) : 0;
+        trackEvent('member_added', {
+          is_first_member: before === 0,
+          member_count_bucket: toBucket(before + 1),
+        });
+      } catch {
+        trackEvent('member_added', {}); // cohort unknown — still record the add
+      }
+
     } catch (err) {
       console.error('Add member error:', err);
       showToast(`Failed to add member: ${err.message}`, 'error');

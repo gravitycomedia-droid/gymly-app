@@ -8,9 +8,9 @@ import { createPayment, getNextInvoiceNumber, Timestamp } from '../../../firebas
 import { updateDoc, doc } from '../../../firebase/firestore-payments';
 import { db, storage } from '../../../firebase/config';
 import { generateInvoicePDF, uploadInvoice } from '../../../utils/invoiceGenerator';
-import { sendWhatsApp, buildReceiptParams } from '../../../utils/whatsapp';
 import { generateEnrollmentNumber, initializeNumberingSettings } from '../../../utils/numberingService';
 import { initiateRazorpayPayment } from '../../../utils/razorpay';
+import { trackEvent, toAmountBucket } from '../../../lib/analytics';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { getInitials, formatDate, addDays, getPlanName } from '../../../utils/helpers';
 import { getAvatarColor } from '../../lib/avatarColor';
@@ -48,7 +48,6 @@ export default function AddPayment() {
   const [dueDate, setDueDate] = useState('');
   const [upiScreenshot, setUpiScreenshot] = useState(null);
 
-  const [sendWaReceipt, setSendWaReceipt] = useState(true);
   const [generatePdf, setGeneratePdf] = useState(true);
 
   const [showSuccess, setShowSuccess] = useState(false);
@@ -131,6 +130,12 @@ export default function AddPayment() {
 
       const paymentId = await createPayment(paymentData);
 
+      // GA4: dues_recorded — only when money is actually outstanding. The exact
+      // rupee figure never leaves the client, only its bucket.
+      if (pendingAmount > 0) {
+        trackEvent('dues_recorded', { amount_bucket: toAmountBucket(pendingAmount) });
+      }
+
       if (method === 'upi' && upiScreenshot) {
         const storageRef = ref(storage, `payment_screenshots/${paymentId}`);
         await uploadBytes(storageRef, upiScreenshot, { cacheControl: 'public,max-age=86400' });
@@ -152,13 +157,6 @@ export default function AddPayment() {
         } catch (pdfErr) { console.error('Invoice error (non-critical):', pdfErr); }
       }
 
-      if (statusToSave === 'paid' && sendWaReceipt) {
-        try {
-          await sendWhatsApp({ phone: selectedMember.phone, templateName: 'payment_receipt', params: buildReceiptParams(gym, selectedMember, paymentData), gymId: userDoc.gym_id, memberId: selectedMember.id });
-          await updateDoc(doc(db, 'payments', paymentId), { whatsapp_sent: true });
-        } catch (waErr) { console.error('WhatsApp error:', waErr); }
-      }
-
       setSuccessData({ invoiceNumber, paymentId, invoiceUrl, status: statusToSave });
       setShowSuccess(true);
       showToast('Payment recorded successfully!', 'success');
@@ -172,6 +170,12 @@ export default function AddPayment() {
 
   const handleRazorpay = async () => {
     if (!selectedMember || !selectedPlan) { showToast('Select a member and plan first', 'error'); return; }
+    // After validation, so a mis-click is not recorded as a started checkout.
+    trackEvent('checkout_started', {
+      plan_tier: selectedPlan?.name,
+      value: finalAmount,
+      currency: 'INR',
+    });
     try {
       await initiateRazorpayPayment({
         amount: finalAmount * 100, memberName: selectedMember.name, memberPhone: selectedMember.phone,
@@ -323,10 +327,6 @@ export default function AddPayment() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <label style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
-                <input type="checkbox" checked={sendWaReceipt} onChange={(e) => setSendWaReceipt(e.target.checked)} />
-                <span style={{ fontSize: 14 }}>Send WhatsApp receipt</span>
-              </label>
               <label style={{ display: 'flex', gap: 10, alignItems: 'center', cursor: 'pointer' }}>
                 <input type="checkbox" checked={generatePdf} onChange={(e) => setGeneratePdf(e.target.checked)} />
                 <span style={{ fontSize: 14 }}>Generate invoice PDF</span>

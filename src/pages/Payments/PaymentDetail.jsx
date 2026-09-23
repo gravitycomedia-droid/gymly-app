@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getPaymentById, deletePayment, updatePayment, getMemberPayments } from '../../firebase/firestore-payments';
-import { getGym, updateMember } from '../../firebase/firestore';
-import { sendWhatsApp, buildReceiptParams } from '../../utils/whatsapp';
+import { updateMember } from '../../firebase/firestore';
 import { formatDate } from '../../utils/helpers';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import './Payments.css';
@@ -15,7 +14,6 @@ const PaymentDetail = () => {
   const { userDoc } = useAuth();
   const { showToast } = useToast();
   const [payment, setPayment] = useState(null);
-  const [gym, setGym] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -23,12 +21,7 @@ const PaymentDetail = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [paymentData, gymData] = await Promise.all([
-          getPaymentById(id),
-          userDoc?.gym_id ? getGym(userDoc.gym_id) : null,
-        ]);
-        setPayment(paymentData);
-        setGym(gymData);
+        setPayment(await getPaymentById(id));
       } catch (err) {
         console.error('Error fetching payment:', err);
         showToast('Failed to load payment', 'error');
@@ -59,36 +52,6 @@ const PaymentDetail = () => {
     } catch (err) {
       console.error('Invoice generation failed:', err);
       showToast('PDF not available for this legacy payment.', 'error');
-    }
-  };
-
-  const handleSendWhatsApp = async () => {
-    if (!payment) return;
-    
-    try {
-      if (payment.invoice_pdf_url) {
-        // Trigger automated Cleomitra backend invoice sender
-        const functions = getFunctions();
-        const resendInvoice = httpsCallable(functions, 'resendInvoice');
-        await resendInvoice({ paymentId: id });
-        await updatePayment(id, { invoice_status: 'sent_via_wa' });
-        setPayment(prev => ({ ...prev, invoice_status: 'sent_via_wa' }));
-      } else {
-        // Fallback to legacy SMS/WA API if no automated invoice is present
-        await sendWhatsApp({
-          phone: payment.member_phone,
-          templateName: 'payment_receipt',
-          params: buildReceiptParams(gym, { name: payment.member_name, phone: payment.member_phone }, payment),
-          gymId: payment.gym_id,
-          memberId: payment.member_id,
-        });
-        await updatePayment(id, { whatsapp_sent: true });
-        setPayment(prev => ({ ...prev, whatsapp_sent: true }));
-      }
-      showToast('WhatsApp receipt sent!', 'success');
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to send WhatsApp via cloud function', 'error');
     }
   };
 
@@ -204,12 +167,6 @@ const PaymentDetail = () => {
             </svg>
             Download
           </button>
-          <button className="action-btn success glass-card" onClick={handleSendWhatsApp}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            WhatsApp
-          </button>
           <button className="action-btn danger glass-card" onClick={() => setShowDeleteConfirm(true)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <polyline points="3 6 5 6 21 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -265,19 +222,6 @@ const PaymentDetail = () => {
             <span className="payment-info-label">Membership</span>
             <span className="payment-info-value">
               {formatDate(payment.membership_start)} → {formatDate(payment.membership_end)}
-            </span>
-          </div>
-          <div className="payment-info-row">
-            <span className="payment-info-label">WhatsApp receipt</span>
-            <span className="payment-info-value">
-              {payment.invoice_status === 'sent_via_wa' 
-                ? <span style={{ color: '#1E7A4B', fontWeight: 600 }}>✓ Auto-Delivered</span> 
-                : payment.invoice_status === 'wa_failed' 
-                ? <span style={{ color: 'var(--error)', fontWeight: 600 }}>✕ Delivery Failed</span>
-                : payment.whatsapp_sent 
-                ? '✓ Yes (Legacy)' 
-                : '✗ Not sent'
-              }
             </span>
           </div>
           {payment.notes && (

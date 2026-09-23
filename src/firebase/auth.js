@@ -1,6 +1,7 @@
 import { RecaptchaVerifier, signInWithPhoneNumber, signInWithCustomToken, signOut, getAdditionalUserInfo } from 'firebase/auth';
 import { httpsCallable } from 'firebase/functions';
 import { auth, functions } from './config';
+import { clearAnalyticsUser } from '../lib/analytics';
 
 /**
  * Initialise an invisible reCAPTCHA verifier anchored to `containerId`.
@@ -77,6 +78,9 @@ export const verifyOTP = async (confirmationResult, code) => {
 export const logout = async () => {
   if (!auth) return;
   await signOut(auth);
+  // Drops user_id and the gym_id / user_role / plan_tier user properties so the
+  // next account on a shared reception tablet starts a clean GA4 session.
+  clearAnalyticsUser();
 };
 
 /**

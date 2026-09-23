@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { pairDeviceByCode, updateKioskDevice } from '../firebase/firestore-kiosk';
 import { serverTimestamp } from 'firebase/firestore';
+import { setKioskSession } from '../lib/analytics';
 
 const DEVICE_ID_KEY = 'gymly_kiosk_device_id';
 const GYM_ID_KEY = 'gymly_kiosk_gym_id';
@@ -27,6 +28,12 @@ const useKioskAuth = () => {
       signInAnonymously(auth).catch(() => {});
     }
   }, []);
+
+  // Tag the GA4 session with the tenant once pairing resolves. Deliberately
+  // does NOT set a user id — this device is shared and signs in anonymously.
+  useEffect(() => {
+    if (gymId) setKioskSession({ gym_id: gymId });
+  }, [gymId]);
 
   // Update device lastSeen periodically (every 60 seconds)
   useEffect(() => {

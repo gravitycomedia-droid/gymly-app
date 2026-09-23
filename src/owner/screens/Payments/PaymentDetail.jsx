@@ -4,12 +4,10 @@ import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { getPaymentById, deletePayment, updatePayment, getMemberPayments } from '../../../firebase/firestore-payments';
 import { updateMember } from '../../../firebase/firestore';
-import { sendWhatsApp, buildReceiptParams } from '../../../utils/whatsapp';
 import { formatDate } from '../../../utils/helpers';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import Badge from '../../primitives/Badge';
 import PageSkeleton from '../../primitives/PageSkeleton';
-import useOwnerGym from '../../hooks/useOwnerGym';
 
 export default function PaymentDetail() {
   const { id } = useParams();
@@ -17,7 +15,6 @@ export default function PaymentDetail() {
   const { userDoc } = useAuth();
   const { showToast } = useToast();
   const [payment, setPayment] = useState(null);
-  const { gym } = useOwnerGym(userDoc?.gym_id);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -50,30 +47,6 @@ export default function PaymentDetail() {
     } catch (err) {
       console.error('Invoice generation failed:', err);
       showToast('PDF not available for this legacy payment.', 'error');
-    }
-  };
-
-  const handleSendWhatsApp = async () => {
-    if (!payment) return;
-    try {
-      if (payment.invoice_pdf_url) {
-        const functions = getFunctions();
-        await httpsCallable(functions, 'resendInvoice')({ paymentId: id });
-        await updatePayment(id, { invoice_status: 'sent_via_wa' });
-        setPayment((prev) => ({ ...prev, invoice_status: 'sent_via_wa' }));
-      } else {
-        await sendWhatsApp({
-          phone: payment.member_phone, templateName: 'payment_receipt',
-          params: buildReceiptParams(gym, { name: payment.member_name, phone: payment.member_phone }, payment),
-          gymId: payment.gym_id, memberId: payment.member_id,
-        });
-        await updatePayment(id, { whatsapp_sent: true });
-        setPayment((prev) => ({ ...prev, whatsapp_sent: true }));
-      }
-      showToast('WhatsApp receipt sent!', 'success');
-    } catch (err) {
-      console.error(err);
-      showToast('Failed to send WhatsApp via cloud function', 'error');
     }
   };
 
@@ -144,7 +117,6 @@ export default function PaymentDetail() {
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             <button type="button" className="gl2-btn gl2-btn-secondary" style={{ flex: 1 }} onClick={handleDownload}>Download</button>
-            <button type="button" className="gl2-btn" style={{ flex: 1, background: '#25D366', color: '#fff' }} onClick={handleSendWhatsApp}>WhatsApp</button>
             <button type="button" className="gl2-btn gl2-btn-danger" onClick={() => setShowDeleteConfirm(true)}>Delete</button>
           </div>
 
@@ -161,12 +133,6 @@ export default function PaymentDetail() {
             <div className="gl2-summary-row"><span className="gl2-summary-label">Method</span><span className="gl2-summary-value">{payment.method === 'cash' ? 'Cash' : payment.method === 'upi' ? 'UPI' : 'Online'}{payment.upi_ref ? ` · ${payment.upi_ref}` : ''}</span></div>
             <div className="gl2-summary-row"><span className="gl2-summary-label">Payment date</span><span className="gl2-summary-value">{formatDate(payment.payment_date)}</span></div>
             <div className="gl2-summary-row"><span className="gl2-summary-label">Membership</span><span className="gl2-summary-value">{formatDate(payment.membership_start)} → {formatDate(payment.membership_end)}</span></div>
-            <div className="gl2-summary-row">
-              <span className="gl2-summary-label">WhatsApp receipt</span>
-              <span className="gl2-summary-value" style={{ color: payment.invoice_status === 'sent_via_wa' || payment.whatsapp_sent ? 'var(--gl2-success-fg)' : payment.invoice_status === 'wa_failed' ? 'var(--gl2-danger-fg)' : undefined }}>
-                {payment.invoice_status === 'sent_via_wa' ? '✓ Auto-delivered' : payment.invoice_status === 'wa_failed' ? '✕ Delivery failed' : payment.whatsapp_sent ? '✓ Sent' : 'Not sent'}
-              </span>
-            </div>
             {payment.notes && <div className="gl2-summary-row"><span className="gl2-summary-label">Notes</span><span className="gl2-summary-value">{payment.notes}</span></div>}
             {isPendingOrPartial && (
               <div className="gl2-summary-row" style={{ background: 'var(--gl2-warning-bg)' }}>
