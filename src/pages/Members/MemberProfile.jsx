@@ -15,6 +15,7 @@ import BottomNav from '../../components/BottomNav';
 import { can, getBasePath } from '../../utils/permissions';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { uploadMemberPhoto } from '../../firebase/storage';
+import { sendCardToMemberChat, drawCircleImageCover } from '../../utils/whatsappCard';
 import '../MemberCard/MemberCard.css';
 
 // ── Default card settings (mirrors CardEditor defaults) ─────────
@@ -50,6 +51,8 @@ const MemberProfile = ({ readOnly = false }) => {
   const [showRenew, setShowRenew] = useState(false);
   const [showDelete, setShowDelete] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [cardCanvas, setCardCanvas] = useState(null);
+  const [sharing, setSharing] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
   const [memberPayments, setMemberPayments] = useState([]);
   const [clearingId, setClearingId] = useState(null);
@@ -349,12 +352,7 @@ const MemberProfile = ({ readOnly = false }) => {
 
       // Profile photo overwrites initials
       if (photoRes?.img && cs.show_photo) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(photoRes.img, avatarX - avatarR, avatarY - avatarR, avatarR * 2, avatarR * 2);
-        ctx.restore();
+        drawCircleImageCover(ctx, photoRes.img, avatarX, avatarY, avatarR);
       }
 
       // Status badge — drawn LAST (fixes z-index bug)
@@ -410,39 +408,28 @@ const MemberProfile = ({ readOnly = false }) => {
   };
 
   // ── Send card via WhatsApp (no billing details) ─────────────
-  const shareCardOnWhatsApp = async () => {
-    if (!member?.phone) {
-      showToast('No phone number for this member', 'error');
-      return;
-    }
-    try {
-      const canvas = await drawCardToCanvas();
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const fileName = `Gymly_Card_${member.name.replace(/\s+/g, '_')}.png`;
-        const file = new File([blob], fileName, { type: 'image/png' });
-        const cardMsg = `Hi ${member.name}! 🏋️ Here is your membership card from ${gym?.name || 'Gymly'}.`;
+  // The card is rendered when the modal opens so navigator.share() can run
+  // instantly on tap — it needs the click's user gesture.
+  const openCardModal = () => {
+    setShowQRModal(true);
+    setCardCanvas(null);
+    drawCardToCanvas()
+      .then(setCardCanvas)
+      .catch((err) => { console.error('Card render error:', err); showToast('Could not prepare the card', 'error'); });
+  };
 
-        // Mobile: share card image directly via native share sheet
-        if (navigator.canShare?.({ files: [file] })) {
-          try {
-            await navigator.share({ title: 'Gymly Membership Card', text: cardMsg, files: [file] });
-            return;
-          } catch (e) {
-            if (e.name === 'AbortError') return;
-          }
-        }
-        // Desktop fallback: download card + open WhatsApp chat with simple message
-        const a = document.createElement('a');
-        a.href = canvas.toDataURL('image/png');
-        a.download = fileName;
-        a.click();
-        const phone = String(member.phone).replace(/[^0-9]/g, '');
-        setTimeout(() => window.open(`https://wa.me/${phone}?text=${encodeURIComponent(cardMsg)}`, '_blank'), 600);
-      }, 'image/png');
+  // Opens the member's own WhatsApp chat with the message + card (as an image
+  // preview link) ready to send.
+  const shareCardOnWhatsApp = async () => {
+    if (!cardCanvas || sharing) return;
+    setSharing(true);
+    try {
+      await sendCardToMemberChat({ canvas: cardCanvas, member, gymId: member.gym_id || userDoc?.gym_id, gymName: gym?.name });
     } catch (err) {
-      console.error(err);
-      showToast('Failed to send card', 'error');
+      console.error('Share card error:', err);
+      showToast(err.message === 'No valid WhatsApp number for this member' ? err.message : 'Failed to send card', 'error');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -670,7 +657,7 @@ const MemberProfile = ({ readOnly = false }) => {
                   <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Renew</span>
                 </button>
                 {cs.card_enabled !== false && (
-                  <button onClick={() => setShowQRModal(true)} className="bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
+                  <button onClick={openCardModal} className="bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
                     <span className="material-symbols-outlined text-tertiary group-hover:scale-110 transition-transform">qr_code_scanner</span>
                     <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Access QR</span>
                   </button>
@@ -1033,13 +1020,14 @@ const MemberProfile = ({ readOnly = false }) => {
             {/* Send card via WhatsApp */}
             <button
               onClick={shareCardOnWhatsApp}
+              disabled={!cardCanvas || sharing}
               className="w-full mt-3 py-3 rounded-xl font-label-md flex items-center justify-center gap-2 transition-colors"
               style={{ background: '#25D366', color: '#fff' }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
               </svg>
-              Send Card
+              {!cardCanvas ? 'Preparing card…' : sharing ? 'Opening WhatsApp…' : 'Send on WhatsApp'}
             </button>
 
             <button onClick={() => setShowQRModal(false)} className="w-full mt-3 py-3 rounded-xl border border-black/20 text-on-surface-variant font-label-md hover:bg-black/5 transition-colors">

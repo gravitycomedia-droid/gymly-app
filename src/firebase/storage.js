@@ -4,7 +4,7 @@ import {
   getDownloadURL,
   deleteObject,
 } from 'firebase/storage';
-import { storage } from './config';
+import { storage, auth } from './config';
 
 const IMG_CACHE = { cacheControl: 'public,max-age=31536000' };
 
@@ -41,9 +41,19 @@ export async function compressImage(file, maxDim = 400, quality = 0.85) {
  * Returns the public download URL.
  */
 export const uploadMemberPhoto = async (gymId, memberId, file) => {
+  if (!file?.type?.startsWith('image/')) throw new Error('Please choose an image file');
   const compressed = await compressImage(file);
   const storageRef = ref(storage, `members/${gymId}/${memberId}/profile_photo`);
-  await uploadBytes(storageRef, compressed, { contentType: 'image/webp', ...IMG_CACHE });
+  const meta = { contentType: 'image/webp', ...IMG_CACHE };
+  try {
+    await uploadBytes(storageRef, compressed, meta);
+  } catch (err) {
+    // Storage rules check the gym_id token claim; a cached token can predate
+    // it. Refresh once and retry before giving up.
+    if (err?.code !== 'storage/unauthorized' || !auth?.currentUser) throw err;
+    await auth.currentUser.getIdToken(true);
+    await uploadBytes(storageRef, compressed, meta);
+  }
   return getDownloadURL(storageRef);
 };
 

@@ -234,6 +234,7 @@ const AddMember = ({ quickAddOnly = false }) => {
           await updateDoc(doc(db, 'users', docMemberId), { profile_photo: photoUrl });
         } catch (photoErr) {
           console.error('Profile photo upload error (non-critical):', photoErr);
+          showToast('Member added, but the photo failed to upload — add it again from their profile', 'error');
         }
       }
 

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
@@ -15,6 +15,7 @@ import { getRecommendedPlanName } from '../../../data/exerciseLibrary';
 import { generateInvoicePDF, uploadInvoice } from '../../../utils/invoiceGenerator';
 import { generateMemberNumber, generateEnrollmentNumber, generateMemberId, initializeNumberingSettings } from '../../../utils/numberingService';
 import { uploadMemberPhoto } from '../../../firebase/storage';
+import PhotoSourceSheet from '../../components/PhotoSourceSheet';
 import { Field, WizardDone } from '../../components/Wizard';
 import { trackEvent, toBucket } from '../../../lib/analytics';
 
@@ -49,7 +50,7 @@ export default function AddMember() {
   const [dueDate, setDueDate] = useState('');
   const [discount, setDiscount] = useState('');
   const [errors, setErrors] = useState({});
-  const photoInputRef = useRef(null);
+  const [showPhotoSheet, setShowPhotoSheet] = useState(false);
 
   const plans = (gym?.settings?.plans?.filter((p) => p.is_active) || []).sort((a, b) => (a.duration_days || 0) - (b.duration_days || 0));
   const selectedPlan = plans.find((p) => p.id === form.planId);
@@ -79,9 +80,7 @@ export default function AddMember() {
     }
   };
 
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handlePhotoChange = (file) => {
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
   };
@@ -130,7 +129,10 @@ export default function AddMember() {
         try {
           const photoUrl = await uploadMemberPhoto(userDoc.gym_id, docMemberId, photoFile);
           await updateDoc(doc(db, 'users', docMemberId), { profile_photo: photoUrl });
-        } catch (photoErr) { console.error('Profile photo upload error (non-critical):', photoErr); }
+        } catch (photoErr) {
+          console.error('Profile photo upload error (non-critical):', photoErr);
+          showToast('Member added, but the photo failed to upload — add it again from their profile', 'error');
+        }
       }
 
       try {
@@ -237,10 +239,10 @@ export default function AddMember() {
             <p className="gl2-card-title" style={{ marginBottom: 14 }}>Member</p>
 
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
-              <button type="button" onClick={() => photoInputRef.current?.click()} style={{ width: 84, height: 84, borderRadius: 42, overflow: 'hidden', border: '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,.12)', background: 'var(--gl2-primary-tint)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button type="button" onClick={() => setShowPhotoSheet(true)} style={{ width: 84, height: 84, borderRadius: 42, overflow: 'hidden', border: '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,.12)', background: 'var(--gl2-primary-tint)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {photoPreview ? <img src={photoPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span className="material-symbols-outlined" style={{ fontSize: 30, color: 'var(--gl2-primary)' }}>add_a_photo</span>}
               </button>
-              <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
+              <PhotoSourceSheet open={showPhotoSheet} onClose={() => setShowPhotoSheet(false)} onPick={handlePhotoChange} onError={(err) => showToast(err.message, 'error')} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

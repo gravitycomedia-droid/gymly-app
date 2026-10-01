@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
 import { getUser, updateMember, getTrainers } from '../../../firebase/firestore';
 import { calculateBMI, capPhoneDigits } from '../../../utils/helpers';
 import { uploadMemberPhoto } from '../../../firebase/storage';
+import PhotoSourceSheet from '../../components/PhotoSourceSheet';
 import { Field } from '../../components/Wizard';
 import PageSkeleton from '../../primitives/PageSkeleton';
 
@@ -27,7 +28,7 @@ export default function EditMember() {
   const [saving, setSaving] = useState(false);
   const [photoFile, setPhotoFile] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
-  const photoInputRef = useRef(null);
+  const [showPhotoSheet, setShowPhotoSheet] = useState(false);
 
   const [form, setForm] = useState({
     name: '', dob: '', gender: '', bloodGroup: '', address: '', emergencyContact: '',
@@ -67,9 +68,7 @@ export default function EditMember() {
   const update = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
   const bmi = calculateBMI(Number(form.height), Number(form.weight));
 
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+  const handlePhotoChange = (file) => {
     setPhotoFile(file);
     setPhotoPreview(URL.createObjectURL(file));
   };
@@ -139,10 +138,10 @@ export default function EditMember() {
 
       <div className="gl2-wizard-card" style={{ maxWidth: 640 }}>
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
-          <button type="button" onClick={() => photoInputRef.current?.click()} style={{ width: 88, height: 88, borderRadius: 44, overflow: 'hidden', border: '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,.12)', background: 'var(--gl2-primary-tint)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <button type="button" onClick={() => setShowPhotoSheet(true)} style={{ width: 88, height: 88, borderRadius: 44, overflow: 'hidden', border: '3px solid #fff', boxShadow: '0 4px 16px rgba(0,0,0,.12)', background: 'var(--gl2-primary-tint)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {photoPreview ? <img src={photoPreview} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span className="material-symbols-outlined" style={{ fontSize: 32, color: 'var(--gl2-primary)' }}>add_a_photo</span>}
           </button>
-          <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
+          <PhotoSourceSheet open={showPhotoSheet} onClose={() => setShowPhotoSheet(false)} onPick={handlePhotoChange} onError={(err) => showToast(err.message, 'error')} />
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

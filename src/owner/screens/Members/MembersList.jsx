@@ -196,7 +196,9 @@ export default function MembersList() {
                       {selected && <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#fff' }}>check</span>}
                     </button>
                   )}
-                  <span className="gl2-avatar" style={{ background: getAvatarColor(m.name) }}>{getInitials(m.name)}</span>
+                  <span className="gl2-avatar" style={{ background: getAvatarColor(m.name), overflow: 'hidden' }}>
+                    {m.profile_photo ? <img src={m.profile_photo} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getInitials(m.name)}
+                  </span>
                   <button type="button" className="gl2-member-row-info" onClick={() => navigate(`/owner/members/${m.id}`)}>
                     <p style={{ margin: 0, fontSize: 15, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.name}</p>
                     <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--gl2-muted)' }}>{m.phone}{!useEnrollId && m.memberNumber ? ` · #${m.memberNumber}` : ''}</p>

@@ -5,6 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym } from '../../firebase/firestore';
 import { getExpiryStatus, formatDate, getInitials, getAvatarColor, getPlanName } from '../../utils/helpers';
+import { drawCircleImageCover } from '../../utils/whatsappCard';
 import './MemberCard.css';
 
 const DEFAULT_SETTINGS = {
@@ -257,12 +258,7 @@ const MemberCard = () => {
 
       // Profile photo overwrites the initials
       if (photoRes?.img && cs.show_photo) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2);
-        ctx.clip();
-        ctx.drawImage(photoRes.img, avatarX - avatarR, avatarY - avatarR, avatarR * 2, avatarR * 2);
-        ctx.restore();
+        drawCircleImageCover(ctx, photoRes.img, avatarX, avatarY, avatarR);
       }
 
       // ── Status badge — drawn LAST so it's always on top ──

@@ -234,8 +234,10 @@ export default function OwnerShell({ children, activeTab }) {
           <div className="gl2-overlay gl2-quickview-overlay" onClick={closeQuickView}>
             <aside className="gl2-quickview" onClick={(e) => e.stopPropagation()}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-                <span className="gl2-avatar" style={{ width: 52, height: 52, borderRadius: 26, fontSize: 18, background: getAvatarColor(quickViewMember.name) }}>
-                  {getInitials(quickViewMember.name)}
+                <span className="gl2-avatar" style={{ width: 52, height: 52, borderRadius: 26, fontSize: 18, background: getAvatarColor(quickViewMember.name), overflow: 'hidden' }}>
+                  {quickViewMember.profile_photo
+                    ? <img src={quickViewMember.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    : getInitials(quickViewMember.name)}
                 </span>
                 <div style={{ minWidth: 0 }}>
                   <p style={{ margin: 0, fontSize: 19, fontWeight: 800, letterSpacing: '-.3px' }}>{quickViewMember.name}</p>

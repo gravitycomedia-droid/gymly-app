@@ -14,12 +14,20 @@ import { uploadMemberPhoto } from '../../../firebase/storage';
 import Badge from '../../primitives/Badge';
 import PageSkeleton from '../../primitives/PageSkeleton';
 import MembershipCard from '../../components/MembershipCard';
+import PhotoSourceSheet from '../../components/PhotoSourceSheet';
+import { sendCardToMemberChat, drawCircleImageCover } from '../../../utils/whatsappCard';
 
 const DEFAULT_CS = {
   show_gym_name: true, show_gymly_label: true, show_member_name: true, show_photo: true,
   show_member_id: true, show_enrollment_id: true, show_plan: true, show_expiry: true,
   show_phone: false, show_qr: true, show_status: true, card_enabled: true,
 };
+
+const WhatsAppIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.21-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48s1.07 2.88 1.21 3.08c.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.69.63.71.23 1.36.2 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.69.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35M12.05 21.5h-.01a9.4 9.4 0 0 1-4.8-1.31l-.34-.2-3.57.94.95-3.48-.22-.36a9.4 9.4 0 0 1-1.44-5.02c0-5.2 4.24-9.44 9.45-9.44a9.38 9.38 0 0 1 6.68 2.77 9.38 9.38 0 0 1 2.76 6.68c0 5.21-4.24 9.44-9.45 9.44m8.04-17.48A11.3 11.3 0 0 0 12.05.68C5.78.68.68 5.78.68 12.04c0 2 .52 3.96 1.52 5.68L.58 23.62l6.04-1.58a11.33 11.33 0 0 0 5.43 1.38h.01c6.26 0 11.36-5.1 11.36-11.36 0-3.03-1.18-5.89-3.33-8.03"/>
+  </svg>
+);
 
 const STATUS_COLORS = {
   active: { bg: 'rgba(15,94,60,0.15)', color: '#0F5E3C', dot: '#0F5E3C' },
@@ -43,7 +51,9 @@ export default function MemberProfile() {
   const [clearingId, setClearingId] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [downloading, setDownloading] = useState(false);
-  const photoInputRef = useRef(null);
+  const [cardCanvas, setCardCanvas] = useState(null);
+  const [sharing, setSharing] = useState(false);
+  const [showPhotoSheet, setShowPhotoSheet] = useState(false);
   const qrCanvasRef = useRef(null);
 
   const fetchData = async () => {
@@ -64,8 +74,7 @@ export default function MemberProfile() {
     return () => unsub();
   }, [userDoc?.gym_id, id]);
 
-  const handlePhotoChange = async (e) => {
-    const file = e.target.files[0];
+  const handlePhotoChange = async (file) => {
     if (!file || !userDoc?.gym_id) return;
     setUploadingPhoto(true);
     try {
@@ -77,7 +86,6 @@ export default function MemberProfile() {
       showToast(`Photo upload failed: ${err.message}`, 'error');
     } finally {
       setUploadingPhoto(false);
-      if (photoInputRef.current) photoInputRef.current.value = '';
     }
   };
 
@@ -247,8 +255,7 @@ export default function MemberProfile() {
     const finish = (results = []) => {
       const photoRes = results.find((r) => r.type === 'photo');
       if (photoRes?.img && cs.show_photo) {
-        ctx.save(); ctx.beginPath(); ctx.arc(avatarX, avatarY, avatarR, 0, Math.PI * 2); ctx.clip();
-        ctx.drawImage(photoRes.img, avatarX - avatarR, avatarY - avatarR, avatarR * 2, avatarR * 2); ctx.restore();
+        drawCircleImageCover(ctx, photoRes.img, avatarX, avatarY, avatarR);
       }
       if (cs.show_status) {
         ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
@@ -285,25 +292,28 @@ export default function MemberProfile() {
     }
   };
 
+  // Render the card as soon as the card sheet opens so the share button can
+  // call navigator.share() instantly — it needs the tap's user gesture.
+  const openCardModal = () => {
+    setShowCardModal(true);
+    setCardCanvas(null);
+    drawCardToCanvas()
+      .then(setCardCanvas)
+      .catch((err) => { console.error('Card render error:', err); showToast('Could not prepare the card', 'error'); });
+  };
+
+  // Opens the member's own WhatsApp chat with the message + card (as an image
+  // preview link) ready to send.
   const shareCardOnWhatsApp = async () => {
-    if (!member?.phone) { showToast('No phone number for this member', 'error'); return; }
+    if (!cardCanvas || sharing) return;
+    setSharing(true);
     try {
-      const canvas = await drawCardToCanvas();
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const fileName = `Gymly_Card_${member.name.replace(/\s+/g, '_')}.png`;
-        const file = new File([blob], fileName, { type: 'image/png' });
-        const cardMsg = `Hi ${member.name}! 🏋️ Here is your membership card from ${gym?.name || 'Gymly'}.`;
-        if (navigator.canShare?.({ files: [file] })) {
-          try { await navigator.share({ title: 'Gymly Membership Card', text: cardMsg, files: [file] }); return; } catch (e) { if (e.name === 'AbortError') return; }
-        }
-        const a = document.createElement('a'); a.href = canvas.toDataURL('image/png'); a.download = fileName; a.click();
-        const phone = String(member.phone).replace(/[^0-9]/g, '');
-        setTimeout(() => window.open(`https://wa.me/${phone}?text=${encodeURIComponent(cardMsg)}`, '_blank'), 600);
-      }, 'image/png');
+      await sendCardToMemberChat({ canvas: cardCanvas, member, gymId: member.gym_id || userDoc?.gym_id, gymName: gym?.name });
     } catch (err) {
       console.error('Share card error:', err);
-      showToast('Failed to send card', 'error');
+      showToast(err.message === 'No valid WhatsApp number for this member' ? err.message : 'Failed to send card', 'error');
+    } finally {
+      setSharing(false);
     }
   };
 
@@ -330,10 +340,10 @@ export default function MemberProfile() {
               <span className="gl2-avatar gl2-avatar-lg" style={{ background: getAvatarColor(member.name), overflow: 'hidden' }}>
                 {member.profile_photo ? <img src={member.profile_photo} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} /> : getInitials(member.name)}
               </span>
-              <button type="button" className="gl2-icon-btn" style={{ position: 'absolute', bottom: -4, right: -4, width: 26, height: 26 }} title="Change photo" onClick={() => photoInputRef.current?.click()} disabled={uploadingPhoto}>
+              <button type="button" className="gl2-icon-btn" style={{ position: 'absolute', bottom: -4, right: -4, width: 26, height: 26 }} title="Change photo" onClick={() => setShowPhotoSheet(true)} disabled={uploadingPhoto}>
                 <span className="material-symbols-outlined" style={{ fontSize: 14 }}>{uploadingPhoto ? 'hourglass_empty' : 'photo_camera'}</span>
               </button>
-              <input ref={photoInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoChange} />
+              <PhotoSourceSheet open={showPhotoSheet} onClose={() => setShowPhotoSheet(false)} onPick={handlePhotoChange} onError={(err) => showToast(err.message, 'error')} />
             </div>
             <div style={{ minWidth: 0 }}>
               {member.latestEnrollmentNumber && <span className="gl2-enroll" style={{ marginBottom: 4 }}>{member.latestEnrollmentNumber}</span>}
@@ -371,9 +381,9 @@ export default function MemberProfile() {
             <div style={{ width: '100%', maxWidth: 380 }}>
               <MembershipCard member={member} gym={gym} cardSettings={cs} statusColor={sc} statusLabel={label} planName={planName} publicUrl={publicUrl} />
             </div>
-            <button type="button" className="gl2-btn gl2-btn-primary" style={{ width: '100%', maxWidth: 380, marginTop: 18 }} onClick={() => setShowCardModal(true)}>
+            <button type="button" className="gl2-btn gl2-btn-primary" style={{ width: '100%', maxWidth: 380, marginTop: 18 }} onClick={openCardModal}>
               <span className="material-symbols-outlined" style={{ fontSize: 17 }}>download</span>
-              Download / share card
+              Download / WhatsApp card
             </button>
           </div>
         </div>
@@ -426,7 +436,9 @@ export default function MemberProfile() {
           <div className="gl2-card" style={{ maxWidth: 380, width: '100%' }} onClick={(e) => e.stopPropagation()}>
             <MembershipCard member={member} gym={gym} cardSettings={cs} statusColor={sc} statusLabel={label} planName={planName} publicUrl={publicUrl} />
             <button type="button" className="gl2-btn gl2-btn-primary gl2-btn-lg" style={{ width: '100%', marginTop: 14 }} onClick={downloadCard} disabled={downloading}>{downloading ? 'Preparing…' : 'Download card'}</button>
-            <button type="button" className="gl2-btn gl2-btn-lg" style={{ width: '100%', marginTop: 10, background: '#25D366', color: '#fff' }} onClick={shareCardOnWhatsApp}>Send on WhatsApp</button>
+            <button type="button" className="gl2-btn gl2-btn-lg" style={{ width: '100%', marginTop: 10, background: '#25D366', color: '#fff', gap: 8 }} onClick={shareCardOnWhatsApp} disabled={!cardCanvas || sharing}>
+              <WhatsAppIcon />{!cardCanvas ? 'Preparing card…' : sharing ? 'Opening WhatsApp…' : 'Send on WhatsApp'}
+            </button>
             <button type="button" className="gl2-btn gl2-btn-secondary gl2-btn-lg" style={{ width: '100%', marginTop: 10 }} onClick={() => setShowCardModal(false)}>Close</button>
           </div>
         </div>
