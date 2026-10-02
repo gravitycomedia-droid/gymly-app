@@ -58,6 +58,10 @@
     - **Razorpay:** flag that a Razorpay plan ID must be created in the Razorpay dashboard by Vishnu. Do not invent one.
   - **Server-side check:** `hasFeature(gymId,'biometric_attendance')` reads `subscriptions/{gymId}.plan` and allows only `['PREMIUM','PREMIUM_PLUS']` (constant `BIOMETRIC_PLANS`).
   - **A missing subscription doc means NOT entitled.** Note the trap: `src/hooks/useSubscription.js:57` defaults to `'PREMIUM'` on the client. Don't copy that.
+  - **Razorpay wiring** (`functions/index.js` `planMap` ~L80): add `PREMIUM_PLUS: { razorpay: "<RAZORPAY_PLAN_ID_FROM_VISHNU>", amount: 149900 }`. Ask Vishnu for the real ID at GATE 3, and never invent one.
+    Existing entries use labels like `premium_monthly_999`, but Razorpay generates `plan_XXXXXXXX` IDs. Check with Vishnu which IDs are live before relying on paid subscriptions.
+  - **PREMIUM gets a 30-day free trial** (`createSubscription`). Gyms on trial are therefore entitled to biometrics too, which is intended.
+    When the trial ends and `checkTrialExpiry` downgrades a gym, the plan-downgrade freeze applies: sync is frozen and the device is never wiped.
   - **Coupons do NOT unlock biometrics by default** (physical hardware; owner can change this later). `featureCheck.js` gets `biometric_attendance: ['PREMIUM','PREMIUM_PLUS']`.
 - **D4, naming.** Use snake_case collections: `bio_devices`, `bio_commands`, `bio_enrollments`, `bio_templates`, `bio_raw_logs`, `bio_unmatched_punches`, `bio_counters`, `gym_settings`. Field names follow master prompt §4.
 - **D5, ports.** Caddy serves **80, 443 and 8081** at the same time, with no HTTP→HTTPS redirect. Devices use 80 by default; 8081 is a documented fallback.
