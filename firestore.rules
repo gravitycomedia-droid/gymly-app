@@ -14,6 +14,23 @@ service cloud.firestore {
         && request.auth.token.firebase.sign_in_provider == 'anonymous';
     }
 
+    // True when the caller owns gyms/{gymId} by document (not by claim), so it
+    // also holds in the minutes after signup before claims propagate.
+    function isGymOwner(gymId) {
+      return gymId is string
+        && exists(/databases/$(database)/documents/gyms/$(gymId))
+        && get(/databases/$(database)/documents/gyms/$(gymId)).data.owner_id == request.auth.uid;
+    }
+
+    // Fields a member may change on their own membership doc
+    // (EditProfile, MemberProgress, MemberAgreement, login linking).
+    function memberEditableKeys() {
+      return ['auth_uid', 'linked_at', 'name', 'goal', 'experience', 'height',
+              'weight', 'blood_group', 'gender', 'date_of_birth', 'address',
+              'emergency_contact', 'agreement_status', 'agreement_signed_at',
+              'agreement_url'];
+    }
+
     // Users — same-gym read/write; role and gym_id are server-managed fields.
     //
     // Multi-gym members: a member doc keeps its own random ID (one doc per gym).
@@ -41,26 +58,72 @@ service cloud.firestore {
                     request.auth.token.phone_number == resource.data.phone
                   );
 
-      allow create: if request.auth != null;
+      // Create — never open to "any signed-in user": a self-created
+      // users/{ownUid} doc with role/gym_id becomes custom claims via
+      // onUserWrite, so an open create rule lets anyone make themselves owner
+      // of any gym. Anonymous (kiosk) sessions can never create users.
+      allow create: if request.auth != null
+                    && request.auth.token.firebase.sign_in_provider != 'anonymous'
+                    && (
+                      // Owner signup: their own doc, as owner of a gym they own.
+                      (
+                        uid == request.auth.uid
+                        && request.resource.data.role == 'owner'
+                        && isGymOwner(request.resource.data.gym_id)
+                      )
+                      ||
+                      // Member records: owner, manager or receptionist of that gym.
+                      (
+                        uid != request.auth.uid
+                        && request.resource.data.role == 'member'
+                        && (
+                          isGymOwner(request.resource.data.gym_id)
+                          || (request.auth.token.gym_id == request.resource.data.gym_id
+                              && request.auth.token.role in ['owner', 'manager', 'receptionist'])
+                        )
+                      )
+                      ||
+                      // Staff records: gym owner only (also works during onboarding,
+                      // before the owner's claims have propagated).
+                      (
+                        uid != request.auth.uid
+                        && request.resource.data.role in ['manager', 'receptionist', 'trainer']
+                        && isGymOwner(request.resource.data.gym_id)
+                      )
+                    );
 
       allow update: if request.auth != null
                     && (
-                      request.auth.uid == uid
+                      // Owner/staff editing their own doc (doc id == Auth UID).
+                      // Members never have uid-keyed docs; excluded defensively.
+                      (request.auth.uid == uid && resource.data.role != 'member')
                       ||
-                      // Member updates a membership doc already linked to them
-                      // (profile edits, agreement, progress) …
-                      resource.data.get('auth_uid', null) == request.auth.uid
+                      // Owner, manager, receptionist of the same gym — full edit
+                      // (renewals, payments, profile). Members ALSO carry a gym_id
+                      // claim, so the role check is what keeps them out.
+                      (request.auth.token.gym_id == resource.data.gym_id
+                        && request.auth.token.role in ['owner', 'manager', 'receptionist'])
                       ||
-                      // … or claims one of their owner-created docs by phone at
-                      // first login (setting auth_uid). Guarded below so this
-                      // path can only ever attach their own UID.
-                      (
-                        request.auth.token.phone_number == resource.data.phone
+                      // Trainer of the same gym — assigning a workout plan only.
+                      (request.auth.token.gym_id == resource.data.gym_id
+                        && request.auth.token.role == 'trainer'
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['workout_plan_id']))
+                      ||
+                      // Member editing a membership doc linked to them — profile,
+                      // agreement and progress fields ONLY. Never expiry, plan,
+                      // payment, deletion or numbering fields.
+                      (resource.data.get('auth_uid', null) == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(memberEditableKeys()))
+                      ||
+                      // First login: member attaches their own UID to an
+                      // owner-created doc that matches their verified phone.
+                      (resource.data.get('auth_uid', null) == null
+                        && request.auth.token.phone_number == resource.data.phone
                         && request.resource.data.auth_uid == request.auth.uid
-                      )
-                      ||
-                      request.auth.token.gym_id
-                        == resource.data.gym_id
+                        && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(['auth_uid', 'linked_at']))
                     )
                     // role and gym_id are server-managed and can never be changed
                     // by a client. auth_uid, once set, is immutable.
@@ -349,6 +412,16 @@ service cloud.firestore {
     match /broadcasts/{id} {
       allow read: if isSuperAdmin()
         || (request.auth != null && resource.data.active == true);
+      allow write: if false;
+    }
+
+    // Platform settings — currently just the Super Admin's contact details,
+    // written by the adminSaveContactDetails callable. Super-admin read only:
+    // these are the operator's own details, not anything a gym owner needs.
+    // Drafts of broadcasts are NOT here — they live in /broadcasts with
+    // active == false, which the rule above already keeps owners out of.
+    match /platform_settings/{document} {
+      allow read: if isSuperAdmin();
       allow write: if false;
     }
   }

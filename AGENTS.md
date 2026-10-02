@@ -14,7 +14,7 @@ existing functionality or cause data loss.
 
 Firebase project ID: `gymly-app-06`
 Frontend deploy: Vercel (gymly.online)
-Functions runtime: Node.js 18, CommonJS (.js), NOT TypeScript
+Functions runtime: Node.js 22 (1st gen, v1 API; supported until 2027-10-31), CommonJS (.js), NOT TypeScript
 
 ---
 
