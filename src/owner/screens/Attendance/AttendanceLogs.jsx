@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { getInitials } from '../../../utils/helpers';
 import { getAvatarColor } from '../../lib/avatarColor';
 import useLiveOccupancy from '../../../hooks/useLiveOccupancy';
+import useAttendanceMode from '../../../hooks/useAttendanceMode';
 import EmptyState from '../../primitives/EmptyState';
 import PageSkeleton from '../../primitives/PageSkeleton';
 
@@ -102,6 +103,7 @@ export default function AttendanceLogs() {
   const navigate = useNavigate();
   const { userDoc } = useAuth();
   const gymId = userDoc?.gym_id;
+  const { isBiometric } = useAttendanceMode(gymId);
 
   const [period, setPeriod] = useState('today');
   const [sessions, setSessions] = useState([]);
@@ -184,7 +186,7 @@ export default function AttendanceLogs() {
     <section data-screen-label="Attendance analytics">
       <div className="gl2-page-header">
         <h1 className="gl2-page-title">Attendance analytics</h1>
-        <button type="button" className="gl2-btn gl2-btn-secondary" onClick={() => navigate('/owner/kiosk-devices')}>Kiosk devices</button>
+        <button type="button" className="gl2-btn gl2-btn-secondary" onClick={() => navigate(isBiometric ? '/owner/biometric-devices' : '/owner/kiosk-devices')}>{isBiometric ? 'Fingerprint devices' : 'Kiosk devices'}</button>
       </div>
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
@@ -231,7 +233,10 @@ export default function AttendanceLogs() {
                 return (
                   <div key={row.id || i} className="gl2-row" style={{ flexWrap: 'wrap' }}>
                     <span className="gl2-avatar" style={{ background: getAvatarColor(name) }}>{getInitials(name)}</span>
-                    <div style={{ flex: 1, minWidth: 130 }}><p style={{ margin: 0, fontWeight: 700 }}>{name}</p></div>
+                    <div style={{ flex: 1, minWidth: 130 }}>
+                      <p style={{ margin: 0, fontWeight: 700 }}>{name}</p>
+                      {row.source === 'biometric' && <p style={{ margin: '1px 0 0', fontSize: 11.5, color: 'var(--gl2-muted)' }}><span className="material-symbols-outlined" style={{ fontSize: 12, verticalAlign: 'middle', marginRight: 2 }}>fingerprint</span>Fingerprint</p>}
+                    </div>
                     <span style={{ fontSize: 13, color: 'var(--gl2-muted)' }}>In {formatTime(entryTime)}</span>
                     <span style={{ fontSize: 13, color: 'var(--gl2-muted)' }}>Out {row.exitTime ? formatTime(row.exitTime) : '—'}</span>
                     <span style={{ fontSize: 13, color: 'var(--gl2-muted)' }}>{formatDuration(row.durationMinutes)}</span>
@@ -289,8 +294,8 @@ export default function AttendanceLogs() {
           {sessions.length === 0 && deniedLogs.length === 0 && (
             <EmptyState
               title="No attendance data yet"
-              sub="Set up kiosk devices so members can scan in and out. Analytics will appear here."
-              action={<button type="button" className="gl2-btn gl2-btn-primary" onClick={() => navigate('/owner/kiosk-devices')}>Set up kiosk devices</button>}
+              sub={isBiometric ? 'Fingerprint check-ins will appear here as members arrive.' : 'Set up kiosk devices so members can scan in and out. Analytics will appear here.'}
+              action={<button type="button" className="gl2-btn gl2-btn-primary" onClick={() => navigate(isBiometric ? '/owner/biometric-devices' : '/owner/kiosk-devices')}>{isBiometric ? 'Fingerprint devices' : 'Set up kiosk devices'}</button>}
             />
           )}
         </>

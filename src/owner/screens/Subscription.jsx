@@ -12,9 +12,11 @@ const PLANS = {
   BASIC: { name: 'Basic', price: 199, billing: '₹199/month', members: 50, color: '#3E7CB1', features: ['Up to 50 members', 'QR attendance', 'Member management'], missing: ['Payments', 'Analytics', 'WhatsApp automation'] },
   PROFESSIONAL: { name: 'Professional', price: 499, billing: '₹499/month', members: 200, color: '#0F5E3C', features: ['Up to 200 members', 'Payment integration', 'Landing page + QR', 'Lead inquiry form', 'Invoice generation'], missing: ['Analytics', 'WhatsApp automation'] },
   PROFESSIONAL_PLUS: { name: 'Professional+', price: 799, billing: '₹799/month', members: 500, color: '#8A4B00', features: ['Up to 500 members', 'Advanced analytics', 'Trainer dashboard', 'Equipment tracking', '3 branches'], missing: ['WhatsApp automation'] },
-  PREMIUM: { name: 'Premium', price: 999, billing: '₹999/month', members: Infinity, color: '#4A438F', featured: true, features: ['Unlimited members', 'WhatsApp automation', 'All analytics', 'Complete dashboard', 'Unlimited branches', 'Priority support'], missing: [] },
+  PREMIUM: { name: 'Premium', price: 999, billing: '₹999/month', members: Infinity, color: '#4A438F', featured: true, features: ['Unlimited members', 'WhatsApp automation', 'All analytics', 'Complete dashboard', 'Unlimited branches', 'Fingerprint door access', 'Priority support'], missing: [] },
+  // Assigned by the Gymly team (no online checkout) — see `manual`.
+  PREMIUM_PLUS: { name: 'Premium Plus', price: 1499, billing: '₹1,499/month', members: Infinity, color: '#1F2A5C', manual: true, features: ['Everything in Premium', 'Fingerprint door devices (ZKTeco / eSSL)', 'Remote fingerprint enrollment', 'Device setup help'], missing: [] },
 };
-const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'];
+const PLAN_ORDER = ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'];
 const TABS = [['plans', 'Plans'], ['history', 'Billing History'], ['payment', 'Payment']];
 
 export default function Subscription() {
@@ -192,10 +194,17 @@ export default function Subscription() {
             </div>
             {upgradeModal.plan.price > 0 && <p style={{ fontSize: 12.5, color: 'var(--gl2-muted)', marginBottom: 10 }}>💡 You'll be charged ₹{upgradeModal.plan.price}/month. Charges are pro-rated for mid-cycle changes.</p>}
             {upgradeModal.planKey === 'PREMIUM' && <p style={{ fontSize: 12.5, color: 'var(--gl2-primary-deep)', marginBottom: 10 }}>🎉 Premium includes a 30-day free trial. You won't be charged until day 31.</p>}
-            <div style={{ display: 'flex', gap: 10 }}>
-              <button type="button" className="gl2-btn gl2-btn-secondary" style={{ flex: 1 }} onClick={() => setUpgradeModal(null)}>Cancel</button>
-              <button type="button" className="gl2-btn gl2-btn-primary" style={{ flex: 1 }} onClick={handleConfirmUpgrade} disabled={processing}>{processing ? 'Processing…' : 'Confirm & pay'}</button>
-            </div>
+            {upgradeModal.plan.manual ? (
+              <>
+                <p style={{ fontSize: 13, marginBottom: 12 }}>{upgradeModal.plan.name} is switched on by the Gymly team, together with your fingerprint device setup. Message Gymly support and we'll get you set up.</p>
+                <button type="button" className="gl2-btn gl2-btn-secondary" style={{ width: '100%' }} onClick={() => setUpgradeModal(null)}>Close</button>
+              </>
+            ) : (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" className="gl2-btn gl2-btn-secondary" style={{ flex: 1 }} onClick={() => setUpgradeModal(null)}>Cancel</button>
+                <button type="button" className="gl2-btn gl2-btn-primary" style={{ flex: 1 }} onClick={handleConfirmUpgrade} disabled={processing}>{processing ? 'Processing…' : 'Confirm & pay'}</button>
+              </div>
+            )}
           </div>
         </div>
       )}

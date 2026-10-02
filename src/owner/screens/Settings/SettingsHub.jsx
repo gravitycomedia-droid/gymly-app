@@ -11,6 +11,7 @@ import { getInitials } from '../../../utils/helpers';
 import EditSheet, { ToggleRow, SettingsRow } from '../../components/EditSheet';
 import PageSkeleton from '../../primitives/PageSkeleton';
 import { invalidateOwnerGym } from '../../hooks/useOwnerGym';
+import useAttendanceMode from '../../../hooks/useAttendanceMode';
 
 const FACILITIES = ['Cardio', 'Strength', 'CrossFit', 'Yoga Studio', 'Showers', 'Lockers', 'WiFi', 'Parking', 'Personal Training', 'Cafe'];
 
@@ -36,6 +37,7 @@ export default function SettingsHub() {
   const [couponCode, setCouponCode] = useState('');
   const [couponSaving, setCouponSaving] = useState(false);
   const [activeSubInfo, setActiveSubInfo] = useState(null);
+  const { isBiometric } = useAttendanceMode(userDoc?.gym_id);
 
   // Settings writes the gym doc directly (not through the shared read-only
   // cache) — invalidate on unmount so read-only screens (Members, Add
@@ -301,10 +303,18 @@ export default function SettingsHub() {
       </div>
 
       <div className="gl2-settings-group">
+        <p className="gl2-eyebrow">Attendance</p>
+        <div className="gl2-list">
+          <SettingsRow icon={isBiometric ? '👆' : '📷'} label="Attendance mode" desc={isBiometric ? 'Fingerprint — QR check-in is off' : 'QR code check-in'} onClick={() => navigate('/owner/biometric-devices')} />
+          <SettingsRow icon="👆" label="Fingerprint devices" desc="ZKTeco / eSSL door devices" onClick={() => navigate('/owner/biometric-devices')} />
+          {!isBiometric && <SettingsRow icon="🖥️" label="Kiosk mode" desc="Manage kiosk devices & self check-in" onClick={() => navigate('/owner/kiosk-devices')} />}
+        </div>
+      </div>
+
+      <div className="gl2-settings-group">
         <p className="gl2-eyebrow">Quick links</p>
         <div className="gl2-list">
-          <SettingsRow icon="🔗" label="Quick links" desc="Billing, analytics, logs & scanner" onClick={() => navigate('/owner/settings/quick-links')} />
-          <SettingsRow icon="🖥️" label="Kiosk mode" desc="Manage kiosk devices & self check-in" onClick={() => navigate('/owner/kiosk-devices')} />
+          <SettingsRow icon="🔗" label="Quick links" desc={isBiometric ? 'Billing, analytics & logs' : 'Billing, analytics, logs & scanner'} onClick={() => navigate('/owner/settings/quick-links')} />
         </div>
       </div>
 

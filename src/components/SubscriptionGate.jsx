@@ -11,6 +11,9 @@ import { trackEvent } from '../lib/analytics';
  *   <PaymentList />
  * </SubscriptionGate>
  */
+// Features a coupon does NOT unlock (they control physical hardware).
+const COUPON_EXCLUDED = ['biometric_attendance'];
+
 export default function SubscriptionGate({ feature, children }) {
   const { plan, loading } = useSubscription();
   const { gymDoc, userDoc } = useAuth();
@@ -30,7 +33,7 @@ export default function SubscriptionGate({ feature, children }) {
   // re-reports at most once, which is acceptable for an activation signal.
   // Hook stays above every early return so call order is unconditional.
   const accessGranted =
-    !loading && (couponActive || checkFeatureAccess(plan, feature).hasAccess);
+    !loading && ((couponActive && !COUPON_EXCLUDED.includes(feature)) || checkFeatureAccess(plan, feature).hasAccess);
   const gymId = userDoc?.gym_id;
   useEffect(() => {
     if (!accessGranted || !gymId) return;
@@ -55,7 +58,8 @@ export default function SubscriptionGate({ feature, children }) {
   }
 
   // Coupon bypass — if gym has active coupon subscription, allow all features
-  if (couponActive) return children;
+  // except physical-hardware ones (fingerprint devices need the real plan).
+  if (couponActive && !COUPON_EXCLUDED.includes(feature)) return children;
 
   const { hasAccess, minimumPlan } = checkFeatureAccess(plan, feature);
 
@@ -71,6 +75,7 @@ export default function SubscriptionGate({ feature, children }) {
     PROFESSIONAL: '🚀',
     PROFESSIONAL_PLUS: '⚡',
     PREMIUM: '👑',
+    PREMIUM_PLUS: '👆',
   };
 
   // Feature benefits per plan
@@ -83,6 +88,7 @@ export default function SubscriptionGate({ feature, children }) {
     trainer_dashboard: ['Trainer performance view', 'Member assignments', 'Workout plan management'],
     equipment_tracking: ['Equipment inventory', 'Maintenance schedules', 'Asset tracking'],
     attendance_heatmap: ['Visual attendance patterns', 'Peak hours analysis', 'Member consistency tracking'],
+    biometric_attendance: ['Fingerprint door access (ZKTeco / eSSL)', 'Members added and removed automatically', 'Remote fingerprint enrollment', 'Works offline at the door'],
   };
 
   const benefits = featureBenefits[feature] || [

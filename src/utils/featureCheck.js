@@ -3,36 +3,40 @@
 
 export const FEATURE_MAP = {
   // Basic features (all plans)
-  'manage_members': ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
-  'qr_attendance': ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
-  'kiosk_attendance': ['BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
+  'manage_members': ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'qr_attendance': ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'kiosk_attendance': ['BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
 
   // Professional features
-  'payments': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
-  'landing_page': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
-  'invoice_generation': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
-  'lead_inquiry_form': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'],
+  'payments': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'landing_page': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'invoice_generation': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'lead_inquiry_form': ['PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
 
   // Professional Plus features
-  'analytics': ['PROFESSIONAL_PLUS', 'PREMIUM'],
-  'attendance_heatmap': ['PROFESSIONAL_PLUS', 'PREMIUM'],
-  'trainer_dashboard': ['PROFESSIONAL_PLUS', 'PREMIUM'],
-  'equipment_tracking': ['PROFESSIONAL_PLUS', 'PREMIUM'],
-  'member_segments': ['PROFESSIONAL_PLUS', 'PREMIUM'],
-  'revenue_reports': ['PROFESSIONAL_PLUS', 'PREMIUM'],
+  'analytics': ['PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'attendance_heatmap': ['PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'trainer_dashboard': ['PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'equipment_tracking': ['PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'member_segments': ['PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
+  'revenue_reports': ['PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'],
 
   // Premium features
-  'whatsapp_automation': ['PREMIUM'],
-  'whatsapp_welcome_messages': ['PREMIUM'],
-  'whatsapp_expiry_alerts': ['PREMIUM'],
-  'whatsapp_payment_confirmations': ['PREMIUM'],
-  'whatsapp_payment_reminders': ['PREMIUM'],
-  'whatsapp_inactivity_alerts': ['PREMIUM'],
-  'whatsapp_milestone_celebrations': ['PREMIUM'],
-  'complete_owner_dashboard': ['PREMIUM'],
-  'priority_support': ['PREMIUM'],
-  'unlimited_branches': ['PREMIUM'],
-  'api_access': ['PREMIUM'],
+  'whatsapp_automation': ['PREMIUM', 'PREMIUM_PLUS'],
+  'whatsapp_welcome_messages': ['PREMIUM', 'PREMIUM_PLUS'],
+  'whatsapp_expiry_alerts': ['PREMIUM', 'PREMIUM_PLUS'],
+  'whatsapp_payment_confirmations': ['PREMIUM', 'PREMIUM_PLUS'],
+  'whatsapp_payment_reminders': ['PREMIUM', 'PREMIUM_PLUS'],
+  'whatsapp_inactivity_alerts': ['PREMIUM', 'PREMIUM_PLUS'],
+  'whatsapp_milestone_celebrations': ['PREMIUM', 'PREMIUM_PLUS'],
+  'complete_owner_dashboard': ['PREMIUM', 'PREMIUM_PLUS'],
+  'priority_support': ['PREMIUM', 'PREMIUM_PLUS'],
+  'unlimited_branches': ['PREMIUM', 'PREMIUM_PLUS'],
+  'api_access': ['PREMIUM', 'PREMIUM_PLUS'],
+
+  // Fingerprint door devices (ZKTeco/eSSL). Enforced server-side too
+  // (functions/src/lib/entitlement.js); coupons never unlock it (SubscriptionGate).
+  'biometric_attendance': ['PREMIUM', 'PREMIUM_PLUS'],
 };
 
 export const PLAN_LIMITS = {
@@ -41,6 +45,7 @@ export const PLAN_LIMITS = {
   'PROFESSIONAL': { max_members: 200, max_staff: 5, max_branches: 1, max_trainers: 5 },
   'PROFESSIONAL_PLUS': { max_members: 500, max_staff: 10, max_branches: 3, max_trainers: 10 },
   'PREMIUM': { max_members: Infinity, max_staff: Infinity, max_branches: Infinity, max_trainers: Infinity },
+  'PREMIUM_PLUS': { max_members: Infinity, max_staff: Infinity, max_branches: Infinity, max_trainers: Infinity },
 };
 
 export const PLAN_PRICES = {
@@ -49,9 +54,10 @@ export const PLAN_PRICES = {
   'PROFESSIONAL': 499,
   'PROFESSIONAL_PLUS': 799,
   'PREMIUM': 999,
+  'PREMIUM_PLUS': 1499,
 };
 
-export const PLAN_HIERARCHY = ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM'];
+export const PLAN_HIERARCHY = ['FREE', 'BASIC', 'PROFESSIONAL', 'PROFESSIONAL_PLUS', 'PREMIUM', 'PREMIUM_PLUS'];
 
 /**
  * Check if a gym has access to a feature.

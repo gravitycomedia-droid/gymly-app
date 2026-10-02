@@ -73,6 +73,7 @@ const OwnerAnalyticsV2     = lazy(() => import('./owner/screens/Analytics'));
 const OwnerWhatsAppLogV2   = lazy(() => import('./owner/screens/WhatsAppLog'));
 const OwnerAttendanceLogsV2 = lazy(() => import('./owner/screens/Attendance/AttendanceLogs'));
 const OwnerKioskDevicesV2  = lazy(() => import('./owner/screens/Attendance/KioskDevices'));
+const OwnerBiometricDevices = lazy(() => import('./owner/screens/Attendance/BiometricDevices'));
 const OwnerSettingsHubV2   = lazy(() => import('./owner/screens/Settings/SettingsHub'));
 const OwnerQuickLinksV2    = lazy(() => import('./owner/screens/Settings/QuickLinks'));
 const OwnerEquipmentV2     = lazy(() => import('./owner/screens/Settings/Equipment'));
@@ -379,6 +380,20 @@ function AnimatedRoutes() {
               <ProtectedRoute allowedRoles={['owner']}>
                 <OwnerShell activeTab="settings">
                   <SubscriptionGate feature="kiosk_attendance"><PageTransition><OwnerKioskDevicesV2 /></PageTransition></SubscriptionGate>
+                </OwnerShell>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Fingerprint devices + attendance mode (owner-only). Deliberately NOT
+              behind SubscriptionGate: a gym that lost the plan must still reach
+              this page to switch back to QR — the page shows the plan lock. */}
+          <Route
+            path="/owner/biometric-devices"
+            element={
+              <ProtectedRoute allowedRoles={['owner']}>
+                <OwnerShell activeTab="settings">
+                  <PageTransition><OwnerBiometricDevices /></PageTransition>
                 </OwnerShell>
               </ProtectedRoute>
             }

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { logout } from '../firebase/auth';
 import { getInitials } from '../utils/helpers';
 import useNewLeadsCount from '../hooks/useNewLeadsCount';
+import useAttendanceMode from '../hooks/useAttendanceMode';
 import { getGymMembers, getGymStaff } from '../firebase/firestore';
 import { getAvatarColor } from './lib/avatarColor';
 import { OwnerShellContext } from './OwnerShellContext';
@@ -22,8 +23,9 @@ const NAV = [
   { id: 'settings', label: 'Settings', icon: 'settings', path: '/owner/settings' },
 ];
 
-const QUICK_ACTIONS = (newLeads, navigate) => [
-  { id: 'scan', label: 'Scan QR', icon: 'qr_code_scanner', go: () => navigate('/scan') },
+// QR scanning is hidden when the gym takes attendance by fingerprint (D1).
+const QUICK_ACTIONS = (newLeads, navigate, isBiometric) => [
+  ...(isBiometric ? [] : [{ id: 'scan', label: 'Scan QR', icon: 'qr_code_scanner', go: () => navigate('/scan') }]),
   { id: 'addMember', label: 'Add Member', icon: 'person_add', go: () => navigate('/owner/members/add') },
   { id: 'recordPayment', label: 'Record Payment', icon: 'payments', go: () => navigate('/owner/payments/add') },
   { id: 'leads', label: 'Inquiries', icon: 'inbox', go: () => navigate('/owner/leads'), badge: newLeads },
@@ -33,6 +35,7 @@ export default function OwnerShell({ children, activeTab }) {
   const navigate = useNavigate();
   const { userDoc, gymDoc } = useAuth();
   const newLeads = useNewLeadsCount(userDoc?.gym_id);
+  const { isBiometric } = useAttendanceMode(userDoc?.gym_id);
 
   const [toastMsg, setToastMsg] = useState('');
   const [quickViewMember, setQuickViewMember] = useState(null);
@@ -76,7 +79,7 @@ export default function OwnerShell({ children, activeTab }) {
 
   const activeGroup = NAV.find((n) => n.id === activeTab) || NAV[0];
 
-  const quickItems = QUICK_ACTIONS(newLeads, navigate);
+  const quickItems = QUICK_ACTIONS(newLeads, navigate, isBiometric);
 
   const searchResults = useMemo(() => {
     const q = gq.trim().toLowerCase();
@@ -117,10 +120,17 @@ export default function OwnerShell({ children, activeTab }) {
           </button>
 
           <div className="gl2-topbar-actions">
-            <button type="button" className="gl2-scan-btn" onClick={() => navigate('/scan')}>
-              <span className="material-symbols-outlined" style={{ fontSize: 17 }}>qr_code_scanner</span>
-              <span>Check-in scan</span>
-            </button>
+            {isBiometric ? (
+              <button type="button" className="gl2-scan-btn" onClick={() => navigate('/owner/biometric-devices')}>
+                <span className="material-symbols-outlined" style={{ fontSize: 17 }}>fingerprint</span>
+                <span>Fingerprint devices</span>
+              </button>
+            ) : (
+              <button type="button" className="gl2-scan-btn" onClick={() => navigate('/scan')}>
+                <span className="material-symbols-outlined" style={{ fontSize: 17 }}>qr_code_scanner</span>
+                <span>Check-in scan</span>
+              </button>
+            )}
           </div>
         </header>
 

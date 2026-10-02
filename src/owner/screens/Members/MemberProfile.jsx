@@ -15,6 +15,8 @@ import Badge from '../../primitives/Badge';
 import PageSkeleton from '../../primitives/PageSkeleton';
 import MembershipCard from '../../components/MembershipCard';
 import PhotoSourceSheet from '../../components/PhotoSourceSheet';
+import FingerprintPanel from '../../components/FingerprintPanel';
+import ExtendMembershipSheet from '../../components/ExtendMembershipSheet';
 import { sendCardToMemberChat, drawCircleImageCover } from '../../../utils/whatsappCard';
 
 const DEFAULT_CS = {
@@ -54,6 +56,8 @@ export default function MemberProfile() {
   const [cardCanvas, setCardCanvas] = useState(null);
   const [sharing, setSharing] = useState(false);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
+  const [showExtend, setShowExtend] = useState(false);
+  const canExtend = ['owner', 'manager'].includes(userDoc?.role);
   const qrCanvasRef = useRef(null);
 
   const fetchData = async () => {
@@ -354,6 +358,7 @@ export default function MemberProfile() {
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
             <button type="button" className="gl2-btn gl2-btn-primary" onClick={() => setShowRenew(true)}>Record Payment</button>
+            {canExtend && <button type="button" className="gl2-btn gl2-btn-secondary" onClick={() => setShowExtend(true)}>Extend</button>}
             <a href={member.phone ? `https://wa.me/${String(member.phone).replace(/[^0-9]/g, '')}` : '#'} target="_blank" rel="noreferrer" className="gl2-btn gl2-btn-secondary">Message</a>
           </div>
 
@@ -373,6 +378,8 @@ export default function MemberProfile() {
             </div>
           </div>
         </div>
+
+        <FingerprintPanel member={member} gymId={userDoc?.gym_id} />
 
         <div className="gl2-card" style={{ background: 'linear-gradient(180deg, var(--gl2-primary-tint-2) 0%, var(--gl2-surface) 130px)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
@@ -429,6 +436,7 @@ export default function MemberProfile() {
       )}
 
       {showRenew && <RenewModal member={member} plans={plans} onClose={() => setShowRenew(false)} onSuccess={() => fetchData()} />}
+      {showExtend && <ExtendMembershipSheet member={member} showToast={showToast} onClose={() => setShowExtend(false)} onDone={() => fetchData()} />}
       {showDelete && <DeleteConfirmModal memberName={member.name} onConfirm={handleDelete} onClose={() => setShowDelete(false)} />}
 
       {showCardModal && (
