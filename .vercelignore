@@ -1,0 +1,2 @@
+# Device gateway runs on a GCE VM, never on Vercel
+bio-gateway/
