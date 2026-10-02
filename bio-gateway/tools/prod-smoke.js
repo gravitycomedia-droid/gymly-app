@@ -6,7 +6,7 @@
 // login`). It only ever touches one TEST device doc (SN must start with
 // GYMLYTEST) and never touches users, members or attendance.
 //
-//   node tools/prod-smoke.js claim   --gym <testGymId> --sn GYMLYTEST01 --yes
+//   node tools/prod-smoke.js claim   --gym GYMLY_SMOKE_TEST --sn GYMLYTEST01 --yes   (or a real test gym id)
 //   node tools/simulate-device.js    --url http://bio.gymly.online --sn GYMLYTEST01 --polls 3 --interval 3000 --no-replay
 //   node tools/prod-smoke.js verify  --sn GYMLYTEST01
 //   node tools/prod-smoke.js disable --sn GYMLYTEST01 --yes
@@ -18,6 +18,7 @@
 const { initializeApp, applicationDefault } = require("firebase-admin/app");
 const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
+const SMOKE_GYM = "GYMLY_SMOKE_TEST";
 const args = process.argv.slice(2);
 const cmd = args[0];
 const opt = (name) => { const i = args.indexOf(`--${name}`); return i >= 0 ? args[i + 1] : null; };
@@ -40,8 +41,10 @@ const ref = db.doc(`bio_devices/${sn}`);
 async function claim() {
   const gym = opt("gym");
   if (!gym) throw new Error("--gym <testGymId> is required");
+  // GYMLY_SMOKE_TEST is a tenant-less id: no gym doc, no owner, invisible to
+  // every dashboard — the safest place for simulator punches.
   const gymSnap = await db.doc(`gyms/${gym}`).get();
-  if (!gymSnap.exists) throw new Error(`gyms/${gym} does not exist`);
+  if (!gymSnap.exists && gym !== SMOKE_GYM) throw new Error(`gyms/${gym} does not exist`);
   const existing = await ref.get();
   if (existing.exists && existing.data().gym_id !== gym) throw new Error(`${sn} belongs to gym ${existing.data().gym_id}`);
   const doc = {
@@ -54,7 +57,7 @@ async function claim() {
     createdAt: Timestamp.now(),
     ...(existing.exists ? {} : { cmdSeq: 0 }),
   };
-  console.log(`Will write bio_devices/${sn} for gym "${gymSnap.data().name || gym}":`, { ...doc, claimExpiresAt: doc.claimExpiresAt.toDate() });
+  console.log(`Will write bio_devices/${sn} for gym "${gymSnap.exists ? gymSnap.data().name || gym : gym}":`, { ...doc, claimExpiresAt: doc.claimExpiresAt.toDate() });
   if (!yes) return console.log("Dry run — add --yes to write.");
   await ref.set(doc, { merge: true });
   console.log("Claimed. Run the simulator within 30 minutes.");
