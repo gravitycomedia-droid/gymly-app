@@ -26,3 +26,15 @@ cp functions/.env "$WT/functions/.env"
 ONLY=$(echo "$FUNCS" | sed 's/[^,]*/functions:&/g')
 echo "Deploying from $(git -C "$WT" rev-parse --short HEAD): $ONLY"
 (cd "$WT" && firebase deploy --project gymly-app-06 --only "$ONLY")
+
+# Callables need allUsers → roles/cloudfunctions.invoker (auth is checked
+# inside each function). Firebase only sets it when it CREATES a function, so a
+# function first created by a failed deploy never gets it and every browser call
+# fails with "internal". Report any callable that is missing it.
+echo "Checking invoker permission on callables…"
+for f in setAttendanceMode extendMembership processScan permanentlyDeleteMember claimBioDevice syncBioDevice setBioDeviceStatus requestBioEnroll queueBioRawCommand adminSeedDefaultPlans; do
+  if ! gcloud functions get-iam-policy "$f" --region=us-central1 --project gymly-app-06 --format=json 2>/dev/null | grep -q allUsers; then
+    echo "  MISSING on $f — fix: gcloud functions add-iam-policy-binding $f --region=us-central1 --project gymly-app-06 --member=allUsers --role=roles/cloudfunctions.invoker"
+  fi
+done
+echo "Invoker check done."
