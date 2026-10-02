@@ -406,3 +406,12 @@ exports.checkTrialExpiry = functions.pubsub
       throw error;
     }
   });
+
+// Attendance mode (D1) — exclusive QR vs biometric, server-managed in
+// gym_settings/{gymId}; processScan rejects scans while biometric is on.
+const attendanceMode = require("./src/attendanceMode");
+exports.setAttendanceMode = attendanceMode.setAttendanceMode;
+
+// Extend membership by N days (D2b) — owner/manager, audited.
+const extendMembershipModule = require("./src/extendMembership");
+exports.extendMembership = extendMembershipModule.extendMembership;

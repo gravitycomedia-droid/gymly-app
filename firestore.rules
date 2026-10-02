@@ -385,6 +385,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Gym settings (D1) — attendance_mode 'qr' | 'biometric'. Written only by
+    // the setAttendanceMode callable, which checks the plan server-side.
+    match /gym_settings/{gymId} {
+      allow read: if request.auth != null
+        && request.auth.token.gym_id == gymId
+        && request.auth.token.role in ['owner', 'manager'];
+      allow write: if false;
+    }
+
     // Platform Stats — Super Admin KPI rollup; written only by Cloud Functions (SA-1)
     match /platform_stats/{document} {
       allow read: if isSuperAdmin();

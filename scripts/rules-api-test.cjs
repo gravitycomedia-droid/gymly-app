@@ -12,6 +12,7 @@ const gymDoc=(id,owner)=>[{function:'exists',args:[{exactValue:`${D}/gyms/${id}`
 const mocks=[...gymDoc('G1','OWNER1'),...gymDoc('G2','OWNER2'),{function:'exists',args:[{anyValue:{}}],result:{value:false}}];
 const member={role:'member',gym_id:'G1',name:'Ravi',phone:'+919999900000',auth_uid:'MUID',subscription_expiry:'2026-10-01'};
 const unlinked={...member}; delete unlinked.auth_uid;
+const GS={gym_id:'G1',attendance_mode:'biometric'};
 const tok=(role,gym,extra={})=>({role,gym_id:gym,phone_number:'+919999900000',firebase:{sign_in_provider:'phone'},...extra});
 const cases=[
  ['member extends OWN expiry','DENY','update','users/MEMDOC',{uid:'MUID',token:tok('member','G1')},member,{...member,subscription_expiry:'2099-01-01'}],
@@ -42,6 +43,16 @@ const cases=[
  ['member creates member doc','DENY','create','users/NEWM',{uid:'MUID',token:tok('member','G1')},null,{role:'member',gym_id:'G1'}],
  ['owner creates 2nd owner doc','DENY','create','users/X',{uid:'OWNER1',token:tok('owner','G1')},null,{role:'owner',gym_id:'G1'}],
  ['member reads own doc (read path unchanged)','ALLOW','get','users/MEMDOC',{uid:'MUID',token:tok('member','G1')},member,null],
+ // gym_settings (D1) — owner/manager read own gym; no client writes
+ ['owner reads own gym_settings','ALLOW','get','gym_settings/G1',{uid:'OWNER1',token:tok('owner','G1')},GS,null],
+ ['manager reads own gym_settings','ALLOW','get','gym_settings/G1',{uid:'MG',token:tok('manager','G1')},GS,null],
+ ['receptionist reads gym_settings','DENY','get','gym_settings/G1',{uid:'R',token:tok('receptionist','G1')},GS,null],
+ ['member reads gym_settings','DENY','get','gym_settings/G1',{uid:'MUID',token:tok('member','G1')},GS,null],
+ ['owner of OTHER gym reads gym_settings','DENY','get','gym_settings/G1',{uid:'OWNER2',token:tok('owner','G2')},GS,null],
+ ['unauthenticated reads gym_settings','DENY','get','gym_settings/G1',null,GS,null],
+ ['owner creates gym_settings (bypass plan)','DENY','create','gym_settings/G1',{uid:'OWNER1',token:tok('owner','G1')},null,GS],
+ ['owner flips mode directly','DENY','update','gym_settings/G1',{uid:'OWNER1',token:tok('owner','G1')},GS,{...GS,attendance_mode:'qr'}],
+ ['owner deletes gym_settings','DENY','delete','gym_settings/G1',{uid:'OWNER1',token:tok('owner','G1')},GS,null],
 ];
 const toV=o=>o;
 (async()=>{

@@ -19,6 +19,8 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { verifyToken } = require("./attendanceAuth");
+const { isMemberActive } = require("./lib/membership");
+const { getAttendanceMode } = require("./attendanceMode");
 
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
@@ -101,9 +103,11 @@ async function handleStaffScan({ uid, callerGymId, scannedByUid, source }) {
     if (member.gym_id !== callerGymId) {
       throw new HttpsError("permission-denied", "Member belongs to a different gym");
     }
+    // Soft-deleted members are gone from the gym's point of view.
+    if (member.is_deleted === true) throw new HttpsError("not-found", "Member not found");
 
-    const expiryMs = subscriptionExpiryMs(member);
-    const isExpired = !expiryMs || expiryMs < Date.now();
+    // D2: expiry date is inclusive (active through the end of the IST day).
+    const isExpired = !isMemberActive(member, now);
 
     // Duplicate check (only meaningful for valid members).
     const dupSnap = await tx.get(
@@ -192,7 +196,8 @@ async function handleKioskScan({ uid, callerGymId, deviceId, deviceDoc, intent }
     }
 
     const expiryMs = subscriptionExpiryMs(member);
-    const isExpired = !expiryMs || expiryMs <= Date.now();
+    // D2: expiry date is inclusive; soft-deleted members are never active.
+    const isExpired = !isMemberActive(member, now);
     const daysLeft = expiryMs ? Math.ceil((expiryMs - Date.now()) / DAY) : 0;
 
     // Most recent "inside" session (with 90-min auto-exit for stale ones).
@@ -332,6 +337,12 @@ exports.processScan = functions
       callerGymId = context.auth.token.gym_id;
     }
     if (!callerGymId) throw new HttpsError("permission-denied", "No gym context on token");
+
+    // D1: a gym in biometric mode takes attendance only from its fingerprint
+    // devices. Every QR, kiosk and manual scan is rejected.
+    if ((await getAttendanceMode(callerGymId)) === "biometric") {
+      throw new HttpsError("failed-precondition", "QR attendance is disabled for this gym");
+    }
 
     // Manual staff check-in (no QR) — staff only.
     if (data && data.manualMemberId) {
