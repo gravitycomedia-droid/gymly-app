@@ -8,7 +8,7 @@ const db = admin.firestore();
 
 // Flat monthly price per plan, in RUPEES. Fallback when amount_monthly (paise) absent.
 const PLAN_PRICES_INR = {
-  FREE: 0, BASIC: 199, PROFESSIONAL: 499, PROFESSIONAL_PLUS: 799, PREMIUM: 999,
+  FREE: 0, BASIC: 199, PROFESSIONAL: 499, PROFESSIONAL_PLUS: 799, PREMIUM: 999, PREMIUM_PLUS: 1499,
 };
 
 function monthlyInr(sub) {

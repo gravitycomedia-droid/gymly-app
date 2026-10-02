@@ -334,6 +334,7 @@ exports.adminSeedDefaultPlans = functions.https.onCall(async (data, context) => 
     { id: "PROFESSIONAL",      name: "Professional",      inr: 499, order: 2 },
     { id: "PROFESSIONAL_PLUS", name: "Professional Plus", inr: 799, order: 3 },
     { id: "PREMIUM",           name: "Premium",           inr: 999, order: 4 },
+    { id: "PREMIUM_PLUS",      name: "Premium Plus",      inr: 1499, order: 5 },
   ];
   let created = 0;
   for (const p of DEFAULTS) {

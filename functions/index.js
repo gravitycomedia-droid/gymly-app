@@ -71,7 +71,7 @@ exports.createSubscription = functions.https.onRequest(async (req, res) => {
     const { gymId, planId, razorpay_token_id } = req.body;
     if (!gymId || !planId) return res.status(400).json({ error: "Missing required fields" });
 
-    const validPlans = ["BASIC", "PROFESSIONAL", "PROFESSIONAL_PLUS", "PREMIUM", "FREE"];
+    const validPlans = ["BASIC", "PROFESSIONAL", "PROFESSIONAL_PLUS", "PREMIUM", "PREMIUM_PLUS", "FREE"];
     if (!validPlans.includes(planId)) return res.status(400).json({ error: "Invalid plan" });
 
     const gymDoc = await db.collection("gyms").doc(gymId).get();
@@ -83,6 +83,10 @@ exports.createSubscription = functions.https.onRequest(async (req, res) => {
       PROFESSIONAL:      { razorpay: "professional_monthly_499",      amount: 49900 },
       PROFESSIONAL_PLUS: { razorpay: "professional_plus_monthly_799", amount: 79900 },
       PREMIUM:           { razorpay: "premium_monthly_999",           amount: 99900 },
+      // ₹1,499 tier (biometric attendance). Assigned manually from the Super
+      // Admin console; online purchase is off. To sell it online, create the
+      // plan in Razorpay and put its plan_XXXX id here.
+      PREMIUM_PLUS:      { razorpay: null,                            amount: 149900 },
       FREE:              { razorpay: null,                            amount: 0 },
     };
     const planInfo = planMap[planId];
@@ -93,6 +97,9 @@ exports.createSubscription = functions.https.onRequest(async (req, res) => {
         auto_renew: false, created_at: admin.firestore.Timestamp.now(), updated_at: admin.firestore.Timestamp.now(),
       });
       return res.json({ success: true, message: "Free tier activated" });
+    }
+    if (!planInfo.razorpay) {
+      return res.status(503).json({ error: "This plan can't be bought online yet. Please contact Gymly support." });
     }
 
     const rzp = getRazorpay();
@@ -415,3 +422,15 @@ exports.setAttendanceMode = attendanceMode.setAttendanceMode;
 // Extend membership by N days (D2b) — owner/manager, audited.
 const extendMembershipModule = require("./src/extendMembership");
 exports.extendMembership = extendMembershipModule.extendMembership;
+
+// Biometric (ZKTeco ADMS) — device claim/sync/status, remote enrollment, the
+// owner device console, and the member trigger that keeps devices in step.
+// The bio-gateway VM delivers the queued commands (bio-gateway/).
+const bioCallables = require("./src/bio/callables");
+exports.claimBioDevice     = bioCallables.claimBioDevice;
+exports.syncBioDevice      = bioCallables.syncBioDevice;
+exports.setBioDeviceStatus = bioCallables.setBioDeviceStatus;
+exports.requestBioEnroll   = bioCallables.requestBioEnroll;
+exports.queueBioRawCommand = bioCallables.queueBioRawCommand;
+const bioMemberTrigger = require("./src/bio/memberTrigger");
+exports.bioOnMemberWrite = bioMemberTrigger.bioOnMemberWrite;

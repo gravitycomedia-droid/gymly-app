@@ -5,6 +5,7 @@ const admin = require("firebase-admin");
 
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
+const bio = require("./bio/core");
 
 // ─── Callable: softDeleteMember ───
 exports.softDeleteMember = functions.https.onCall(async (data, context) => {
@@ -116,6 +117,12 @@ exports.permanentlyDeleteMember = functions.https.onCall(async (data, context) =
     timestamp: admin.firestore.Timestamp.now(),
   });
   await batch.commit();
+  // Biometric: delete templates/enrollment and take the PIN off every device.
+  try {
+    await bio.purgeMemberBio(gymId, memberId);
+  } catch (err) {
+    console.error(`purgeMemberBio failed for ${memberId}:`, err);
+  }
   return { success: true };
 });
 
@@ -176,6 +183,15 @@ exports.permanentlyDeleteExpired = functions.pubsub
   .onRun(async () => {
     const now = admin.firestore.Timestamp.now();
 
+    // Biometric expiry sweep (D2) — must run BEFORE the early return below,
+    // which fires on most days. Takes yesterday's expiries off the devices.
+    // A failure here must never block the recycle-bin purge.
+    try {
+      await bio.runBioExpirySweep(now.toDate());
+    } catch (err) {
+      console.error("runBioExpirySweep failed:", err);
+    }
+
     // collectionGroup query across all /deleted_members/{gymId}/bin subcollections.
     // Requires a Firestore index: collection group 'bin', field expires_at ASC.
     const expiredSnap = await db.collectionGroup("bin")
@@ -207,6 +223,11 @@ exports.permanentlyDeleteExpired = functions.pubsub
 
         await db.collection("users").doc(memberId).delete();
         await docSnap.ref.delete();
+        try {
+          await bio.purgeMemberBio(gymId, memberId);
+        } catch (bioErr) {
+          console.error(`purgeMemberBio failed for ${memberId}:`, bioErr);
+        }
 
         await db.collection("audit_logs").doc(gymId).collection("events").add({
           action: "member_permanently_deleted",
