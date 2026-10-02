@@ -132,7 +132,7 @@ curl -s  https://bio.gymly.online/health                                        
 
 # Simulator round trip against prod, using a TEST device under a TEST gym
 cd bio-gateway && npm ci
-node tools/prod-smoke.js claim --gym <TEST_GYM_ID> --sn GYMLYTEST01 --yes
+node tools/prod-smoke.js claim --gym GYMLY_SMOKE_TEST --sn GYMLYTEST01 --yes   # tenant-less test id
 node tools/simulate-device.js --url http://bio.gymly.online --sn GYMLYTEST01 --polls 3 --interval 3000 --no-replay
 node tools/prod-smoke.js verify --sn GYMLYTEST01          # → ROUND TRIP OK ✓
 node tools/prod-smoke.js disable --sn GYMLYTEST01 --yes
