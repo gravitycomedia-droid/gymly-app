@@ -6,7 +6,8 @@
 //
 // Collections written: bio_devices, bio_commands, bio_enrollments,
 // bio_templates, bio_raw_logs, bio_unmatched_punches, attendance_sessions,
-// attendance_logs. Never users (that would re-fire three users triggers).
+// attendance_logs, and the three streak fields on users (once per member per
+// IST day — the same cadence processScan writes them for QR check-ins).
 
 const { FieldValue, Timestamp } = require("firebase-admin/firestore");
 const { istDateKey, istCompact } = require("../time/ist");
@@ -14,6 +15,7 @@ const { mergeCaps, currentCaps } = require("../protocol/caps");
 const { adapterFor } = require("../protocol/adapters");
 const { MIN_MEMBER_PIN } = require("../protocol/commands");
 const { redactTemplates } = require("../protocol/kv");
+const { applyCheckinDays } = require("../streak");
 const log = require("../log");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -350,7 +352,8 @@ function createStore(db, { caches, now = () => Date.now() } = {}) {
 
     const ops = [];
     const seen = new Set();
-    const counts = { sessions: 0, logs: 0, unmatched: 0, duplicates: 0, skippedInside: 0 };
+    const counts = { sessions: 0, logs: 0, unmatched: 0, duplicates: 0, skippedInside: 0, streaks: 0 };
+    const newDays = new Map(); // memberId → IST days that got their first log now
     const t = now();
 
     for (const p of valid) {
@@ -410,6 +413,8 @@ function createStore(db, { caches, now = () => Date.now() } = {}) {
         ops.push((b) => b.set(db.doc(lPath), doc));
         seen.add(lPath);
         counts.logs += 1;
+        if (!newDays.has(memberId)) newDays.set(memberId, []);
+        newDays.get(memberId).push(doc.date);
       }
     }
 
@@ -434,7 +439,36 @@ function createStore(db, { caches, now = () => Date.now() } = {}) {
     }
 
     await chunkedCommit(db, ops);
+    counts.streaks = await updateStreaks(newDays);
     return counts;
+  }
+
+  // Streaks are cosmetic: they run AFTER the attendance commit, each in its
+  // own small transaction, and a failure is logged — never turned into a
+  // 500 that would make the device re-send punches.
+  async function updateStreaks(newDays) {
+    let updated = 0;
+    await Promise.all([...newDays.entries()].map(async ([memberId, days]) => {
+      try {
+        const changed = await db.runTransaction(async (tx) => {
+          const ref = db.doc(`users/${memberId}`);
+          const snap = await tx.get(ref);
+          if (!snap.exists) return false;
+          const next = applyCheckinDays(snap.data(), days);
+          if (!next.changed) return false;
+          tx.update(ref, {
+            current_streak: next.current_streak,
+            longest_streak: next.longest_streak,
+            last_checkin_date: next.last_checkin_date,
+          });
+          return true;
+        });
+        if (changed) updated += 1;
+      } catch (err) {
+        log.warn("streak_update_failed", { memberId, err });
+      }
+    }));
+    return updated;
   }
 
   // ── templates (OPERLOG FP / BIODATA / templatev10) ─────────────────────

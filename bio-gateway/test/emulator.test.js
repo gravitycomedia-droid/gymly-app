@@ -118,6 +118,10 @@ test("TA 2.x FINGERTMP device: claim → users → enroll → punches → replay
     assert.equal(ravi.date, istDateKey(istWallClockToMillis(firstLine)));
     assert.equal(ravi.id, `bio_M_SIM1_${ravi.date}`);
 
+    // Streak: first fingerprint day → 1, written once despite the replay.
+    const raviDoc = (await db.doc("users/M_SIM1").get()).data();
+    assert.deepEqual([raviDoc.current_streak, raviDoc.longest_streak, raviDoc.last_checkin_date], [1, 1, ravi.date]);
+
     const unmatched = await docs("bio_unmatched_punches", "gym_id", SIM_GYM);
     assert.deepEqual(unmatched.map((u) => [u.pin, u.reason]).sort(), [["1", "device_local_pin"], ["4321", "unknown_pin"]]);
 
@@ -200,6 +204,25 @@ test("AC 3.x scaffold: registry/push/rtlog punch lands in attendance", { skip: S
     const logs = await docs("attendance_logs", "gym_id", SIM_GYM);
     assert.equal(logs.length, 1);
     assert.equal(logs[0].member_id, "M_SIM2");
+  } finally {
+    await stopGateway();
+  }
+});
+
+test("streak continues from a QR-era streak and survives replays", { skip: SKIP }, async () => {
+  await reset();
+  const { seed, SIM_SN } = require("../tools/seed-emulator");
+  const { istDateKey } = require("../src/time/ist");
+  await seed(db);
+  const today = istDateKey(Date.now() - 10 * 60000); // simulator punches ~10 min ago
+  const yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
+  await db.doc("users/M_SIM2").set({ current_streak: 6, longest_streak: 6, last_checkin_date: yesterday }, { merge: true });
+  await startGateway();
+  try {
+    const { simulate } = require("../tools/simulate-device");
+    await simulate({ url: base, sn: SIM_SN, polls: 1, interval: 100, quiet: true, replay: true });
+    const sita = (await db.doc("users/M_SIM2").get()).data();
+    assert.deepEqual([sita.current_streak, sita.longest_streak, sita.last_checkin_date], [7, 7, today]);
   } finally {
     await stopGateway();
   }
