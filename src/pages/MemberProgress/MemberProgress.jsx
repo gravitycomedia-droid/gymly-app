@@ -10,6 +10,7 @@ import { getMemberProgressLogs, createProgressLog, getMemberWorkoutLogs } from '
 import { calculateBMI, formatDate } from '../../utils/helpers';
 import BottomNav from '../../components/BottomNav';
 import './MemberProgress.css';
+import { displayStreak } from '../../utils/streak';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Filler);
 
@@ -244,7 +245,7 @@ const MemberProgress = () => {
         <div className="stats-row">
             <div className="stat-card glass-card">
                 <div className="stat-icon streak-icon">🔥</div>
-                <div className="stat-value">{userDoc?.streak || 0}</div>
+                <div className="stat-value">{displayStreak(userDoc)}</div>
                 <div className="stat-label">Day Streak</div>
             </div>
             <div className="stat-card glass-card">

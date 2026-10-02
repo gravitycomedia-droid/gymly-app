@@ -31,6 +31,7 @@ import { GYMLY_EXERCISE_DB } from '../../data/gymlyExerciseDb';
 import { QRCodeSVG } from 'qrcode.react';
 import BottomNav from '../../components/BottomNav';
 import './MemberHome.css';
+import { displayStreak } from '../../utils/streak';
 
 const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -291,7 +292,7 @@ const MemberHome = () => {
 
   const bmi = calculateBMI(userDoc?.height, userDoc?.weight);
   const avatarColor = getAvatarColor(userDoc?.name);
-  const streak = userDoc?.streak || 0;
+  const streak = displayStreak(userDoc);
   const workoutsThisMonth = recentLogs.filter(l => {
     const d = l.log_date?.toDate ? l.log_date.toDate() : null;
     return d && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
