@@ -9,11 +9,54 @@
 
 | Total Issues | Fixed | Pending | Progress |
 |---|---|---|---|
-| 16 | 16 | 0 | ✅ 100% COMPLETE |
+| 16 | 15 | 1 (H-5, partly open) | ⚠️ see correction below |
 
 | Critical (3) | High (7) | Medium (3) | Low (3) |
 |---|---|---|---|
-| 3 closed | 7 closed | 3 closed | 3 closed |
+| 3 closed | 6 closed, H-5 partial | 3 closed | 3 closed |
+
+### Correction (2026-10-02) — H-5 is NOT fully closed
+The `kiosk_devices` update rule allows an update when
+`request.resource.data.device_secret == resource.data.device_secret`. **No code
+ever writes `device_secret`** (grep src/ and functions/: no matches), so both
+sides are `null` and that check always passes: any signed-in client — including
+an anonymous kiosk session — can update any kiosk device doc (status, gymId,
+mode). Attendance writes themselves are safe (they go through the `processScan`
+callable), but a kiosk device can be re-pointed or re-activated by anyone.
+**Fix:** drop the `device_secret` branch (or have pairing write a real secret
+and check it), with a rules-api-test case. Tracked; not part of the biometric work.
+
+---
+
+## Biometric gateway — new public surface (2026-10-02)
+
+ZKTeco/eSSL fingerprint devices talk to `bio.gymly.online` (GCE VM
+`bio-gateway`, asia-south1-a). Code: `bio-gateway/`; runbook: `bio-gateway/DEPLOY.md`.
+
+| Surface | Exposure | Mitigations |
+|---|---|---|
+| `http://bio.gymly.online:80`, `:8081`, `https://…:443` → `/iclock/*` | Unauthenticated, **plain HTTP** (device firmware can't do TLS or follow redirects) | Only serials pre-claimed by an owner (30-min claim window) are accepted; uploads from unknown/disabled SNs get 503 and are never stored; SN format validated before any Firestore access; per-IP rate limit 120 req/min; 10 MB body cap; responses are only `OK`, config text or queued commands; optional `/d/{token}` path secret per device |
+| `/health` | Public | Returns only `{ok:true}` — no tenant data |
+| VM | Static IP; ports 80/443/8081 open; SSH only via IAP (35.235.240.0/20) | Attached service account with **`roles/datastore.user` only**, no key files; OS Login; shielded VM; unattended security upgrades; gateway runs as an unprivileged systemd user with `ProtectSystem=strict`; Node listens on 127.0.0.1 only |
+
+**Residual risks (accepted for v1):**
+- *Serial number spoofing.* Anyone who knows a claimed device's serial (printed on its
+  sticker) and reaches the internet can post punches for that gym or read the
+  queued commands (taking them away from the real device) — which contain
+  member PINs, names and, after enrollment, fingerprint templates. Templates are vendor-format minutiae, not images, but
+  are sensitive (T17). Mitigation available today: set a per-device
+  `deviceToken` and configure the device with `bio.gymly.online/d/<token>` where
+  the firmware allows a path (verified per model in Part 6).
+- *Plain HTTP on the LAN/ISP path.* Same data as above can be observed in
+  transit. Use HTTPS on firmware that supports it.
+- *No door control from the cloud.* The device decides access locally; the
+  server can only add/remove users. A gateway outage never opens or locks a door.
+
+**Data protection:** `bio_templates`, `bio_commands`, `bio_raw_logs`,
+`bio_counters` are `allow read, write: if false` (Admin SDK only); templates are
+redacted from every log; permanently deleted members have templates and
+enrollment deleted and template data scrubbed from old commands;
+`bio_commands` (30 d) and `bio_raw_logs` (7 d) have Firestore TTL policies.
 
 ---
 

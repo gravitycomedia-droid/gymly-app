@@ -1100,5 +1100,27 @@ Run after all 7 optimisations are deployed:
 
 ---
 
+## BIOMETRIC (ZKTeco ADMS) — COST PROFILE (2026-10-02)
+
+Designed to add almost nothing per gym. The VM (e2-small, about $13/month flat) is
+the only fixed cost. Code: `bio-gateway/`, `functions/src/bio/`.
+
+| Activity | Firestore cost | Why it's cheap |
+|---|---|---|
+| Device polls `getrequest` every 10 s | **0 reads** | Served from the gateway's in-memory command cache |
+| Device heartbeat | ≤ 1 write / device / 60 s | `lastSeenAt` is throttled |
+| Gateway listeners | One-time read of `bio_devices` + `bio_enrollments` + pending `bio_commands` per gateway restart, then only changes | 3 listeners for the whole platform, not per device |
+| Fingerprint punch | 1 member read + 1–2 existence reads + ≤ 2 writes (session + daily log), +1 streak write once per member per day | Deterministic IDs make device re-uploads free (no duplicate writes) |
+| `users` write (any) | 1 trigger invocation, **0 reads** unless name, expiry or deletion changed | The diff guard returns before any read; streak writes are ignored |
+| Renewal, new member or expiry in a biometric gym | ~2 reads + 1 write per device | One command doc per device |
+| Daily sweep (inside `permanentlyDeleteExpired`) | Reads enrollments with `desiredOnDevice == true` + their member docs | No new Cloud Scheduler job (T15) |
+| Owner UI attendance mode | 1 read per gym per session | Module cache shared by every screen |
+| Fingerprint card on member profile | 1 device query + 1 enrollment listener while the profile is open | Only in biometric gyms |
+| `bio_commands` / `bio_raw_logs` storage | Auto-deleted after 30 / 7 days | Firestore TTL policies on `expireAt` |
+
+QR-mode gyms pay for the attendance-mode check only: 1 extra read per `processScan` call (`gym_settings/{gymId}`).
+
+---
+
 *End of EFFICIENCY.md*
 *10 gyms × 500 members baseline | Target: ≤$5/month at 15,000 members*

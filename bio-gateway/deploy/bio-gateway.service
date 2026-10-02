@@ -1,0 +1,28 @@
+[Unit]
+Description=Gymly bio-gateway (ZKTeco/eSSL ADMS)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=biogw
+Group=biogw
+WorkingDirectory=/opt/bio-gateway
+# Credentials come from the VM's attached service account via the metadata
+# server (Application Default Credentials). There are no key files.
+Environment=NODE_ENV=production PORT=8080 HOST=127.0.0.1 GCLOUD_PROJECT=gymly-app-06
+ExecStart=/usr/bin/node src/server.js
+Restart=always
+RestartSec=3
+# Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

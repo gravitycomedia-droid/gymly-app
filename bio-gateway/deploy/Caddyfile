@@ -1,0 +1,17 @@
+# Caddy for bio.gymly.online — three listeners, NO HTTP→HTTPS redirect (T12, D5).
+# ZKTeco/eSSL firmware speaks plain HTTP and cannot follow redirects, so:
+#   • :80   plain HTTP for any Host (devices may send an IP or odd Host header)
+#   • :8081 plain HTTP fallback port (troubleshooting only)
+#   • :443  HTTPS for bio.gymly.online (newer firmware, the uptime check)
+# No `encode` directive: responses must stay uncompressed text/plain (T1).
+{
+	auto_https disable_redirects
+}
+
+http://:80, http://:8081 {
+	reverse_proxy 127.0.0.1:8080
+}
+
+https://bio.gymly.online {
+	reverse_proxy 127.0.0.1:8080
+}
