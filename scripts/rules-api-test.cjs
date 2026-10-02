@@ -13,6 +13,9 @@ const mocks=[...gymDoc('G1','OWNER1'),...gymDoc('G2','OWNER2'),{function:'exists
 const member={role:'member',gym_id:'G1',name:'Ravi',phone:'+919999900000',auth_uid:'MUID',subscription_expiry:'2026-10-01'};
 const unlinked={...member}; delete unlinked.auth_uid;
 const GS={gym_id:'G1',attendance_mode:'biometric'};
+const BD={gym_id:'G1',status:'active',label:'Main door'};
+const BE={gym_id:'G1',memberId:'MEMDOC',bioPin:1000,fingers:[0],desiredOnDevice:true};
+const BU={gym_id:'G1',pin:'4321',at:'2026-10-02'};
 const tok=(role,gym,extra={})=>({role,gym_id:gym,phone_number:'+919999900000',firebase:{sign_in_provider:'phone'},...extra});
 const cases=[
  ['member extends OWN expiry','DENY','update','users/MEMDOC',{uid:'MUID',token:tok('member','G1')},member,{...member,subscription_expiry:'2099-01-01'}],
@@ -53,6 +56,48 @@ const cases=[
  ['owner creates gym_settings (bypass plan)','DENY','create','gym_settings/G1',{uid:'OWNER1',token:tok('owner','G1')},null,GS],
  ['owner flips mode directly','DENY','update','gym_settings/G1',{uid:'OWNER1',token:tok('owner','G1')},GS,{...GS,attendance_mode:'qr'}],
  ['owner deletes gym_settings','DENY','delete','gym_settings/G1',{uid:'OWNER1',token:tok('owner','G1')},GS,null],
+ // bio_* (Part 1) — read-only for the right roles; no client writes
+ ['bio_devices get as o','ALLOW','get','bio_devices/SN123456',{uid:'OWNER1',token:tok('owner','G1')},BD,null],
+ ['bio_devices get as mg','ALLOW','get','bio_devices/SN123456',{uid:'MG',token:tok('manager','G1')},BD,null],
+ ['bio_devices get as r','DENY','get','bio_devices/SN123456',{uid:'R',token:tok('receptionist','G1')},BD,null],
+ ['bio_devices get as t','DENY','get','bio_devices/SN123456',{uid:'T',token:tok('trainer','G1')},BD,null],
+ ['bio_devices get as m','DENY','get','bio_devices/SN123456',{uid:'MUID',token:tok('member','G1')},BD,null],
+ ['bio_devices get as o2','DENY','get','bio_devices/SN123456',{uid:'OWNER2',token:tok('owner','G2')},BD,null],
+ ['bio_devices get as anon','DENY','get','bio_devices/SN123456',{uid:'ANON',token:{firebase:{sign_in_provider:'anonymous'}}},BD,null],
+ ['bio_devices get as none','DENY','get','bio_devices/SN123456',null,BD,null],
+ ['owner creates bio_device (bypass claim)','DENY','create','bio_devices/SN999999',{uid:'OWNER1',token:tok('owner','G1')},null,BD],
+ ['owner edits own bio_device','DENY','update','bio_devices/SN123456',{uid:'OWNER1',token:tok('owner','G1')},BD,{...BD,status:'active'}],
+ ['owner deletes bio_device','DENY','delete','bio_devices/SN123456',{uid:'OWNER1',token:tok('owner','G1')},BD,null],
+ ['bio_enrollments get as o','ALLOW','get','bio_enrollments/G1_1000',{uid:'OWNER1',token:tok('owner','G1')},BE,null],
+ ['bio_enrollments get as mg','ALLOW','get','bio_enrollments/G1_1000',{uid:'MG',token:tok('manager','G1')},BE,null],
+ ['bio_enrollments get as r','ALLOW','get','bio_enrollments/G1_1000',{uid:'R',token:tok('receptionist','G1')},BE,null],
+ ['bio_enrollments get as t','DENY','get','bio_enrollments/G1_1000',{uid:'T',token:tok('trainer','G1')},BE,null],
+ ['bio_enrollments get as m','DENY','get','bio_enrollments/G1_1000',{uid:'MUID',token:tok('member','G1')},BE,null],
+ ['bio_enrollments get as o2','DENY','get','bio_enrollments/G1_1000',{uid:'OWNER2',token:tok('owner','G2')},BE,null],
+ ['bio_enrollments get as anon','DENY','get','bio_enrollments/G1_1000',{uid:'ANON',token:{firebase:{sign_in_provider:'anonymous'}}},BE,null],
+ ['bio_enrollments get as none','DENY','get','bio_enrollments/G1_1000',null,BE,null],
+ ['receptionist sets desiredOnDevice','DENY','update','bio_enrollments/G1_1000',{uid:'R',token:tok('receptionist','G1')},BE,{...BE,desiredOnDevice:true}],
+ ['owner creates enrollment','DENY','create','bio_enrollments/G1_1001',{uid:'OWNER1',token:tok('owner','G1')},null,BE],
+ ['bio_unmatched_punches get as o','ALLOW','get','bio_unmatched_punches/P1',{uid:'OWNER1',token:tok('owner','G1')},BU,null],
+ ['bio_unmatched_punches get as mg','ALLOW','get','bio_unmatched_punches/P1',{uid:'MG',token:tok('manager','G1')},BU,null],
+ ['bio_unmatched_punches get as r','DENY','get','bio_unmatched_punches/P1',{uid:'R',token:tok('receptionist','G1')},BU,null],
+ ['bio_unmatched_punches get as m','DENY','get','bio_unmatched_punches/P1',{uid:'MUID',token:tok('member','G1')},BU,null],
+ ['bio_unmatched_punches get as o2','DENY','get','bio_unmatched_punches/P1',{uid:'OWNER2',token:tok('owner','G2')},BU,null],
+ ['bio_unmatched_punches get as none','DENY','get','bio_unmatched_punches/P1',null,BU,null],
+ ['owner writes unmatched punch','DENY','create','bio_unmatched_punches/P2',{uid:'OWNER1',token:tok('owner','G1')},null,BU],
+ ['bio_commands owner get','DENY','get','bio_commands/C1',{uid:'OWNER1',token:tok('owner','G1')},{gym_id:'G1'},null],
+ ['bio_commands owner create','DENY','create','bio_commands/C1',{uid:'OWNER1',token:tok('owner','G1')},null,{gym_id:'G1'}],
+ ['bio_commands anon kiosk get','DENY','get','bio_commands/C1',{uid:'ANON',token:{firebase:{sign_in_provider:'anonymous'}}},{gym_id:'G1'},null],
+ ['bio_templates owner get','DENY','get','bio_templates/G1_1000_1_0',{uid:'OWNER1',token:tok('owner','G1')},{gym_id:'G1'},null],
+ ['bio_templates owner create','DENY','create','bio_templates/G1_1000_1_0',{uid:'OWNER1',token:tok('owner','G1')},null,{gym_id:'G1'}],
+ ['bio_templates anon kiosk get','DENY','get','bio_templates/G1_1000_1_0',{uid:'ANON',token:{firebase:{sign_in_provider:'anonymous'}}},{gym_id:'G1'},null],
+ ['bio_raw_logs owner get','DENY','get','bio_raw_logs/L1',{uid:'OWNER1',token:tok('owner','G1')},{gym_id:'G1'},null],
+ ['bio_raw_logs owner create','DENY','create','bio_raw_logs/L1',{uid:'OWNER1',token:tok('owner','G1')},null,{gym_id:'G1'}],
+ ['bio_raw_logs anon kiosk get','DENY','get','bio_raw_logs/L1',{uid:'ANON',token:{firebase:{sign_in_provider:'anonymous'}}},{gym_id:'G1'},null],
+ ['bio_counters owner get','DENY','get','bio_counters/G1',{uid:'OWNER1',token:tok('owner','G1')},{gym_id:'G1'},null],
+ ['bio_counters owner create','DENY','create','bio_counters/G1',{uid:'OWNER1',token:tok('owner','G1')},null,{gym_id:'G1'}],
+ ['bio_counters anon kiosk get','DENY','get','bio_counters/G1',{uid:'ANON',token:{firebase:{sign_in_provider:'anonymous'}}},{gym_id:'G1'},null],
+ ['owner bumps bio_counters','DENY','update','bio_counters/G1',{uid:'OWNER1',token:tok('owner','G1')},{gym_id:'G1',next:1000},{gym_id:'G1',next:1}],
 ];
 const toV=o=>o;
 (async()=>{

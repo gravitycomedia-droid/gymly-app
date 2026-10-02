@@ -394,6 +394,51 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ── Biometric (ZKTeco ADMS) ─────────────────────────────────────────────
+    // Written only by the bio-gateway VM and Cloud Functions (Admin SDK).
+    // No client writes anywhere. Templates, commands (which can carry
+    // template data), raw device logs and the PIN counter are never readable.
+    function isGymStaffRole(gymId, roles) {
+      return request.auth != null
+        && request.auth.token.gym_id == gymId
+        && request.auth.token.role in roles;
+    }
+
+    // Devices — owner/manager of the device's gym (claim wizard, device cards).
+    match /bio_devices/{sn} {
+      allow read: if isGymStaffRole(resource.data.gym_id, ['owner', 'manager']);
+      allow write: if false;
+    }
+
+    // Enrollments — bioPin / fingers / desiredOnDevice per member (no template
+    // data). Front desk can read them for the fingerprint badge.
+    match /bio_enrollments/{enrollmentId} {
+      allow read: if isGymStaffRole(resource.data.gym_id, ['owner', 'manager', 'receptionist']);
+      allow write: if false;
+    }
+
+    // Punches from PINs that matched no member — owner/manager debugging list.
+    match /bio_unmatched_punches/{punchId} {
+      allow read: if isGymStaffRole(resource.data.gym_id, ['owner', 'manager']);
+      allow write: if false;
+    }
+
+    match /bio_commands/{commandId} {
+      allow read, write: if false;
+    }
+
+    match /bio_templates/{templateId} {
+      allow read, write: if false;
+    }
+
+    match /bio_raw_logs/{logId} {
+      allow read, write: if false;
+    }
+
+    match /bio_counters/{gymId} {
+      allow read, write: if false;
+    }
+
     // Platform Stats — Super Admin KPI rollup; written only by Cloud Functions (SA-1)
     match /platform_stats/{document} {
       allow read: if isSuperAdmin();

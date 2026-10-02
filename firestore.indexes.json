@@ -289,9 +289,66 @@
         { "fieldPath": "gym_id", "order": "ASCENDING" },
         { "fieldPath": "entry_time", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "bio_commands",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "sn", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "seq", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bio_enrollments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "desiredOnDevice", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bio_unmatched_punches",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gym_id", "order": "ASCENDING" },
+        { "fieldPath": "at", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "bio_commands",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "bio_raw_logs",
+      "fieldPath": "expireAt",
+      "ttl": true,
+      "indexes": []
+    },
+    {
+      "collectionGroup": "bio_commands",
+      "fieldPath": "cmd",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "bio_templates",
+      "fieldPath": "tmp",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "bio_raw_logs",
+      "fieldPath": "bodyPreview",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "bio_unmatched_punches",
+      "fieldPath": "rawLine",
+      "indexes": []
+    },
     { "collectionGroup": "users",          "fieldPath": "profile_photo",      "indexes": [] },
     { "collectionGroup": "users",          "fieldPath": "address",            "indexes": [] },
     { "collectionGroup": "users",          "fieldPath": "emergency_contact",  "indexes": [] },
