@@ -90,14 +90,16 @@ const withTimeout = (promise) => Promise.race([
 
 /**
  * Load an image so it can be drawn onto a canvas that is later exported.
- * Plain CORS fetch → blob URL, falling back to a crossOrigin <img>. (The
- * service worker caches only 200s — see vite.config.js — so this fetch no
- * longer gets the opaque copy an <img> left behind.) Resolves null on failure
- * or after PHOTO_TIMEOUT_MS; the card then shows initials.
+ * CORS fetch → blob URL, falling back to a crossOrigin <img>. Needs the
+ * Storage bucket's CORS config (storage.cors.json, applied with
+ * `gcloud storage buckets update --cors-file`) — without it canvas can't read
+ * the photo. cache:'reload' skips copies the browser cached from plain <img>
+ * loads, which lack the CORS header. Resolves null on failure or after
+ * PHOTO_TIMEOUT_MS; the card then shows initials.
  */
 export function loadImageForCanvas(src) {
   if (!src) return Promise.resolve(null);
-  const viaFetch = fetch(src)
+  const viaFetch = fetch(src, { mode: 'cors', cache: 'reload' })
     .then((res) => (res.ok && res.type !== 'opaque' ? res.blob() : Promise.reject(new Error('unreadable'))))
     .then(imageFromBlob)
     .catch(() => new Promise((resolve) => {
