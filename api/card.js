@@ -12,16 +12,20 @@
 const BUCKET = process.env.VITE_FIREBASE_STORAGE_BUCKET || 'gymly-app-06.firebasestorage.app';
 const ID_RE = /^[A-Za-z0-9_-]{1,64}$/;
 const TOKEN_RE = /^[0-9a-f-]{36}$/i;
+const CARD_ID_RE = /^[0-9a-z]{4,16}$/;
 
 export default function handler(req, res) {
-  const { g, m, t } = req.query || {};
-  if (!ID_RE.test(g || '') || !ID_RE.test(m || '') || !TOKEN_RE.test(t || '')) {
+  const { g, m, t, c } = req.query || {};
+  if (!ID_RE.test(g || '') || !ID_RE.test(m || '') || !TOKEN_RE.test(t || '') || (c != null && !CARD_ID_RE.test(c))) {
     res.status(400).setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.send('Invalid card link');
     return;
   }
 
-  const img = `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/members%2F${g}%2F${m}%2Fmembership_card.jpg?alt=media&token=${t}`;
+  // c = per-send card id (members/{g}/{m}/cards/{c}.jpg). Links sent before
+  // that existed point at the old single membership_card.jpg.
+  const objectPath = c ? `members%2F${g}%2F${m}%2Fcards%2F${c}.jpg` : `members%2F${g}%2F${m}%2Fmembership_card.jpg`;
+  const img = `https://firebasestorage.googleapis.com/v0/b/${BUCKET}/o/${objectPath}?alt=media&token=${t}`;
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'public, max-age=300');

@@ -49,7 +49,10 @@ export async function sendCardToMemberChat({ canvas, member, gymId, gymName }) {
 
   try {
     const jpeg = await toPreviewJpeg(canvas);
-    const cardRef = ref(storage, `members/${gymId}/${member.id}/membership_card.jpg`);
+    // One file per send: re-uploading to the same path makes Firebase issue a
+    // new download token, which broke every card link already sent.
+    const cardId = Date.now().toString(36);
+    const cardRef = ref(storage, `members/${gymId}/${member.id}/cards/${cardId}.jpg`);
     const upload = (async () => {
       await uploadBytes(cardRef, jpeg, { contentType: 'image/jpeg', cacheControl: 'public,max-age=300' });
       return getDownloadURL(cardRef);
@@ -60,8 +63,8 @@ export async function sendCardToMemberChat({ canvas, member, gymId, gymName }) {
     ]);
     const token = new URL(url).searchParams.get('token');
 
-    // v= busts WhatsApp's preview cache so a renewed card never shows the old one.
-    const link = `${shareOrigin()}/api/card?g=${encodeURIComponent(gymId)}&m=${encodeURIComponent(member.id)}&t=${token}&v=${Date.now().toString(36)}`;
+    // A new card id per send also gives WhatsApp a fresh URL to preview.
+    const link = `${shareOrigin()}/api/card?g=${encodeURIComponent(gymId)}&m=${encodeURIComponent(member.id)}&c=${cardId}&t=${token}`;
     const text = `Hi ${member.name}! 🏋️ Here is your membership card from ${gymName || 'Gymly'}.\n\n${link}`;
     const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
 
