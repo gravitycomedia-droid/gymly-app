@@ -20,6 +20,7 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { verifyToken } = require("./attendanceAuth");
 const { isMemberActive } = require("./lib/membership");
+const { buildUnfreeze } = require("./lib/freeze");
 const { getAttendanceMode } = require("./attendanceMode");
 
 if (!admin.apps.length) admin.initializeApp();
@@ -99,12 +100,32 @@ async function handleStaffScan({ uid, callerGymId, scannedByUid, source }) {
   return db.runTransaction(async (tx) => {
     const memberSnap = await tx.get(memberRef);
     if (!memberSnap.exists) throw new HttpsError("not-found", "Member not found");
-    const member = memberSnap.data();
+    let member = memberSnap.data();
     if (member.gym_id !== callerGymId) {
       throw new HttpsError("permission-denied", "Member belongs to a different gym");
     }
     // Soft-deleted members are gone from the gym's point of view.
     if (member.is_deleted === true) throw new HttpsError("not-found", "Member not found");
+
+    // Membership freeze (lib/freeze.js): under the gym's 'block' policy a frozen
+    // member is turned away; otherwise this check-in ends the freeze (the
+    // write happens below, after the transaction's last read).
+    let unfreeze = null;
+    if (member.frozen === true) {
+      if (member.freeze_entry_policy === "block") {
+        return {
+          status: "expired",
+          reason: "frozen",
+          memberId: uid,
+          memberName: member.name || "",
+          memberPhoto: member.profile_photo || null,
+          planName: member.plan_name || null,
+          message: "Membership is frozen",
+        };
+      }
+      unfreeze = buildUnfreeze(member, now, "checkin", scannedByUid);
+      member = { ...member, frozen: false, subscription_expiry: unfreeze.update.subscription_expiry || member.subscription_expiry };
+    }
 
     // D2: expiry date is inclusive (active through the end of the IST day).
     const isExpired = !isMemberActive(member, now);
@@ -132,6 +153,8 @@ async function handleStaffScan({ uid, callerGymId, scannedByUid, source }) {
       entry_time: FV.serverTimestamp(),
       scanned_by_uid: scannedByUid || null,
     };
+
+    if (unfreeze) tx.update(memberRef, unfreeze.update);
 
     if (isExpired) {
       tx.set(logsRef.doc(), { ...base, is_expired: true });
@@ -174,6 +197,7 @@ async function handleStaffScan({ uid, callerGymId, scannedByUid, source }) {
       currentStreak: streak.current,
       longestStreak: streak.longest,
       isNewRecord: streak.isNewRecord,
+      ...(unfreeze ? { unfrozen: true, unfrozenDays: unfreeze.days } : {}),
     };
   });
 }
@@ -190,9 +214,18 @@ async function handleKioskScan({ uid, callerGymId, deviceId, deviceDoc, intent }
   return db.runTransaction(async (tx) => {
     const memberSnap = await tx.get(memberRef);
     if (!memberSnap.exists) throw new HttpsError("not-found", "Member not found");
-    const member = memberSnap.data();
+    let member = memberSnap.data();
     if (member.gym_id !== callerGymId) {
       throw new HttpsError("permission-denied", "Member belongs to a different gym");
+    }
+
+    // Membership freeze (lib/freeze.js) — decided for ENTRY only below; an
+    // exit is never blocked and never ends a freeze.
+    const frozenBlock = member.frozen === true && member.freeze_entry_policy === "block";
+    let unfreeze = null;
+    if (member.frozen === true && !frozenBlock) {
+      unfreeze = buildUnfreeze(member, now, "checkin", null);
+      member = { ...member, frozen: false, subscription_expiry: unfreeze.update.subscription_expiry || member.subscription_expiry };
     }
 
     const expiryMs = subscriptionExpiryMs(member);
@@ -257,6 +290,28 @@ async function handleKioskScan({ uid, callerGymId, deviceId, deviceDoc, intent }
       };
     }
 
+    // ENTRY — deny frozen members under the 'block' policy…
+    if (frozenBlock) {
+      tx.set(db.collection("access_denied_logs").doc(), {
+        memberId: uid,
+        gymId: callerGymId,
+        deviceId: deviceId || "unknown",
+        attemptTime: FV.serverTimestamp(),
+        reason: "frozen",
+        memberName: member.name || "",
+        memberPhone: member.phone || "",
+      });
+      return {
+        status: "expired",
+        reason: "frozen",
+        memberName: member.name || "",
+        memberPhoto: member.profile_photo || null,
+        message: "Membership is frozen",
+      };
+    }
+    // …otherwise this entry ends the freeze.
+    if (unfreeze) tx.update(memberRef, unfreeze.update);
+
     // ENTRY — deny expired members.
     if (isExpired) {
       tx.set(db.collection("access_denied_logs").doc(), {
@@ -302,6 +357,7 @@ async function handleKioskScan({ uid, callerGymId, deviceId, deviceDoc, intent }
       memberName: member.name || "",
       memberPhoto: member.profile_photo || null,
       daysLeft,
+      ...(unfreeze ? { unfrozen: true, unfrozenDays: unfreeze.days } : {}),
       currentStreak: streak.current,
       longestStreak: streak.longest,
       isNewRecord: streak.isNewRecord,

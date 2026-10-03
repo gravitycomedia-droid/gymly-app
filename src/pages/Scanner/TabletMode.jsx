@@ -97,7 +97,7 @@ const TabletMode = () => {
         setTimeout(resetScan, 3000);
       } else if (data.status === 'expired') {
         playHapticSound('error');
-        setResult({ type: 'expired', member });
+        setResult({ type: 'expired', member, frozen: data.reason === 'frozen' });
         setTimeout(resetScan, 5000);
       } else if (data.status === 'duplicate') {
         playHapticSound('error');
@@ -168,7 +168,7 @@ const TabletMode = () => {
         </div>
         <div className="tablet-result-subtitle">
           {result.type === 'success' && (result.member?.plan_name || 'Active member')}
-          {result.type === 'expired' && `${result.member?.name}'s membership has expired`}
+          {result.type === 'expired' && `${result.member?.name}'s membership ${result.frozen ? 'is frozen' : 'has expired'}`}
           {result.type === 'already' && 'Already checked in today'}
         </div>
         {result.type === 'success' && result.streak > 1 && (
@@ -178,7 +178,7 @@ const TabletMode = () => {
         )}
         {result.type === 'expired' && (
           <div className="tablet-result-subtitle" style={{ marginTop: 12, opacity: 0.7 }}>
-            Please renew at reception
+            {result.frozen ? 'Please ask reception to unfreeze it' : 'Please renew at reception'}
           </div>
         )}
       </div>

@@ -214,7 +214,7 @@ const ReceptionistDashboard = () => {
         setResult({ type: 'success', member, streak: data.currentStreak, isNewRecord: data.isNewRecord });
       } else if (data.status === 'expired') {
         playHapticSound('error');
-        setResult({ type: 'expired', member, daysAgo: data.daysAgo });
+        setResult({ type: 'expired', member, daysAgo: data.daysAgo, frozen: data.reason === 'frozen' });
       } else if (data.status === 'duplicate') {
         playHapticSound('error');
         setResult({ type: 'duplicate', member });
@@ -340,6 +340,11 @@ const ReceptionistDashboard = () => {
       bg: 'linear-gradient(160deg,#0f6b4c,#0a4d37)', accent: C.greenBright, soft: 'rgba(53,210,154,.18)',
       icon: 'check', name: m?.name, status: `Checked in · ${clock}`, detail: m?.plan_name || 'Active member',
       hasMember: true, streak: result.streak ? `${result.streak}-day streak${result.isNewRecord ? ' · new record!' : ''}` : null,
+    };
+    if (result.type === 'expired' && result.frozen) return {
+      bg: 'linear-gradient(160deg,#1E5FA8,#143f70)', accent: '#9cc8ff', soft: 'rgba(156,200,255,.2)',
+      icon: 'ac_unit', name: m?.name, status: 'Membership frozen',
+      detail: 'A manager can unfreeze it from the member profile', hasMember: true,
     };
     if (result.type === 'expired') return {
       bg: 'linear-gradient(160deg,#8f221c,#5f1712)', accent: '#ff7a72', soft: 'rgba(255,122,114,.2)',

@@ -16,6 +16,8 @@ import { can, getBasePath } from '../../utils/permissions';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { uploadMemberPhoto } from '../../firebase/storage';
 import { sendCardToMemberChat, drawCircleImageCover } from '../../utils/whatsappCard';
+import { FreezeMembershipSheet, UnfreezeMembershipSheet, Gl2Scope } from '../../owner/components/FreezeSheets';
+import { isFrozen, remainingDaysAtFreeze, frozenDaysSoFar, toDate } from '../../utils/freeze';
 import '../MemberCard/MemberCard.css';
 
 // ── Default card settings (mirrors CardEditor defaults) ─────────
@@ -54,6 +56,9 @@ const MemberProfile = ({ readOnly = false }) => {
   const [cardCanvas, setCardCanvas] = useState(null);
   const [sharing, setSharing] = useState(false);
   const [showMoreActions, setShowMoreActions] = useState(false);
+  const [showFreeze, setShowFreeze] = useState(false);
+  const [unfreezeSheet, setUnfreezeSheet] = useState(null); // null | { renewAfter }
+  const canFreeze = ['owner', 'manager'].includes(role);
   const [memberPayments, setMemberPayments] = useState([]);
   const [clearingId, setClearingId] = useState(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -502,7 +507,17 @@ const MemberProfile = ({ readOnly = false }) => {
     progressPercent = Math.min(100, Math.max(0, (daysUsed / totalDays) * 100));
   }
 
-  const isExpired = daysRemaining <= 0;
+  // Days left come from subscription_expiry (so Extend/freeze days show);
+  // while frozen they hold at the value on the day the freeze began.
+  const frozen = isFrozen(member);
+  daysRemaining = frozen ? remainingDaysAtFreeze(member) : Math.max(0, getDaysRemaining(member.subscription_expiry));
+
+  const isExpired = !frozen && daysRemaining <= 0;
+  const openRenew = () => {
+    if (!frozen) { setShowRenew(true); return; }
+    if (canFreeze) setUnfreezeSheet({ renewAfter: true });
+    else showToast('This membership is frozen — ask a manager to unfreeze it before renewing', 'error');
+  };
   const publicUrl = `${window.location.origin}/public/member/${member.id}`;
 
   return (
@@ -644,15 +659,32 @@ const MemberProfile = ({ readOnly = false }) => {
               <div className="text-center md:text-right">
                 <div className="font-headline-md text-headline-md text-primary mb-1">{planName}</div>
                 <div className="font-body-md text-body-md text-on-surface-variant">
-                  {isExpired ? <span className="text-error font-bold">{daysText}</span> : <>Expires in <span className="font-bold text-on-surface">{daysRemaining} Days</span></>}
+                  {frozen
+                    ? <span className="font-bold" style={{ color: '#1E5FA8' }}>❄ Frozen · {daysRemaining} days left</span>
+                    : isExpired ? <span className="text-error font-bold">{daysText}</span> : <>Expires in <span className="font-bold text-on-surface">{daysRemaining} Days</span></>}
                 </div>
               </div>
             </div>
 
+            {frozen && (
+              <div className="rounded-xl p-3 mb-3 flex items-center gap-3" style={{ background: 'rgba(30,95,168,0.08)', border: '1px solid rgba(30,95,168,0.25)' }}>
+                <span className="material-symbols-outlined" style={{ color: '#1E5FA8' }}>ac_unit</span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm" style={{ color: '#1E5FA8', margin: 0 }}>Membership frozen</p>
+                  <p className="text-xs text-on-surface-variant" style={{ margin: 0 }}>
+                    Since {formatDate(toDate(member.frozen_at))} · {frozenDaysSoFar(member)} days so far{member.frozen_until ? ` · unfreezes ${formatDate(toDate(member.frozen_until))}` : ''}
+                  </p>
+                </div>
+                {!readOnly && canFreeze && (
+                  <button onClick={() => setUnfreezeSheet({ renewAfter: false })} className="px-3 py-2 rounded-lg bg-white border border-black/10 text-sm font-label-md">Unfreeze</button>
+                )}
+              </div>
+            )}
+
             {/* Quick Actions Bento */}
             {!readOnly && (
               <div className="grid grid-cols-4 gap-2 md:gap-3 mt-auto">
-                <button onClick={() => setShowRenew(true)} className="bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
+                <button onClick={openRenew} className="bg-white border border-black/10 hover:bg-primary/5 shadow-sm transition-all rounded-xl p-3 flex flex-col items-center justify-center gap-2 group">
                   <span className="material-symbols-outlined text-primary group-hover:scale-110 transition-transform">autorenew</span>
                   <span className="font-label-sm text-[10px] md:text-xs text-on-surface-variant">Renew</span>
                 </button>
@@ -676,6 +708,11 @@ const MemberProfile = ({ readOnly = false }) => {
                       <button onClick={() => { navigate(`${base}/members/${id}/edit`); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-black/5 font-label-md flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm text-secondary">edit</span> Edit Member
                       </button>
+                      {canFreeze && (
+                        <button onClick={() => { if (frozen) setUnfreezeSheet({ renewAfter: false }); else setShowFreeze(true); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-black/5 font-label-md flex items-center gap-2">
+                          <span className="material-symbols-outlined text-sm" style={{ color: '#1E5FA8' }}>{frozen ? 'play_circle' : 'ac_unit'}</span> {frozen ? 'Unfreeze' : 'Freeze'}
+                        </button>
+                      )}
                       {canDeleteMember && (
                         <button onClick={() => { setShowDelete(true); setShowMoreActions(false); }} className="px-4 py-3 text-sm text-left hover:bg-error-container/50 font-label-md text-error flex items-center gap-2">
                           <span className="material-symbols-outlined text-sm">delete</span> Delete
@@ -899,6 +936,25 @@ const MemberProfile = ({ readOnly = false }) => {
       )}
 
       {/* Modals */}
+      {(showFreeze || unfreezeSheet) && (
+        <Gl2Scope>
+          {showFreeze && <FreezeMembershipSheet member={member} gym={gym} showToast={showToast} onClose={() => setShowFreeze(false)} onDone={() => fetchData()} />}
+          {unfreezeSheet && (
+            <UnfreezeMembershipSheet
+              member={member}
+              showToast={showToast}
+              notice={unfreezeSheet.renewAfter ? 'This membership is frozen. Unfreeze it first so the frozen days are added before the renewal is calculated.' : null}
+              onClose={() => setUnfreezeSheet(null)}
+              onDone={async () => {
+                const renewAfter = unfreezeSheet.renewAfter;
+                await fetchData();
+                if (renewAfter) setShowRenew(true);
+              }}
+            />
+          )}
+        </Gl2Scope>
+      )}
+
       {showRenew && (
         <RenewModal member={member} plans={plans} onClose={() => setShowRenew(false)} onSuccess={() => { fetchData(); }} />
       )}

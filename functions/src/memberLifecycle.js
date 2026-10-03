@@ -6,6 +6,7 @@ const admin = require("firebase-admin");
 if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
 const bio = require("./bio/core");
+const freeze = require("./freezeMembership");
 
 // ─── Callable: softDeleteMember ───
 exports.softDeleteMember = functions.https.onCall(async (data, context) => {
@@ -182,6 +183,15 @@ exports.permanentlyDeleteExpired = functions.pubsub
   .timeZone("Asia/Kolkata")
   .onRun(async () => {
     const now = admin.firestore.Timestamp.now();
+
+    // Auto-unfreeze (freezeMembership) — first, so members whose freeze ended
+    // today get their extended expiry before the biometric sweep looks at it.
+    try {
+      const res = await freeze.runAutoUnfreeze(now.toDate());
+      if (res.ended) console.log(`runAutoUnfreeze: ended ${res.ended} of ${res.frozen} freezes`);
+    } catch (err) {
+      console.error("runAutoUnfreeze failed:", err);
+    }
 
     // Biometric expiry sweep (D2) — must run BEFORE the early return below,
     // which fires on most days. Takes yesterday's expiries off the devices.

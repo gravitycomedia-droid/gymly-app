@@ -434,3 +434,11 @@ exports.requestBioEnroll   = bioCallables.requestBioEnroll;
 exports.queueBioRawCommand = bioCallables.queueBioRawCommand;
 const bioMemberTrigger = require("./src/bio/memberTrigger");
 exports.bioOnMemberWrite = bioMemberTrigger.bioOnMemberWrite;
+
+// Membership freeze / unfreeze — owner/manager callables, plus the attendance
+// trigger that ends a freeze on check-in (fingerprint punches included). The
+// 02:00 IST auto-unfreeze runs inside permanentlyDeleteExpired.
+const freezeMembershipModule = require("./src/freezeMembership");
+exports.freezeMembership      = freezeMembershipModule.freezeMembership;
+exports.unfreezeMembership    = freezeMembershipModule.unfreezeMembership;
+exports.onAttendanceLogCreate = freezeMembershipModule.onAttendanceLogCreate;

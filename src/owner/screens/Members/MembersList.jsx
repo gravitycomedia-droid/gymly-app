@@ -26,7 +26,7 @@ export default function MembersList() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const urlFilter = searchParams.get('filter') || '';
-  const [tab, setTab] = useState(urlFilter === 'active' ? 'active' : urlFilter === 'expired' ? 'expired' : 'all');
+  const [tab, setTab] = useState(['active', 'expired', 'frozen'].includes(urlFilter) ? urlFilter : 'all');
   const [activeFilter, setActiveFilter] = useState(urlFilter === 'expiring' ? 'expiring' : '');
   const [numberingSettings, setNumberingSettings] = useState(null);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
@@ -71,13 +71,16 @@ export default function MembersList() {
 
   const filteredMembers = useMemo(() => {
     let result = [...visibleMembers];
+    // Frozen members get their own tab — their expiry isn't counting down.
     if (tab === 'active') {
-      result = result.filter((m) => { const exp = m.subscription_expiry?.toDate?.(); return exp && exp > now; });
+      result = result.filter((m) => { const exp = m.subscription_expiry?.toDate?.(); return !m.frozen && exp && exp > now; });
     } else if (tab === 'expired') {
-      result = result.filter((m) => { const exp = m.subscription_expiry?.toDate?.(); return !exp || exp <= now; });
+      result = result.filter((m) => { const exp = m.subscription_expiry?.toDate?.(); return !m.frozen && (!exp || exp <= now); });
+    } else if (tab === 'frozen') {
+      result = result.filter((m) => m.frozen === true);
     }
     if (activeFilter === 'expiring') {
-      result = result.filter((m) => { const exp = m.subscription_expiry?.toDate?.(); return exp && exp > now && exp <= sevenDays; });
+      result = result.filter((m) => { const exp = m.subscription_expiry?.toDate?.(); return !m.frozen && exp && exp > now && exp <= sevenDays; });
     }
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -154,7 +157,7 @@ export default function MembersList() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
         <input type="search" className="gl2-input" placeholder="Search by name or phone" value={search} onChange={(e) => setSearch(e.target.value)} />
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {['all', 'active', 'expired'].map((t) => (
+          {['all', 'active', 'expired', ...(visibleMembers.some((m) => m.frozen) || tab === 'frozen' ? ['frozen'] : [])].map((t) => (
             <button key={t} type="button" className={`gl2-filter-chip ${tab === t ? 'active' : ''}`} onClick={() => { setTab(t); setActiveFilter(''); }}>
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </button>
@@ -185,8 +188,8 @@ export default function MembersList() {
             const exp = m.subscription_expiry?.toDate?.();
             const isExpired = !exp || exp <= now;
             const isExpiring = !isExpired && exp <= sevenDays;
-            const type = isExpired ? 'expired' : isExpiring ? 'expiring' : 'active';
-            const label = isExpired ? 'Expired' : isExpiring ? 'Expiring' : 'Active';
+            const type = m.frozen ? 'frozen' : isExpired ? 'expired' : isExpiring ? 'expiring' : 'active';
+            const label = m.frozen ? 'Frozen' : isExpired ? 'Expired' : isExpiring ? 'Expiring' : 'Active';
             const selected = selectedIds.has(m.id);
             return (
               <div key={m.id} className="gl2-member-row">
@@ -206,7 +209,7 @@ export default function MembersList() {
                   {useEnrollId && m.latestEnrollmentNumber && <span className="gl2-enroll" style={{ flex: 'none' }}>{m.latestEnrollmentNumber}</span>}
                 </div>
                 <div className="gl2-member-row-actions">
-                  <Badge variant={type}>{label}</Badge>
+                  {type === 'frozen' ? <Badge bg="rgba(30,95,168,0.12)" fg="#1E5FA8">❄ Frozen</Badge> : <Badge variant={type}>{label}</Badge>}
                   <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 36, padding: '0 11px' }} onClick={() => openQuickView({ ...m, status: type, planName: m.plan_name })}>Quick view</button>
                   <button type="button" className="gl2-icon-btn" style={{ width: 36, height: 36, marginLeft: 'auto' }} title="Edit" onClick={() => navigate(`/owner/members/${m.id}/edit`)}>
                     <span className="material-symbols-outlined" style={{ fontSize: 17 }}>edit</span>

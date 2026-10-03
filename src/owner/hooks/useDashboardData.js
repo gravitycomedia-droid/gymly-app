@@ -17,6 +17,7 @@ export default function useDashboardData(gymId) {
   const [recentMembers, setRecentMembers] = useState([]);
   const [expiringMembers, setExpiringMembers] = useState([]);
   const [recentPayments, setRecentPayments] = useState([]);
+  const [frozenMembers, setFrozenMembers] = useState([]);
   const { occupancy } = useLiveOccupancy(gymId);
   const newLeadsCount = useNewLeadsCount(gymId);
 
@@ -41,7 +42,19 @@ export default function useDashboardData(gymId) {
       collection(db, 'users'), where('gym_id', '==', gymId), where('role', '==', 'member'),
       where('subscription_expiry', '>', now), where('subscription_expiry', '<=', in7d), limit(10)
     );
-    getDocs(q).then((snap) => setExpiringMembers(snap.docs.map((d) => ({ id: d.id, ...d.data() })))).catch((err) => console.error('Dashboard query error:', err));
+    getDocs(q).then((snap) => setExpiringMembers(snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => !m.frozen))).catch((err) => console.error('Dashboard query error:', err));
+  }, [gymId]);
+
+  // Live: frozen members (two equality filters — served by single-field indexes).
+  useEffect(() => {
+    if (!gymId) return;
+    const q = query(collection(db, 'users'), where('gym_id', '==', gymId), where('frozen', '==', true), limit(50));
+    const unsub = onSnapshot(q, (snap) => {
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((m) => !m.is_deleted);
+      list.sort((a, b) => (a.frozen_until?.toMillis?.() || 0) - (b.frozen_until?.toMillis?.() || 0));
+      setFrozenMembers(list);
+    }, (err) => console.error('Frozen members listener error:', err));
+    return () => unsub();
   }, [gymId]);
 
   useEffect(() => {
@@ -91,5 +104,6 @@ export default function useDashboardData(gymId) {
     recentMembers,
     expiringMembers,
     recentPayments,
+    frozenMembers,
   };
 }

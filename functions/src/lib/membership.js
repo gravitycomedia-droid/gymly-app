@@ -60,10 +60,18 @@ function istWallClockToTimestamp(str) {
 }
 
 // D2: !is_deleted && subscription_expiry >= start of today (IST).
+// Frozen members (lib/freeze.js): with the gym's 'block' entry policy they are
+// inactive; otherwise days don't run while frozen, so the expiry is judged as
+// of the day the freeze began (they keep door access; checking in ends it).
 function isMemberActive(member, now = new Date()) {
   if (!member || member.is_deleted === true) return false;
   const expiryMs = toMillis(member.subscription_expiry);
   if (expiryMs == null) return false;
+  if (member.frozen === true) {
+    if (member.freeze_entry_policy === "block") return false;
+    const frozenAtMs = toMillis(member.frozen_at);
+    if (frozenAtMs != null) return expiryMs >= startOfTodayIST(new Date(frozenAtMs)).getTime();
+  }
   return expiryMs >= startOfTodayIST(now).getTime();
 }
 

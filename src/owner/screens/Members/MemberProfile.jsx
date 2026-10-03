@@ -17,7 +17,9 @@ import MembershipCard from '../../components/MembershipCard';
 import PhotoSourceSheet from '../../components/PhotoSourceSheet';
 import FingerprintPanel from '../../components/FingerprintPanel';
 import ExtendMembershipSheet from '../../components/ExtendMembershipSheet';
-import { sendCardToMemberChat, drawCircleImageCover } from '../../../utils/whatsappCard';
+import { FreezeMembershipSheet, UnfreezeMembershipSheet } from '../../components/FreezeSheets';
+import { isFrozen, remainingDaysAtFreeze, frozenDaysSoFar, toDate } from '../../../utils/freeze';
+import { sendCardToMemberChat, drawCircleImageCover, toWhatsAppNumber } from '../../../utils/whatsappCard';
 
 const DEFAULT_CS = {
   show_gym_name: true, show_gymly_label: true, show_member_name: true, show_photo: true,
@@ -31,10 +33,20 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
+// "+919876543210" → "+91 98765 43210"; anything else is shown as stored.
+const formatPhone = (phone) => {
+  const n = toWhatsAppNumber(phone);
+  if (n && n.length === 12 && n.startsWith('91')) return `+91 ${n.slice(2, 7)} ${n.slice(7)}`;
+  return phone || '';
+};
+
+const actionTile = { flexDirection: 'column', gap: 4, minHeight: 62, padding: '8px 4px', fontSize: 12.5, fontWeight: 700, width: '100%', textDecoration: 'none' };
+
 const STATUS_COLORS = {
   active: { bg: 'rgba(15,94,60,0.15)', color: '#0F5E3C', dot: '#0F5E3C' },
   expiring: { bg: 'rgba(138,75,0,0.15)', color: '#8A4B00', dot: '#8A4B00' },
   expired: { bg: 'rgba(166,44,34,0.15)', color: '#A62C22', dot: '#A62C22' },
+  frozen: { bg: 'rgba(30,95,168,0.15)', color: '#1E5FA8', dot: '#1E5FA8' },
 };
 
 export default function MemberProfile() {
@@ -57,6 +69,9 @@ export default function MemberProfile() {
   const [sharing, setSharing] = useState(false);
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
   const [showExtend, setShowExtend] = useState(false);
+  const [showFreeze, setShowFreeze] = useState(false);
+  // null | { renewAfter: bool } — the unfreeze sheet, optionally opened by Payment.
+  const [unfreezeSheet, setUnfreezeSheet] = useState(null);
   const canExtend = ['owner', 'manager'].includes(userDoc?.role);
   const qrCanvasRef = useRef(null);
 
@@ -122,7 +137,11 @@ export default function MemberProfile() {
   if (loading) return <PageSkeleton variant="profile" />;
   if (!member) return <div style={{ textAlign: 'center', padding: '60px 0' }}><p style={{ fontWeight: 700, marginBottom: 12 }}>Member not found</p><button type="button" className="gl2-btn gl2-btn-secondary" onClick={() => navigate('/owner/members')}>Back to members</button></div>;
 
-  const { label, type, daysText } = getExpiryStatus(member.subscription_expiry);
+  const frozen = isFrozen(member);
+  const expiryStatus = getExpiryStatus(member.subscription_expiry);
+  const { daysText } = expiryStatus;
+  const label = frozen ? 'Frozen' : expiryStatus.label;
+  const type = frozen ? 'frozen' : expiryStatus.type;
   const planName = getPlanName(gym, member.plan_id);
   const plans = (gym?.settings?.plans?.filter((p) => p.is_active) || []).sort((a, b) => (a.duration_days || 0) - (b.duration_days || 0));
   const currentPlan = plans.find((p) => p.id === member.plan_id);
@@ -136,25 +155,23 @@ export default function MemberProfile() {
   });
   const latestPayment = activePayments[0] || null;
 
+  // Days remaining always come from subscription_expiry, so Extend / freeze
+  // days show up (the last payment's window doesn't know about them). While
+  // frozen the count holds at its value on the day the freeze began.
   let totalDays = currentPlan?.duration_days || 30;
-  let daysUsed = 0;
-  let daysRemaining;
   if (latestPayment?.membership_start && latestPayment?.membership_end) {
     const start = latestPayment.membership_start?.toDate ? latestPayment.membership_start.toDate() : new Date(latestPayment.membership_start);
     const end = latestPayment.membership_end?.toDate ? latestPayment.membership_end.toDate() : new Date(latestPayment.membership_end);
-    const now = new Date();
     const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
     const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     totalDays = Math.max(1, Math.round((endDay - startDay) / 86400000));
-    daysUsed = today < startDay ? 0 : today >= endDay ? totalDays : Math.floor((today - startDay) / 86400000) + 1;
-    daysRemaining = Math.max(0, totalDays - daysUsed);
-  } else {
-    daysRemaining = Math.max(0, getDaysRemaining(member.subscription_expiry));
-    daysUsed = Math.max(0, totalDays - daysRemaining);
   }
+  const daysRemaining = frozen ? remainingDaysAtFreeze(member) : Math.max(0, getDaysRemaining(member.subscription_expiry));
+  totalDays = Math.max(totalDays, daysRemaining);
+  const daysUsed = Math.max(0, totalDays - daysRemaining);
   const progressPercent = Math.min(100, Math.max(0, (daysUsed / totalDays) * 100));
   const publicUrl = `${window.location.origin}/public/member/${member.id}`;
+  const waNumber = toWhatsAppNumber(member.phone);
 
   const drawCardToCanvas = () => new Promise((resolve) => {
     const W = 800, H = 504, R = 20, SCALE = 2;
@@ -352,15 +369,67 @@ export default function MemberProfile() {
             <div style={{ minWidth: 0 }}>
               {member.latestEnrollmentNumber && <span className="gl2-enroll" style={{ marginBottom: 4 }}>{member.latestEnrollmentNumber}</span>}
               <h1 style={{ margin: '4px 0 0', fontSize: 21, fontWeight: 800, letterSpacing: '-.3px' }}>{member.name}</h1>
-              <p style={{ margin: '3px 0 0', fontSize: 14, color: 'var(--gl2-muted)' }}>{member.phone} · {planName}</p>
+              {member.phone && <p style={{ margin: '3px 0 0', fontSize: 14, fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatPhone(member.phone)}</p>}
+              <p style={{ margin: '2px 0 0', fontSize: 13, color: 'var(--gl2-muted)' }}>{planName}</p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-            <button type="button" className="gl2-btn gl2-btn-primary" onClick={() => setShowRenew(true)}>Record Payment</button>
-            {canExtend && <button type="button" className="gl2-btn gl2-btn-secondary" onClick={() => setShowExtend(true)}>Extend</button>}
-            <a href={member.phone ? `https://wa.me/${String(member.phone).replace(/[^0-9]/g, '')}` : '#'} target="_blank" rel="noreferrer" className="gl2-btn gl2-btn-secondary">Message</a>
+          {frozen && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(30,95,168,0.08)', border: '1px solid rgba(30,95,168,0.25)', marginBottom: 12 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 22, color: '#1E5FA8', flex: 'none' }}>ac_unit</span>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#1E5FA8' }}>Membership frozen</p>
+                <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--gl2-muted)' }}>
+                  Since {formatDate(toDate(member.frozen_at))} · {frozenDaysSoFar(member)} day{frozenDaysSoFar(member) === 1 ? '' : 's'} so far
+                  {member.frozen_until && <> · unfreezes {formatDate(toDate(member.frozen_until))}</>}
+                </p>
+              </div>
+              {canExtend && (
+                <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 36, padding: '0 12px', flex: 'none' }} onClick={() => setUnfreezeSheet({ renewAfter: false })}>Unfreeze</button>
+              )}
+            </div>
+          )}
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8, marginBottom: canExtend ? 8 : 14 }}>
+            <button type="button" className="gl2-btn gl2-btn-primary" style={actionTile} onClick={() => (frozen && canExtend ? setUnfreezeSheet({ renewAfter: true }) : setShowRenew(true))}>
+              <span className="material-symbols-outlined" style={{ fontSize: 20 }}>payments</span>Payment
+            </button>
+            {waNumber ? (
+              <a href={`tel:+${waNumber}`} className="gl2-btn gl2-btn-secondary" style={actionTile} title={`Call ${formatPhone(member.phone)}`}>
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>call</span>Call
+              </a>
+            ) : (
+              <button type="button" className="gl2-btn gl2-btn-secondary" style={actionTile} disabled title="No phone number">
+                <span className="material-symbols-outlined" style={{ fontSize: 20 }}>call</span>Call
+              </button>
+            )}
+            {waNumber ? (
+              <a href={`https://wa.me/${waNumber}`} target="_blank" rel="noreferrer" className="gl2-btn gl2-btn-secondary" style={{ ...actionTile, color: '#128C4B' }} title="Message on WhatsApp">
+                <WhatsAppIcon />WhatsApp
+              </a>
+            ) : (
+              <button type="button" className="gl2-btn gl2-btn-secondary" style={actionTile} disabled title="No phone number">
+                <WhatsAppIcon />WhatsApp
+              </button>
+            )}
           </div>
+
+          {canExtend && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8, marginBottom: 14 }}>
+              <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 40, fontSize: 13.5 }} onClick={() => setShowExtend(true)}>
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>event_available</span>Extend
+              </button>
+              {frozen ? (
+                <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 40, fontSize: 13.5, color: '#1E5FA8' }} onClick={() => setUnfreezeSheet({ renewAfter: false })}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>play_circle</span>Unfreeze
+                </button>
+              ) : (
+                <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 40, fontSize: 13.5 }} onClick={() => setShowFreeze(true)}>
+                  <span className="material-symbols-outlined" style={{ fontSize: 18 }}>ac_unit</span>Freeze
+                </button>
+              )}
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(120px,1fr))', gap: 10 }}>
             <div className="gl2-kpi-tile" style={{ padding: 11 }}>
@@ -437,6 +506,20 @@ export default function MemberProfile() {
 
       {showRenew && <RenewModal member={member} plans={plans} onClose={() => setShowRenew(false)} onSuccess={() => fetchData()} />}
       {showExtend && <ExtendMembershipSheet member={member} showToast={showToast} onClose={() => setShowExtend(false)} onDone={() => fetchData()} />}
+      {showFreeze && <FreezeMembershipSheet member={member} gym={gym} showToast={showToast} onClose={() => setShowFreeze(false)} onDone={() => fetchData()} />}
+      {unfreezeSheet && (
+        <UnfreezeMembershipSheet
+          member={member}
+          showToast={showToast}
+          notice={unfreezeSheet.renewAfter ? 'This membership is frozen. Unfreeze it first so the frozen days are added before the renewal is calculated.' : null}
+          onClose={() => setUnfreezeSheet(null)}
+          onDone={async () => {
+            const renewAfter = unfreezeSheet.renewAfter;
+            await fetchData();
+            if (renewAfter) setShowRenew(true);
+          }}
+        />
+      )}
       {showDelete && <DeleteConfirmModal memberName={member.name} onConfirm={handleDelete} onClose={() => setShowDelete(false)} />}
 
       {showCardModal && (

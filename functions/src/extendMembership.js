@@ -61,7 +61,11 @@ exports.extendMembership = functions.https.onCall(async (data, context) => {
 
     const now = new Date();
     const oldMs = toMillis(member.subscription_expiry);
-    const newExpiry = computeExtendedExpiry(member.subscription_expiry, days, now);
+    // A frozen membership isn't counting down, so extend from its current
+    // expiry even if that date has passed during the freeze.
+    const newExpiry = member.frozen === true && oldMs != null
+      ? new Date(oldMs + days * DAY_MS)
+      : computeExtendedExpiry(member.subscription_expiry, days, now);
     const nowTs = admin.firestore.Timestamp.fromDate(now);
 
     tx.update(memberRef, {

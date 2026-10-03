@@ -91,7 +91,7 @@ const ResultOverlay = ({ result, countdown }) => {
     'exit-success': `Checked out successfully. You worked out for ${result.durationMinutes || 0} minutes.`,
     expiring: `Membership expires in ${result.daysLeft} day${result.daysLeft !== 1 ? 's' : ''}. Please renew soon.`,
     expired: result.member
-      ? `${result.member.name}'s membership has expired. Please contact the front desk.`
+      ? `${result.member.name}'s membership ${result.frozen ? 'is frozen' : 'has expired'}. Please contact the front desk.`
       : 'This QR code is not a valid Gymly membership card.',
     error: 'This QR code is not a valid Gymly membership card for this gym.',
   };
@@ -215,7 +215,7 @@ const EntryKiosk = () => {
           autoReturn(4);
           break;
         case 'expired':
-          setResult({ type: 'expired', member });
+          setResult({ type: 'expired', member, frozen: data.reason === 'frozen' });
           playKioskSound('alert');
           autoReturn(4);
           break;

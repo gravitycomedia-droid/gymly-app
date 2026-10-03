@@ -1,3 +1,4 @@
+import { isFrozen, remainingDaysAtFreeze } from '../../utils/freeze';
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
@@ -264,8 +265,13 @@ const MemberHome = () => {
     }
   };
 
-  const { label: statusLabel, type: statusType } = getExpiryStatus(userDoc?.subscription_expiry);
-  const daysRemaining = getDaysRemaining(userDoc?.subscription_expiry);
+  // A frozen membership isn't counting down: show "Frozen" and the days left
+  // as of the day the freeze began.
+  const memberFrozen = isFrozen(userDoc);
+  const expiryStatus = getExpiryStatus(userDoc?.subscription_expiry);
+  const statusLabel = memberFrozen ? 'Frozen' : expiryStatus.label;
+  const statusType = memberFrozen ? 'frozen' : expiryStatus.type;
+  const daysRemaining = memberFrozen ? remainingDaysAtFreeze(userDoc) : getDaysRemaining(userDoc?.subscription_expiry);
 
   // Signed check-in token for the QR. Fetched on mount and refreshed hourly
   // (one cheap callable per session + one per hour while this tab stays open).
@@ -304,7 +310,7 @@ const MemberHome = () => {
 
   const cs = { ...DEFAULT_CS, ...(gym?.card_settings || {}) };
   const cardEnabled = cs.card_enabled !== false;
-  const sc = { active: { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' }, expiring: { bg: 'rgba(239,159,39,0.15)', color: '#EF9F27', dot: '#EF9F27' }, expired: { bg: 'rgba(186,26,26,0.15)', color: '#ba1a1a', dot: '#ba1a1a' } }[statusType] || { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' };
+  const sc = { active: { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' }, expiring: { bg: 'rgba(239,159,39,0.15)', color: '#EF9F27', dot: '#EF9F27' }, expired: { bg: 'rgba(186,26,26,0.15)', color: '#ba1a1a', dot: '#ba1a1a' }, frozen: { bg: 'rgba(30,95,168,0.15)', color: '#1E5FA8', dot: '#1E5FA8' } }[statusType] || { bg: 'rgba(29,158,117,0.15)', color: '#006e28', dot: '#006e28' };
   const publicUrl = `${window.location.origin}/public/member/${user?.uid}`;
 
   if (loading) {

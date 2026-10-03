@@ -1,5 +1,9 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useToast } from '../../context/ToastContext';
+import { UnfreezeMembershipSheet } from '../components/FreezeSheets';
+import { frozenDaysSoFar, toDate } from '../../utils/freeze';
 import { getInitials, getExpiryStatus, getPlanName, formatDate } from '../../utils/helpers';
 import { getAvatarColor } from '../lib/avatarColor';
 import Badge from '../primitives/Badge';
@@ -16,6 +20,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { userDoc, gymDoc: gym } = useAuth();
   const d = useDashboardData(userDoc?.gym_id);
+  const { showToast } = useToast();
+  const [unfreezeMember, setUnfreezeMember] = useState(null);
   const firstName = (userDoc?.name || 'there').split(' ')[0];
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -118,6 +124,42 @@ export default function Dashboard() {
           <p style={{ margin: 0, fontSize: 13.5, color: 'var(--gl2-muted)' }}>members inside now</p>
         </div>
       </div>
+
+      {d.frozenMembers.length > 0 && (
+        <div className="gl2-card" style={{ marginBottom: 14, borderColor: 'rgba(30,95,168,0.3)' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+            <p className="gl2-card-title" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#1E5FA8' }}>ac_unit</span>
+              Frozen members · {d.frozenMembers.length}
+            </p>
+            <a href="#members" onClick={(e) => { e.preventDefault(); navigate('/owner/members?filter=frozen'); }}>View all</a>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {d.frozenMembers.slice(0, 8).map((m) => {
+              const soFar = frozenDaysSoFar(m);
+              const until = toDate(m.frozen_until);
+              return (
+                <div key={m.id} className="gl2-row">
+                  <span className="gl2-avatar" style={{ background: getAvatarColor(m.name), overflow: 'hidden' }}>
+                    {m.profile_photo ? <img src={m.profile_photo} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : getInitials(m.name)}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 120 }}>
+                    <button type="button" onClick={() => navigate(`/owner/members/${m.id}`)} style={{ border: 0, background: 'none', padding: 0, font: 'inherit', fontSize: 14.5, fontWeight: 700, color: 'var(--gl2-ink)', cursor: 'pointer', textAlign: 'left' }}>{m.name}</button>
+                    <p style={{ margin: '2px 0 0', fontSize: 12.5, color: 'var(--gl2-muted)' }}>
+                      {soFar} of {m.freeze_days || '?'} days{until ? ` · unfreezes ${formatDate(until)}` : ''}{m.freeze_reason ? ` · ${m.freeze_reason}` : ''}
+                    </p>
+                  </div>
+                  <button type="button" className="gl2-btn gl2-btn-secondary" style={{ minHeight: 36, padding: '0 12px' }} onClick={() => setUnfreezeMember(m)}>Unfreeze</button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {unfreezeMember && (
+        <UnfreezeMembershipSheet member={unfreezeMember} showToast={showToast} onClose={() => setUnfreezeMember(null)} />
+      )}
 
       {d.expiringMembers.length > 0 && (
         <div className="gl2-card" style={{ marginBottom: 14 }}>

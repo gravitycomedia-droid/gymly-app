@@ -16,6 +16,8 @@ const call = (name) => async (data) => (await httpsCallable(functions, name)(dat
 // ── Callables ───────────────────────────────────────────────────────────────
 export const setAttendanceMode = call('setAttendanceMode');     // { mode: 'qr' | 'biometric' }
 export const extendMembership = call('extendMembership');       // { memberId, days, reason }
+export const freezeMembership = call('freezeMembership');       // { memberId, days, reason, method, upiRef }
+export const unfreezeMembership = call('unfreezeMembership');   // { memberId }
 export const claimBioDevice = call('claimBioDevice');           // { sn, label }
 export const syncBioDevice = call('syncBioDevice');             // { sn }
 export const setBioDeviceStatus = call('setBioDeviceStatus');   // { sn, status }

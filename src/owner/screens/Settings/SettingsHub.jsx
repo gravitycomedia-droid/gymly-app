@@ -239,6 +239,7 @@ export default function SettingsHub() {
         <p className="gl2-eyebrow">Membership & taxes</p>
         <div className="gl2-list">
           <SettingsRow icon="🎟️" label="Membership plans" desc="Manage plans, pricing & limits" onClick={() => navigate('/owner/plans')} />
+          <SettingsRow icon="❄️" label="Membership freeze" desc={gym?.settings?.freeze?.enabled === false ? 'Off' : `Durations, limits, fee & check-in rule`} onClick={() => navigate('/owner/settings/freeze')} />
           <SettingsRow icon="🧾" label="Tax settings" desc={taxConfig.enabled ? `Enabled (${taxConfig.rate}%)` : 'Disabled'} onClick={() => setActiveSheet('tax')} />
           <SettingsRow icon="🔢" label="Numbering system" desc="Member numbers & enrollment codes" onClick={() => navigate('/owner/settings/numbering')} />
         </div>

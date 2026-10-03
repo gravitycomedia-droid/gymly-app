@@ -128,6 +128,11 @@ service cloud.firestore {
                     // role and gym_id are server-managed and can never be changed
                     // by a client. auth_uid, once set, is immutable.
                     && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'gym_id'])
+                    // Membership freeze state is server-managed (freezeMembership /
+                    // unfreezeMembership callables, check-in, 02:00 auto-unfreeze).
+                    && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+                         'frozen', 'frozen_at', 'frozen_until', 'freeze_days', 'freeze_entry_policy',
+                         'freeze_history', 'freeze_fee', 'freeze_payment_id'])
                     // auth_uid may be entirely absent on owner-created member docs
                     // (not just null) — resource.data.auth_uid would throw on a
                     // missing key and silently deny the whole update, so read it

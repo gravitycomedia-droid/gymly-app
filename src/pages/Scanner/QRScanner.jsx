@@ -74,7 +74,7 @@ const QRScanner = () => {
         setResult({ type: 'success', member, streak: data.currentStreak, isNewRecord: data.isNewRecord });
       } else if (data.status === 'expired') {
         playHapticSound('error');
-        setResult({ type: 'expired', member });
+        setResult({ type: 'expired', member, frozen: data.reason === 'frozen' });
       } else if (data.status === 'duplicate') {
         playHapticSound('error');
         setResult({ type: 'already', member });
@@ -207,7 +207,7 @@ const QRScanner = () => {
             </div>
             <div className="scan-result-detail">
               {result.type === 'success' && 'Entry logged successfully!'}
-              {result.type === 'expired' && 'Membership expired'}
+              {result.type === 'expired' && (result.frozen ? 'Membership frozen' : 'Membership expired')}
               {result.type === 'already' && 'Already checked in today'}
               {result.type === 'error' && (result.message || 'An error occurred')}
             </div>

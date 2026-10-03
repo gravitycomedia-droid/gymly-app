@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
-import { getUser, updateMember, getTrainers } from '../../../firebase/firestore';
+import { getUser, updateMember, getTrainers, getMemberByPhone } from '../../../firebase/firestore';
 import { calculateBMI, capPhoneDigits } from '../../../utils/helpers';
 import { uploadMemberPhoto } from '../../../firebase/storage';
 import PhotoSourceSheet from '../../components/PhotoSourceSheet';
@@ -15,6 +15,16 @@ const EXPERIENCE_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 const LIFESTYLES = ['Sedentary', 'Lightly active', 'Very active'];
 const DIET_OPTIONS = ['Veg', 'Non-veg', 'Vegan', 'Keto', 'Other'];
 const GENDERS = ['Male', 'Female', 'Other'];
+const COUNTRY_CODES = ['+91', '+1', '+44'];
+
+// Split a stored phone ("+919876543210", or legacy bare "9876543210") into the
+// country-code select + 10-digit input that Add Member uses.
+const splitPhone = (phone) => {
+  const raw = String(phone || '').replace(/[^\d+]/g, '');
+  const code = COUNTRY_CODES.find((c) => raw.startsWith(c) && raw.length - c.length === 10);
+  if (code) return { countryCode: code, phone: raw.slice(code.length) };
+  return { countryCode: '+91', phone: raw.replace(/\D/g, '').slice(-10) };
+};
 
 export default function EditMember() {
   const { id } = useParams();
@@ -31,7 +41,7 @@ export default function EditMember() {
   const [showPhotoSheet, setShowPhotoSheet] = useState(false);
 
   const [form, setForm] = useState({
-    name: '', dob: '', gender: '', bloodGroup: '', address: '', emergencyContact: '',
+    name: '', countryCode: '+91', phone: '', dob: '', gender: '', bloodGroup: '', address: '', emergencyContact: '',
     height: '', weight: '', goal: '', experience: '', lifestyle: '', diet: '', medicalNotes: '', trainerId: '',
   });
 
@@ -46,7 +56,7 @@ export default function EditMember() {
           setMember(memberDoc);
           setPhotoPreview(memberDoc.profile_photo || null);
           setForm({
-            name: memberDoc.name || '', dob: memberDoc.date_of_birth || '', gender: memberDoc.gender || '',
+            name: memberDoc.name || '', ...splitPhone(memberDoc.phone), dob: memberDoc.date_of_birth || '', gender: memberDoc.gender || '',
             bloodGroup: memberDoc.blood_group || '', address: memberDoc.address || '', emergencyContact: memberDoc.emergency_contact || '',
             height: memberDoc.height ? String(memberDoc.height) : '', weight: memberDoc.weight ? String(memberDoc.weight) : '',
             goal: memberDoc.goal || '', experience: memberDoc.experience || '', lifestyle: memberDoc.lifestyle || '',
@@ -78,10 +88,28 @@ export default function EditMember() {
       showToast('Name must be at least 2 characters', 'error');
       return;
     }
+    // Only touch the phone if it was edited — older docs store it in formats
+    // splitPhone can only approximate, and phone is the member's login key.
+    const original = splitPhone(member.phone);
+    const phoneEdited = form.phone !== original.phone || form.countryCode !== original.countryCode;
+    if (phoneEdited && form.phone.length !== 10) {
+      showToast('Enter a valid 10-digit mobile number', 'error');
+      return;
+    }
     setSaving(true);
     try {
       const changes = {};
       if (form.name.trim() !== member.name) changes.name = form.name.trim();
+      if (phoneEdited) {
+        const newPhone = `${form.countryCode}${form.phone}`;
+        const existing = userDoc?.gym_id ? await getMemberByPhone(userDoc.gym_id, newPhone) : null;
+        if (existing && existing.id !== id) {
+          showToast(`${newPhone} already belongs to ${existing.name || 'another member'}`, 'error');
+          setSaving(false);
+          return;
+        }
+        changes.phone = newPhone;
+      }
       if (form.dob !== (member.date_of_birth || '')) changes.date_of_birth = form.dob || null;
       if (form.gender !== (member.gender || '')) changes.gender = form.gender || null;
       if (form.bloodGroup !== (member.blood_group || '')) changes.blood_group = form.bloodGroup || null;
@@ -147,6 +175,17 @@ export default function EditMember() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           <Field label="Full name" required>
             <input className="gl2-input" value={form.name} onChange={(e) => update('name', e.target.value)} />
+          </Field>
+          <Field label="Mobile number" required>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <select className="gl2-select" style={{ width: 90, flex: 'none' }} value={form.countryCode} onChange={(e) => update('countryCode', e.target.value)}>
+                <option value="+91">🇮🇳 +91</option>
+                <option value="+1">🇺🇸 +1</option>
+                <option value="+44">🇬🇧 +44</option>
+              </select>
+              <input className="gl2-input" type="tel" inputMode="numeric" maxLength={10} placeholder="10-digit number" value={form.phone} onChange={(e) => update('phone', capPhoneDigits(e.target.value))} />
+            </div>
+            <span style={{ fontSize: 12, color: 'var(--gl2-muted)' }}>Used for member login and WhatsApp.</span>
           </Field>
 
           <p className="gl2-eyebrow" style={{ marginTop: 6 }}>Personal details</p>

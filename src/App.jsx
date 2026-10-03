@@ -76,6 +76,7 @@ const OwnerKioskDevicesV2  = lazy(() => import('./owner/screens/Attendance/Kiosk
 const OwnerBiometricDevices = lazy(() => import('./owner/screens/Attendance/BiometricDevices'));
 const OwnerSettingsHubV2   = lazy(() => import('./owner/screens/Settings/SettingsHub'));
 const OwnerQuickLinksV2    = lazy(() => import('./owner/screens/Settings/QuickLinks'));
+const OwnerFreezeSettingsV2 = lazy(() => import('./owner/screens/Settings/FreezeSettings'));
 const OwnerEquipmentV2     = lazy(() => import('./owner/screens/Settings/Equipment'));
 const OwnerNumberingSettingsV2 = lazy(() => import('./owner/screens/Settings/NumberingSettings'));
 const OwnerCardDesignV2    = lazy(() => import('./owner/screens/Settings/CardDesign'));
@@ -423,6 +424,10 @@ function AnimatedRoutes() {
           <Route
             path="/owner/settings"
             element={<ProtectedRoute allowedRoles={['owner']}><OwnerShell activeTab="settings"><PageTransition><OwnerSettingsHubV2 /></PageTransition></OwnerShell></ProtectedRoute>}
+          />
+          <Route
+            path="/owner/settings/freeze"
+            element={<ProtectedRoute allowedRoles={['owner']}><OwnerShell activeTab="settings"><PageTransition><OwnerFreezeSettingsV2 /></PageTransition></OwnerShell></ProtectedRoute>}
           />
           <Route
             path="/owner/settings/quick-links"

@@ -28,6 +28,8 @@ function relevantChange(before, after) {
   if (!before) return true;
   if ((before.name || "") !== (after.name || "")) return true;
   if ((before.is_deleted === true) !== (after.is_deleted === true)) return true;
+  // Freeze start/end can flip isMemberActive (the 'block' entry policy).
+  if ((before.frozen === true) !== (after.frozen === true)) return true;
   return toMillis(before.subscription_expiry) !== toMillis(after.subscription_expiry);
 }
 
