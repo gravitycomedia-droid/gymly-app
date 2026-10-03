@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL, getBlob } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage } from '../firebase/config';
 
 /**
@@ -50,8 +50,15 @@ export async function sendCardToMemberChat({ canvas, member, gymId, gymName }) {
   try {
     const jpeg = await toPreviewJpeg(canvas);
     const cardRef = ref(storage, `members/${gymId}/${member.id}/membership_card.jpg`);
-    await uploadBytes(cardRef, jpeg, { contentType: 'image/jpeg', cacheControl: 'public,max-age=300' });
-    const token = new URL(await getDownloadURL(cardRef)).searchParams.get('token');
+    const upload = (async () => {
+      await uploadBytes(cardRef, jpeg, { contentType: 'image/jpeg', cacheControl: 'public,max-age=300' });
+      return getDownloadURL(cardRef);
+    })();
+    const url = await Promise.race([
+      upload,
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Card upload timed out — check the connection and try again')), 20000)),
+    ]);
+    const token = new URL(url).searchParams.get('token');
 
     // v= busts WhatsApp's preview cache so a renewed card never shows the old one.
     const link = `${shareOrigin()}/api/card?g=${encodeURIComponent(gymId)}&m=${encodeURIComponent(member.id)}&t=${token}&v=${Date.now().toString(36)}`;
@@ -74,27 +81,33 @@ const imageFromBlob = (blob) => new Promise((resolve) => {
   img.src = url;
 });
 
+// Never let a slow or stalled photo hold up the card — draw it without one.
+const PHOTO_TIMEOUT_MS = 6000;
+const withTimeout = (promise) => Promise.race([
+  promise,
+  new Promise((resolve) => setTimeout(() => resolve(null), PHOTO_TIMEOUT_MS)),
+]);
+
 /**
  * Load an image so it can be drawn onto a canvas that is later exported.
- *
- * Storage photos go through the Firebase SDK (getBlob): a plain fetch() of the
- * download URL can be answered by the service worker with the opaque copy it
- * cached when an <img> showed the photo — unreadable by canvas, so the photo
- * silently dropped off downloaded/shared cards. Returns null on failure.
+ * Plain CORS fetch → blob URL, falling back to a crossOrigin <img>. (The
+ * service worker caches only 200s — see vite.config.js — so this fetch no
+ * longer gets the opaque copy an <img> left behind.) Resolves null on failure
+ * or after PHOTO_TIMEOUT_MS; the card then shows initials.
  */
-export async function loadImageForCanvas(src) {
-  if (!src) return null;
-  try {
-    if (src.startsWith('data:') || src.startsWith('blob:')) return await imageFromBlob(await (await fetch(src)).blob());
-    if (src.includes('firebasestorage.googleapis.com')) {
-      return await imageFromBlob(await getBlob(ref(storage, src)));
-    }
-  } catch { /* fall through to a direct CORS fetch */ }
-  try {
-    const res = await fetch(src, { mode: 'cors', cache: 'reload' });
-    if (res.ok && res.type !== 'opaque') return await imageFromBlob(await res.blob());
-  } catch { /* give up — card falls back to initials */ }
-  return null;
+export function loadImageForCanvas(src) {
+  if (!src) return Promise.resolve(null);
+  const viaFetch = fetch(src)
+    .then((res) => (res.ok && res.type !== 'opaque' ? res.blob() : Promise.reject(new Error('unreadable'))))
+    .then(imageFromBlob)
+    .catch(() => new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = src;
+    }));
+  return withTimeout(viaFetch);
 }
 
 /** Draw an image into a circle, cropped like object-fit: cover (no stretching). */

@@ -317,7 +317,7 @@ export default function MemberProfile() {
       await sendCardToMemberChat({ canvas: cardCanvas, member, gymId: member.gym_id || userDoc?.gym_id, gymName: gym?.name });
     } catch (err) {
       console.error('Share card error:', err);
-      showToast(err.message === 'No valid WhatsApp number for this member' ? err.message : 'Failed to send card', 'error');
+      showToast(/No valid WhatsApp|timed out/.test(err?.message || '') ? err.message : 'Failed to send card', 'error');
     } finally {
       setSharing(false);
     }
