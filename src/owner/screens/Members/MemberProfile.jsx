@@ -19,7 +19,7 @@ import FingerprintPanel from '../../components/FingerprintPanel';
 import ExtendMembershipSheet from '../../components/ExtendMembershipSheet';
 import { FreezeMembershipSheet, UnfreezeMembershipSheet } from '../../components/FreezeSheets';
 import { isFrozen, remainingDaysAtFreeze, frozenDaysSoFar, toDate } from '../../../utils/freeze';
-import { sendCardToMemberChat, drawCircleImageCover, toWhatsAppNumber } from '../../../utils/whatsappCard';
+import { sendCardToMemberChat, drawCircleImageCover, toWhatsAppNumber, loadImageForCanvas } from '../../../utils/whatsappCard';
 
 const DEFAULT_CS = {
   show_gym_name: true, show_gymly_label: true, show_member_name: true, show_photo: true,
@@ -181,22 +181,7 @@ export default function MemberProfile() {
     ctx.scale(SCALE, SCALE);
     ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
     const rrect = (x, y, w, h, r) => { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r); ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r); ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r); ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r); ctx.closePath(); };
-    const loadImg = (src) => new Promise((res) => {
-      if (!src) { res(null); return; }
-      fetch(src).then((r) => r.blob()).then((blob) => {
-        const url = URL.createObjectURL(blob);
-        const img = new Image();
-        img.onload = () => { URL.revokeObjectURL(url); res(img); };
-        img.onerror = () => { URL.revokeObjectURL(url); res(null); };
-        img.src = url;
-      }).catch(() => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => res(img);
-        img.onerror = () => res(null);
-        img.src = src;
-      });
-    });
+    const loadImg = loadImageForCanvas; // SW-safe loader (see utils/whatsappCard.js)
 
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, '#1a1040'); grad.addColorStop(0.55, '#2d1b69'); grad.addColorStop(1, '#1a2980');

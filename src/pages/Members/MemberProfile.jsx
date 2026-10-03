@@ -15,7 +15,7 @@ import BottomNav from '../../components/BottomNav';
 import { can, getBasePath } from '../../utils/permissions';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { uploadMemberPhoto } from '../../firebase/storage';
-import { sendCardToMemberChat, drawCircleImageCover } from '../../utils/whatsappCard';
+import { sendCardToMemberChat, drawCircleImageCover, loadImageForCanvas } from '../../utils/whatsappCard';
 import { FreezeMembershipSheet, UnfreezeMembershipSheet, Gl2Scope } from '../../owner/components/FreezeSheets';
 import { isFrozen, remainingDaysAtFreeze, frozenDaysSoFar, toDate } from '../../utils/freeze';
 import '../MemberCard/MemberCard.css';
@@ -170,25 +170,7 @@ const MemberProfile = ({ readOnly = false }) => {
       ctx.closePath();
     };
 
-    const loadImg = (src) => new Promise(res => {
-      if (!src) { res(null); return; }
-      fetch(src)
-        .then(r => r.blob())
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          const img = new Image();
-          img.onload = () => { URL.revokeObjectURL(url); res(img); };
-          img.onerror = () => { URL.revokeObjectURL(url); res(null); };
-          img.src = url;
-        })
-        .catch(() => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => res(img);
-          img.onerror = () => res(null);
-          img.src = src;
-        });
-    });
+    const loadImg = loadImageForCanvas; // SW-safe loader (see utils/whatsappCard.js)
 
     // Background
     const grad = ctx.createLinearGradient(0, 0, W, H);

@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, getBlob } from 'firebase/storage';
 import { storage } from '../firebase/config';
 
 /**
@@ -64,6 +64,37 @@ export async function sendCardToMemberChat({ canvas, member, gymId, gymName }) {
     tab?.close();
     throw err;
   }
+}
+
+const imageFromBlob = (blob) => new Promise((resolve) => {
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+  img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+  img.src = url;
+});
+
+/**
+ * Load an image so it can be drawn onto a canvas that is later exported.
+ *
+ * Storage photos go through the Firebase SDK (getBlob): a plain fetch() of the
+ * download URL can be answered by the service worker with the opaque copy it
+ * cached when an <img> showed the photo — unreadable by canvas, so the photo
+ * silently dropped off downloaded/shared cards. Returns null on failure.
+ */
+export async function loadImageForCanvas(src) {
+  if (!src) return null;
+  try {
+    if (src.startsWith('data:') || src.startsWith('blob:')) return await imageFromBlob(await (await fetch(src)).blob());
+    if (src.includes('firebasestorage.googleapis.com')) {
+      return await imageFromBlob(await getBlob(ref(storage, src)));
+    }
+  } catch { /* fall through to a direct CORS fetch */ }
+  try {
+    const res = await fetch(src, { mode: 'cors', cache: 'reload' });
+    if (res.ok && res.type !== 'opaque') return await imageFromBlob(await res.blob());
+  } catch { /* give up — card falls back to initials */ }
+  return null;
 }
 
 /** Draw an image into a circle, cropped like object-fit: cover (no stretching). */

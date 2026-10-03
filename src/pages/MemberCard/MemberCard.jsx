@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { getGym } from '../../firebase/firestore';
 import { getExpiryStatus, formatDate, getInitials, getAvatarColor, getPlanName } from '../../utils/helpers';
-import { drawCircleImageCover } from '../../utils/whatsappCard';
+import { drawCircleImageCover, loadImageForCanvas } from '../../utils/whatsappCard';
 import './MemberCard.css';
 
 const DEFAULT_SETTINGS = {
@@ -71,25 +71,7 @@ const MemberCard = () => {
       ctx.closePath();
     };
 
-    const loadImg = (src) => new Promise(res => {
-      if (!src) { res(null); return; }
-      fetch(src)
-        .then(r => r.blob())
-        .then(blob => {
-          const url = URL.createObjectURL(blob);
-          const img = new Image();
-          img.onload = () => { URL.revokeObjectURL(url); res(img); };
-          img.onerror = () => { URL.revokeObjectURL(url); res(null); };
-          img.src = url;
-        })
-        .catch(() => {
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          img.onload = () => res(img);
-          img.onerror = () => res(null);
-          img.src = src;
-        });
-    });
+    const loadImg = loadImageForCanvas; // SW-safe loader (see utils/whatsappCard.js)
 
     // ── Background gradient (135deg = top-left → bottom-right) ──
     const grad = ctx.createLinearGradient(0, 0, W, H);

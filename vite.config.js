@@ -57,12 +57,14 @@ export default defineConfig({
             urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
-              cacheName: 'firebase-storage-images',
+              // v2 + 200-only: caching opaque (status 0) <img> responses meant
+              // later CORS reads (card canvas) got an unreadable copy back.
+              cacheName: 'firebase-storage-images-v2',
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 30 * 24 * 60 * 60
               },
-              cacheableResponse: { statuses: [0, 200] }
+              cacheableResponse: { statuses: [200] }
             }
           }
         ]
