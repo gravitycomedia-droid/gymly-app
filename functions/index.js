@@ -347,6 +347,7 @@ exports.adminUpdateGymSettings    = adminControl.adminUpdateGymSettings;
 exports.adminCreateBroadcast      = adminControl.adminCreateBroadcast;
 exports.adminSetBroadcastActive   = adminControl.adminSetBroadcastActive;
 exports.adminDeleteBroadcast      = adminControl.adminDeleteBroadcast;
+exports.adminSaveContactDetails   = adminControl.adminSaveContactDetails;
 
 // Attendance security — signed check-in token + server-validated scans.
 // refreshCheckinClaim issues the member's short-lived QR token; processScan is

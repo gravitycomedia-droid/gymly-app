@@ -7,6 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
+        sa: {
+          canvas: "#F6F6F3",
+          surface: "#FFFFFF",
+          subtle: "#FAFAF8",
+          muted: "#F1F1EC",
+          line: { DEFAULT: "#E6E5E0", soft: "#EFEEE9", strong: "#D4D3CC" },
+          ink: { DEFAULT: "#16181D", 2: "#4A4F5A", 3: "#6B7080", disabled: "#8A8F9C" },
+          accent: {
+            DEFAULT: "#0B7A57", 700: "#08664A", 800: "#065239",
+            ink: "#07573F", soft: "#E4F2EC", tint: "#F2F9F6", line: "#8CC3AD",
+          },
+          success: { DEFAULT: "#17703A", soft: "#E5F3EA", dot: "#1F9D55" },
+          info:    { DEFAULT: "#1D5FB8", soft: "#E8F0FB", dot: "#3B7DDD" },
+          warning: { DEFAULT: "#8A5300", soft: "#FDF1DC", dot: "#D08A1A", line: "#F2D7A6" },
+          danger:  { DEFAULT: "#B42318", 700: "#962018", 800: "#7A1A12", soft: "#FDECEA", dot: "#D92D20", line: "#F6C9C4" },
+          neutral: { DEFAULT: "#3F3F46", soft: "#EEEEF0", dot: "#52525B" },
+        },
         primary: "var(--primary, #0058bc)",
         "primary-container": "var(--primary-container, #0070eb)",
         "on-primary-container": "#fefcff",
@@ -40,6 +57,8 @@ export default {
         "on-background": "#1b1b1d",
       },
       fontFamily: {
+        'sa': ['Geist', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        'sa-mono': ['"Geist Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
         'display-lg': ['"Hanken Grotesk"', 'sans-serif'],
         'headline-lg': ['"Hanken Grotesk"', 'sans-serif'],
         'headline-md': ['"Hanken Grotesk"', 'sans-serif'],
@@ -59,6 +78,11 @@ export default {
         "label-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
         "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
       },
+      // ── Super Admin console tokens (design_handoff_superadmin_console/README.md §5)
+      // Namespaced under `sa` on purpose: the spec's names (surface, warning,
+      // line, ink…) collide with tokens this app already ships. Prefixing keeps
+      // the console's palette self-contained — `bg-sa-surface`, `text-sa-ink-2`.
+      // Shadows and the shimmer keyframe are prefixed for the same reason.
       spacing: {
         "stack-sm": "8px",
         "stack-md": "16px",
@@ -67,7 +91,18 @@ export default {
         "container-padding": "24px",
         "base": "16px",
         "section": "48px"
-      }
+      },
+      boxShadow: {
+        "sa-sm": "0 1px 2px rgba(16,24,40,.06)",
+        "sa-md": "0 4px 12px rgba(16,24,40,.08)",
+        "sa-lg": "0 16px 40px rgba(16,24,40,.18)",
+        "sa-toast": "0 8px 24px rgba(16,24,40,.24)",
+        "sa-seg": "0 1px 2px rgba(16,24,40,.08), 0 0 0 1px rgba(16,24,40,.06)",
+      },
+      keyframes: {
+        "sa-shimmer": { "0%": { backgroundPosition: "200% 0" }, "100%": { backgroundPosition: "-200% 0" } },
+      },
+      animation: { "sa-shimmer": "sa-shimmer 1.4s linear infinite" },
     },
   },
   plugins: [],

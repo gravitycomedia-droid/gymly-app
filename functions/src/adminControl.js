@@ -262,47 +262,117 @@ exports.adminSetPlanActive = functions.https.onCall(async (data, context) => {
 });
 
 // ── Platform broadcasts (in-app banner to gyms) ────────────────────────────
-const BROADCAST_AUDIENCES = ["all", "plan", "status", "specific"];
+// `plan` / `status` / `specific` are the legacy audience names the first
+// console wrote. The new console sends `plans` (multi-select) and `gyms`;
+// both spellings are accepted and normalised on write so historic documents
+// and the owner app's reader keep working.
+const BROADCAST_AUDIENCES = ["all", "plan", "plans", "status", "specific", "gyms"];
+const BROADCAST_STATUSES = ["draft", "published"];
 
+const normaliseAudience = (a) => (a === "plans" ? "plan" : a === "gyms" ? "specific" : a);
+
+/**
+ * Create OR update a broadcast.
+ *
+ * Adds two things the redesigned console needs:
+ *  - `status`: a draft is stored with active:false, so the owner-app rule
+ *    (`resource.data.active == true`) cannot surface it. Publishing flips both.
+ *  - `id`: passing one updates that document instead of adding a new one,
+ *    which is how "save draft" then "publish" reuses the same doc.
+ *
+ * A published broadcast is immutable — the console says so in its confirm
+ * dialog, and this enforces it.
+ */
 exports.adminCreateBroadcast = functions.https.onCall(async (data, context) => {
   assertSuperAdmin(context);
+  const status = data.status == null ? "published" : requireString(data.status, "status");
+  if (!BROADCAST_STATUSES.includes(status)) {
+    throw new functions.https.HttpsError("invalid-argument", `status must be one of ${BROADCAST_STATUSES.join(", ")}`);
+  }
+  const isDraft = status === "draft";
+
   const title = requireString(data.title, "title");
-  const body = requireString(data.body, "body");
-  const audience = requireString(data.audience, "audience");
-  if (!BROADCAST_AUDIENCES.includes(audience)) {
+  // A draft only needs a title; a published broadcast needs a message too.
+  const body = isDraft ? String(data.body || "") : requireString(data.body, "body");
+  const rawAudience = requireString(data.audience, "audience");
+  if (!BROADCAST_AUDIENCES.includes(rawAudience)) {
     throw new functions.https.HttpsError("invalid-argument", `audience must be one of ${BROADCAST_AUDIENCES.join(", ")}`);
   }
+  const audience = normaliseAudience(rawAudience);
 
-  // Build targeting fields — null (never undefined) when not used.
-  const planFilter   = audience === "plan"   ? requireString(data.plan_filter, "plan_filter") : null;
-  const statusFilter = audience === "status" ? requireString(data.status_filter, "status_filter") : null;
+  const asStringArray = (v, cap) => (Array.isArray(v) ? v.filter((x) => typeof x === "string").slice(0, cap) : []);
+
+  // Targeting fields are null (never undefined) when unused, so a Firestore
+  // update clears them rather than leaving stale values behind.
+  let planIds = null;
+  let planFilter = null;
+  if (audience === "plan") {
+    planIds = asStringArray(data.plan_ids, 50);
+    if (planIds.length === 0 && typeof data.plan_filter === "string") planIds = [data.plan_filter];
+    if (!isDraft && planIds.length === 0) {
+      throw new functions.https.HttpsError("invalid-argument", "plan_ids required for a plan audience");
+    }
+    // Kept so the existing owner-app reader, which matches on a single
+    // plan_filter, still works for single-plan broadcasts.
+    planFilter = planIds[0] || null;
+  }
+
   let gymIds = null;
   if (audience === "specific") {
-    if (!Array.isArray(data.gym_ids) || data.gym_ids.length === 0) {
+    gymIds = asStringArray(data.gym_ids, 500);
+    if (!isDraft && gymIds.length === 0) {
       throw new functions.https.HttpsError("invalid-argument", "gym_ids required for specific audience");
     }
-    gymIds = data.gym_ids.filter((x) => typeof x === "string").slice(0, 500);
   }
+
+  const statusFilter = audience === "status" ? requireString(data.status_filter, "status_filter") : null;
 
   const days = Number(data.expires_in_days);
   const expiresAt = Number.isFinite(days) && days > 0
     ? admin.firestore.Timestamp.fromDate(new Date(Date.now() + days * 86400000))
     : null;
 
-  const ref = await db.collection("broadcasts").add({
+  const reachCount = Number.isFinite(Number(data.reach_count)) ? Number(data.reach_count) : null;
+
+  const payload = {
     title: title.slice(0, 120),
     body: body.slice(0, 1000),
+    status,
     audience,
     plan_filter: planFilter,
+    plan_ids: planIds,
     status_filter: statusFilter,
     gym_ids: gymIds,
-    active: true,
+    reach_count: reachCount,
+    // Drafts must never satisfy the owner-app read rule.
+    active: !isDraft,
     expires_at: expiresAt,
+    updated_at: admin.firestore.FieldValue.serverTimestamp(),
+  };
+
+  const id = typeof data.id === "string" && data.id.trim() ? data.id.trim() : null;
+
+  if (id) {
+    const ref = db.collection("broadcasts").doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) throw new functions.https.HttpsError("not-found", "broadcast not found");
+    if ((snap.data().status || "published") === "published") {
+      throw new functions.https.HttpsError("failed-precondition", "published broadcasts can't be edited");
+    }
+    if (!isDraft) payload.published_at = admin.firestore.FieldValue.serverTimestamp();
+    await ref.set(payload, { merge: true });
+    await audit(context, { gymId: null, action: `admin_update_broadcast_${status}`, after: { id, audience, title } });
+    return { ok: true, id };
+  }
+
+  const ref = await db.collection("broadcasts").add({
+    ...payload,
+    published_at: isDraft ? null : admin.firestore.FieldValue.serverTimestamp(),
     created_by: context.auth.uid,
     created_at: admin.firestore.FieldValue.serverTimestamp(),
   });
 
-  await audit(context, { gymId: null, action: "admin_create_broadcast", after: { id: ref.id, audience, title } });
+  await audit(context, { gymId: null, action: `admin_create_broadcast_${status}`, after: { id: ref.id, audience, title } });
   return { ok: true, id: ref.id };
 });
 
@@ -353,4 +423,35 @@ exports.adminSeedDefaultPlans = functions.https.onCall(async (data, context) => 
   }
   await audit(context, { gymId: null, action: "admin_seed_default_plans", after: { created } });
   return { ok: true, created };
+});
+
+
+// ── Super Admin contact details ────────────────────────────────────────────
+// Backs the console's Settings screen. Stored at platform_settings/super_admin,
+// which is super-admin-read / server-write-only in firestore.rules.
+exports.adminSaveContactDetails = functions.https.onCall(async (data, context) => {
+  assertSuperAdmin(context);
+
+  const phone = String(data.phone || "").replace(/\D/g, "");
+  if (!/^[6-9]\d{9}$/.test(phone)) {
+    throw new functions.https.HttpsError("invalid-argument", "phone must be a 10-digit Indian mobile number");
+  }
+
+  const email = String(data.email || "").trim();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    throw new functions.https.HttpsError("invalid-argument", "email is not a valid address");
+  }
+
+  const ref = db.collection("platform_settings").doc("super_admin");
+  const before = (await ref.get()).data() || null;
+  const after = {
+    phone,
+    email,
+    updated_by: context.auth.uid,
+    updated_at: admin.firestore.FieldValue.serverTimestamp(),
+  };
+  await ref.set(after, { merge: true });
+
+  await audit(context, { gymId: null, action: "admin_save_contact_details", before, after });
+  return { ok: true };
 });

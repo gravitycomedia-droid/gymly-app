@@ -1,3 +1,7 @@
+// The app's stylesheet. It lives here rather than in main.jsx so the public
+// landing page, which shares main.jsx but none of these styles, does not block
+// its first paint on 80 KB of CSS it never uses.
+import './index.css';
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -48,9 +52,14 @@ const TabletMode           = lazy(() => import('./pages/Scanner/TabletMode'));
 const SubscriptionPlans    = lazy(() => import('./pages/Subscription/SubscriptionPlans'));
 const GymLandingPage       = lazy(() => import('./pages/Subscription/GymLandingPage'));
 const MemberAgreement      = lazy(() => import('./pages/Agreement/MemberAgreement'));
-const SuperAdminDashboard  = lazy(() => import('./pages/Admin/SuperAdminDashboard'));
-const BroadcastsPage       = lazy(() => import('./pages/Admin/BroadcastsPage'));
-const PlansPage            = lazy(() => import('./pages/Admin/PlansPage'));
+// Super Admin console (design_handoff_superadmin_console). One shell, five
+// screens; the old single-page control plane lives on only inside ViewAsOwner.
+const SuperAdminLayout     = lazy(() => import('./superadmin/SuperAdminLayout'));
+const SuperAdminDashboard  = lazy(() => import('./superadmin/screens/Dashboard'));
+const SuperAdminGymDetail  = lazy(() => import('./superadmin/screens/GymDetail'));
+const SuperAdminBroadcasts = lazy(() => import('./superadmin/screens/Broadcasts'));
+const SuperAdminPlans      = lazy(() => import('./superadmin/screens/Plans'));
+const SuperAdminSettings   = lazy(() => import('./superadmin/screens/Settings'));
 const SubscriptionGate     = lazy(() => import('./components/SubscriptionGate'));
 const EntryKiosk           = lazy(() => import('./pages/Kiosk/EntryKiosk'));
 const ExitKiosk            = lazy(() => import('./pages/Kiosk/ExitKiosk'));
@@ -406,18 +415,29 @@ function AnimatedRoutes() {
             element={<ProtectedRoute allowedRoles={['owner']}><OwnerShell activeTab="settings"><PageTransition><OwnerSubscriptionV2 /></PageTransition></OwnerShell></ProtectedRoute>}
           />
 
-          {/* Super-Admin Portal — platform control plane (super_admin claim) */}
+          {/* Super-Admin console — platform control plane (super_admin claim).
+              SuperAdminLayout supplies its own page transition, so these routes
+              are not wrapped in PageTransition: that would cross-fade the
+              sidebar and tab bar along with the content. */}
           <Route
             path="/admin"
-            element={<ProtectedRoute requireSuperAdmin><PageTransition><SuperAdminDashboard /></PageTransition></ProtectedRoute>}
+            element={<ProtectedRoute requireSuperAdmin><SuperAdminLayout active="dashboard"><SuperAdminDashboard /></SuperAdminLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/gyms/:gymId"
+            element={<ProtectedRoute requireSuperAdmin><SuperAdminLayout active="gym"><SuperAdminGymDetail /></SuperAdminLayout></ProtectedRoute>}
           />
           <Route
             path="/admin/broadcasts"
-            element={<ProtectedRoute requireSuperAdmin><PageTransition><BroadcastsPage /></PageTransition></ProtectedRoute>}
+            element={<ProtectedRoute requireSuperAdmin><SuperAdminLayout active="broadcasts"><SuperAdminBroadcasts /></SuperAdminLayout></ProtectedRoute>}
           />
           <Route
             path="/admin/plans"
-            element={<ProtectedRoute requireSuperAdmin><PageTransition><PlansPage /></PageTransition></ProtectedRoute>}
+            element={<ProtectedRoute requireSuperAdmin><SuperAdminLayout active="plans"><SuperAdminPlans /></SuperAdminLayout></ProtectedRoute>}
+          />
+          <Route
+            path="/admin/settings"
+            element={<ProtectedRoute requireSuperAdmin><SuperAdminLayout active="settings"><SuperAdminSettings /></SuperAdminLayout></ProtectedRoute>}
           />
 
           {/* Settings (Gymloop v2 shell) */}

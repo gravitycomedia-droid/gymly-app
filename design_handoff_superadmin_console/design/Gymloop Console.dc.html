@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+html,body{margin:0;padding:0}
+*{box-sizing:border-box}
+body{font-family:Geist,ui-sans-serif,system-ui,sans-serif;color:#16181D;-webkit-font-smoothing:antialiased}
+a{color:#07573F;text-decoration:none}a:hover{color:#065239;text-decoration:underline}
+input::placeholder,textarea::placeholder{color:#8A8F9C}
+:focus{outline:none}:focus-visible{outline:2px solid #0B7A57;outline-offset:2px}
+@keyframes gl-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@keyframes gl-page{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes gl-fade{from{opacity:0}to{opacity:1}}
+@keyframes gl-modal{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+@keyframes gl-sheet{from{transform:translateY(100%)}to{transform:none}}
+@keyframes gl-panel{from{transform:translateX(100%)}to{transform:none}}
+@keyframes gl-toast{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes gl-spin{to{transform:rotate(360deg)}}
+</style>
+</helmet>
+<div ref="{{ rootRef }}" style="position:relative;display:flex;width:100%;height:{{ L.rootH }};overflow:hidden;background:#F6F6F3;font-family:Geist,ui-sans-serif,system-ui,sans-serif;color:#16181D;font-size:14px;line-height:20px">
+
+<sc-if value="{{ L.showSidebar }}" hint-placeholder-val="{{ true }}">
+<aside style="flex:none;width:{{ L.sideW }};height:100%;display:flex;flex-direction:column;background:#FFFFFF;border-right:1px solid #E6E5E0;transition:width 200ms ease">
+<div style="height:64px;flex:none;display:flex;align-items:center;gap:10px;padding:0 20px;border-bottom:1px solid #EFEEE9">
+<div style="width:32px;height:32px;flex:none;border-radius:8px;background:#0B7A57;color:#FFFFFF;display:grid;place-items:center;font-weight:700;font-size:16px">G</div>
+<sc-if value="{{ L.expanded }}" hint-placeholder-val="{{ true }}"><div style="min-width:0;white-space:nowrap"><div style="font-size:15px;line-height:20px;font-weight:600">Gymloop</div><div style="font-size:11px;line-height:14px;color:#6B7080;text-transform:uppercase;letter-spacing:.06em;font-weight:500">Super Admin</div></div></sc-if>
+</div>
+<nav aria-label="Primary" style="flex:1;padding:12px;display:flex;flex-direction:column;gap:4px">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+<button onClick="{{ n.go }}" aria-current="{{ n.aria }}" title="{{ n.label }}" style="display:flex;align-items:center;gap:12px;height:40px;padding:0 10px;border:0;border-radius:8px;background:{{ n.bg }};color:{{ n.fg }};font-family:inherit;font-size:14px;font-weight:{{ n.fw }};cursor:pointer;width:100%;justify-content:{{ L.navJustify }};white-space:nowrap" style-hover="box-shadow:inset 0 0 0 100px rgba(22,24,29,.04)" style-active="box-shadow:inset 0 0 0 100px rgba(22,24,29,.08)">
+<svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ n.icon }}"></path></svg>
+<sc-if value="{{ L.expanded }}" hint-placeholder-val="{{ true }}"><span>{{ n.label }}</span></sc-if>
+</button>
+</sc-for>
+</nav>
+<div style="padding:12px;border-top:1px solid #EFEEE9;display:flex;flex-direction:column;gap:4px">
+<button onClick="{{ toggleCollapse }}" aria-label="{{ collapseLabel }}" title="{{ collapseLabel }}" style="display:flex;align-items:center;gap:12px;height:40px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#4A4F5A;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:{{ L.navJustify }};white-space:nowrap" style-hover="box-shadow:inset 0 0 0 100px rgba(22,24,29,.04)">
+<svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.panel }}"></path></svg>
+<sc-if value="{{ L.expanded }}"><span>Collapse</span></sc-if>
+</button>
+<button onClick="{{ askLogout }}" title="Log out" style="display:flex;align-items:center;gap:12px;height:40px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#B42318;font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;width:100%;justify-content:{{ L.navJustify }};white-space:nowrap" style-hover="background:#FDECEA">
+<svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.logout }}"></path></svg>
+<sc-if value="{{ L.expanded }}"><span>Log out</span></sc-if>
+</button>
+</div>
+</aside>
+</sc-if>
+
+<div style="flex:1;min-width:0;height:100%;display:flex;flex-direction:column">
+<sc-if value="{{ L.isMobile }}">
+<header style="flex:none;height:56px;display:flex;align-items:center;gap:4px;padding:0 4px 0 8px;background:#FFFFFF;border-bottom:1px solid #E6E5E0">
+<sc-if value="{{ tb.showBack }}"><button onClick="{{ tb.back }}" aria-label="Back to dashboard" style="width:44px;height:44px;flex:none;display:grid;place-items:center;border:0;background:transparent;border-radius:8px;color:#16181D;cursor:pointer" style-active="background:#F1F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.arrowLeft }}"></path></svg></button></sc-if>
+<sc-if value="{{ tb.showLogo }}"><div style="width:44px;height:44px;flex:none;display:grid;place-items:center"><div style="width:28px;height:28px;border-radius:7px;background:#0B7A57;color:#FFFFFF;display:grid;place-items:center;font-weight:700;font-size:14px">G</div></div></sc-if>
+<h1 style="flex:1;min-width:0;margin:0;font-size:17px;line-height:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ tb.title }}</h1>
+<button onClick="{{ tb.toggleMenu }}" aria-label="Account menu" aria-expanded="{{ tb.menuOpen }}" style="width:44px;height:44px;flex:none;display:grid;place-items:center;border:0;background:transparent;border-radius:999px;cursor:pointer"><span style="width:32px;height:32px;border-radius:999px;background:#E4F2EC;color:#07573F;display:grid;place-items:center;font-size:12px;font-weight:600">SA</span></button>
+</header>
+</sc-if>
+<main ref="{{ scrollRef }}" style="flex:1;min-height:0;overflow-y:auto;overflow-x:hidden">
+<div style="max-width:1200px;margin:0 auto;padding:{{ L.pagePad }}">
+<sc-if value="{{ R.dashboard }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:{{ L.gap }};animation:gl-page 200ms ease-out">
+<sc-if value="{{ L.notMobile }}" hint-placeholder-val="{{ true }}">
+<header style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+<div><h1 style="margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.01em">Dashboard</h1><p style="margin:4px 0 0;color:#6B7080">Every gym on Gymloop, at a glance.</p></div>
+<div style="font-size:13px;color:#6B7080">As of {{ todayLabel }}</div>
+</header>
+</sc-if>
+<section aria-label="Platform totals" style="display:grid;grid-template-columns:{{ L.kpiCols }};gap:{{ L.kpiGap }}">
+<sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+<div style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:{{ L.kpiPad }};min-height:{{ L.kpiH }};display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-width:0">
+<div style="font-size:13px;line-height:18px;color:#4A4F5A;font-weight:500">{{ k.label }}</div>
+<sc-if value="{{ k.ready }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+<div style="font-size:{{ L.kpiVal }};line-height:1.15;font-weight:600;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;overflow-wrap:anywhere">{{ k.value }}</div>
+<div style="font-size:12px;line-height:16px;color:#6B7080"><span style="color:{{ k.subColor }};font-weight:600">{{ k.subStrong }}</span> {{ k.subRest }}</div>
+</div>
+</sc-if>
+<sc-if value="{{ k.loading }}">
+<div aria-busy="true" style="display:flex;flex-direction:column;gap:8px"><div style="height:24px;width:70%;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div><div style="height:12px;width:45%;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div></div>
+</sc-if>
+<sc-if value="{{ k.error }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
+<span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#B42318"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.alert }}"></path></svg>Couldn’t load</span>
+<button onClick="{{ k.retry }}" style="height:32px;padding:0 10px;display:flex;align-items:center;gap:6px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:13px;font-weight:500;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.refresh }}"></path></svg>Retry</button>
+</div>
+</sc-if>
+</div>
+</sc-for>
+</section>
+
+<section aria-labelledby="gyms-h" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;min-width:0">
+<div style="padding:{{ L.cardPad }};display:flex;flex-direction:column;gap:12px;border-bottom:1px solid #EFEEE9">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px"><h2 id="gyms-h" style="margin:0;font-size:16px;line-height:24px;font-weight:600">Gyms</h2><span style="font-size:13px;color:#6B7080;font-variant-numeric:tabular-nums">{{ gl.countLabel }}</span></div>
+<div style="display:grid;grid-template-columns:{{ L.toolCols }};gap:8px">
+<div style="position:relative;grid-column:{{ L.searchSpan }};min-width:0">
+<svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="{{ I.search }}"></path></svg>
+<input type="search" value="{{ gl.q }}" onChange="{{ gl.setQ }}" aria-label="Search gyms by name, owner or city" placeholder="Search gym, owner or city" style="width:100%;height:{{ L.ctlH }};padding:0 40px 0 38px;border:1px solid #D4D3CC;border-radius:8px;background:#FFFFFF;font-family:inherit;font-size:14px;color:#16181D">
+<sc-if value="{{ gl.hasSearch }}"><button onClick="{{ gl.clearQ }}" aria-label="Clear search" style="position:absolute;right:2px;top:50%;transform:translateY(-50%);width:36px;height:36px;display:grid;place-items:center;border:0;background:transparent;color:#6B7080;cursor:pointer;border-radius:6px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round"><path d="{{ I.x }}"></path></svg></button></sc-if>
+</div>
+<label style="position:relative;display:block;min-width:0"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Filter by plan</span>
+<select value="{{ gl.fPlan }}" onChange="{{ gl.setPlan }}" style="appearance:none;width:100%;height:{{ L.ctlH }};padding:0 32px 0 12px;border:1px solid {{ gl.planS.bd }};background:{{ gl.planS.bg }};border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;cursor:pointer"><option value="">All plans</option><option value="starter_monthly">Starter</option><option value="growth_monthly">Growth</option><option value="pro_monthly">Pro</option><option value="studio_plus_monthly">Studio Plus</option><option value="basic_legacy">Basic (Legacy)</option><option value="founders_annual">Founders’ Club</option></select>
+<svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="{{ I.chevD }}"></path></svg></label>
+<label style="position:relative;display:block;min-width:0"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Filter by status</span>
+<select value="{{ gl.fStatus }}" onChange="{{ gl.setStatus }}" style="appearance:none;width:100%;height:{{ L.ctlH }};padding:0 32px 0 12px;border:1px solid {{ gl.statusS.bd }};background:{{ gl.statusS.bg }};border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;cursor:pointer"><option value="">All statuses</option><option value="Active">Active</option><option value="Trial">Trial</option><option value="Expired">Expired</option><option value="Suspended">Suspended</option></select>
+<svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="{{ I.chevD }}"></path></svg></label>
+<label style="position:relative;display:block;min-width:0"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Filter by city</span>
+<select value="{{ gl.fCity }}" onChange="{{ gl.setCity }}" style="appearance:none;width:100%;height:{{ L.ctlH }};padding:0 32px 0 12px;border:1px solid {{ gl.cityS.bd }};background:{{ gl.cityS.bg }};border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;cursor:pointer"><option value="">All cities</option><option>Ahmedabad</option><option>Bengaluru</option><option>Chandigarh</option><option>Chennai</option><option>Delhi</option><option>Hyderabad</option><option>Indore</option><option>Jaipur</option><option>Kochi</option><option>Lucknow</option><option>Mumbai</option><option>Pune</option></select>
+<svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="{{ I.chevD }}"></path></svg></label>
+<label style="position:relative;display:block;min-width:0"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Sort gyms</span>
+<select value="{{ gl.sort }}" onChange="{{ gl.setSort }}" style="appearance:none;width:100%;height:{{ L.ctlH }};padding:0 32px 0 12px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;cursor:pointer"><option value="newest">Sort: Newest</option><option value="name">Sort: Name A–Z</option><option value="members">Sort: Most members</option></select>
+<svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="{{ I.chevD }}"></path></svg></label>
+</div>
+<sc-if value="{{ gl.hasChips }}">
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+<sc-for list="{{ gl.chips }}" as="c">
+<button onClick="{{ c.clear }}" aria-label="Remove filter {{ c.label }}" style="display:inline-flex;align-items:center;gap:6px;height:{{ L.chipH }};padding:0 8px 0 12px;border-radius:999px;border:1px solid #BFDDD0;background:#E4F2EC;color:#07573F;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer" style-hover="background:#D6ECE2">{{ c.label }}<svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="{{ I.x }}"></path></svg></button>
+</sc-for>
+<button onClick="{{ gl.clearAll }}" style="height:{{ L.chipH }};padding:0 10px;border:0;background:transparent;color:#4A4F5A;font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;border-radius:8px;text-decoration:underline;text-underline-offset:3px">Clear all</button>
+</div>
+</sc-if>
+</div>
+
+<sc-if value="{{ gl.showSkeleton }}">
+<div aria-busy="true" aria-label="Loading gyms">
+<sc-for list="{{ skel6 }}" as="x">
+<div style="display:flex;align-items:center;gap:16px;padding:16px 20px;border-top:1px solid #EFEEE9">
+<div style="flex:2;display:flex;flex-direction:column;gap:6px"><div style="height:12px;width:60%;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div><div style="height:10px;width:35%;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div></div>
+<div style="flex:1;height:12px;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div>
+<div style="width:64px;height:22px;border-radius:999px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ gl.showError }}">
+<div role="alert" style="padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px">
+<div style="width:48px;height:48px;border-radius:12px;background:#FDECEA;color:#B42318;display:grid;place-items:center;margin-bottom:4px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.alert }}"></path></svg></div>
+<h3 style="margin:0;font-size:16px;line-height:24px;font-weight:600">Couldn’t load gyms</h3>
+<p style="margin:0;max-width:360px;color:#6B7080">Something went wrong while fetching the gyms list. Check your connection and try again.</p>
+<button onClick="{{ gl.retry }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;display:flex;align-items:center;gap:8px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3" style-active="background:#EFEEE9"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.refresh }}"></path></svg>Try again</button>
+</div>
+</sc-if>
+<sc-if value="{{ gl.showEmpty }}">
+<div style="padding:56px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px">
+<div style="width:48px;height:48px;border-radius:12px;background:#F1F1EC;color:#6B7080;display:grid;place-items:center;margin-bottom:4px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.inbox }}"></path></svg></div>
+<h3 style="margin:0;font-size:16px;line-height:24px;font-weight:600">No gyms yet</h3>
+<p style="margin:0;max-width:360px;color:#6B7080">Gyms appear here as soon as an owner signs up for Gymloop.</p>
+</div>
+</sc-if>
+<sc-if value="{{ gl.showNoResults }}">
+<div style="padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px">
+<div style="width:48px;height:48px;border-radius:12px;background:#F1F1EC;color:#6B7080;display:grid;place-items:center;margin-bottom:4px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.search }}"></path></svg></div>
+<h3 style="margin:0;font-size:16px;line-height:24px;font-weight:600;overflow-wrap:anywhere">{{ gl.noResTitle }}</h3>
+<p style="margin:0;max-width:360px;color:#6B7080">Try a different name, owner or city, or clear your filters.</p>
+<button onClick="{{ gl.clearAll }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3">Clear filters</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ gl.showTable }}" hint-placeholder-val="{{ true }}">
+<div role="table" aria-label="Gyms">
+<div role="row" style="position:sticky;top:0;z-index:2;display:grid;grid-template-columns:{{ L.gymCols }};gap:16px;padding:0 20px;height:40px;align-items:center;background:#FAFAF8;border-bottom:1px solid #EFEEE9;font-size:12px;font-weight:600;color:#5B606B;text-transform:uppercase;letter-spacing:.04em">
+<div role="columnheader">Gym</div>
+<sc-if value="{{ L.isDesktop }}" hint-placeholder-val="{{ true }}"><div role="columnheader">City</div></sc-if>
+<div role="columnheader">Owner</div><div role="columnheader">Plan</div><div role="columnheader">Status</div><div role="columnheader" style="text-align:right">Members</div>
+</div>
+<sc-for list="{{ gl.rows }}" as="g" hint-placeholder-count="8">
+<div role="row" tabindex="0" onClick="{{ g.open }}" onKeyDown="{{ g.key }}" aria-label="Open {{ g.name }}" style="display:grid;grid-template-columns:{{ L.gymCols }};gap:16px;padding:0 20px;min-height:56px;align-items:center;border-top:1px solid #EFEEE9;cursor:pointer" style-hover="background:#FAFAF7">
+<div role="cell" style="min-width:0"><div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.name }}</div><sc-if value="{{ L.isTablet }}"><div style="font-size:12px;line-height:16px;color:#6B7080">{{ g.city }}</div></sc-if></div>
+<sc-if value="{{ L.isDesktop }}" hint-placeholder-val="{{ true }}"><div role="cell" style="color:#4A4F5A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.city }}</div></sc-if>
+<div role="cell" style="color:#4A4F5A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.owner }}</div>
+<div role="cell"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid #D4D3CC;border-radius:6px;font-size:12px;font-weight:500;color:#16181D;white-space:nowrap">{{ g.plan }}</span></div>
+<div role="cell"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;background:{{ g.badge.bg }};color:{{ g.badge.fg }};font-size:12px;font-weight:600;white-space:nowrap"><span style="width:6px;height:6px;border-radius:999px;background:{{ g.badge.dot }}"></span>{{ g.badge.label }}</span></div>
+<div role="cell" style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500">{{ g.members }}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ gl.showCards }}">
+<ul aria-label="Gyms" style="list-style:none;margin:0;padding:0">
+<sc-for list="{{ gl.rows }}" as="g">
+<li style="border-top:1px solid #EFEEE9"><button onClick="{{ g.open }}" style="width:100%;text-align:left;display:flex;flex-direction:column;gap:6px;padding:14px 16px;border:0;background:#FFFFFF;font-family:inherit;color:inherit;cursor:pointer" style-active="background:#F6F6F3">
+<span style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%"><span style="font-size:15px;line-height:20px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ g.name }}</span><span style="flex:none;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;background:{{ g.badge.bg }};color:{{ g.badge.fg }};font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:999px;background:{{ g.badge.dot }}"></span>{{ g.badge.label }}</span></span>
+<span style="font-size:13px;line-height:18px;color:#4A4F5A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%">{{ g.city }} · {{ g.owner }}</span>
+<span style="display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid #D4D3CC;border-radius:6px;font-size:12px;font-weight:500">{{ g.plan }}</span><span style="font-size:13px;color:#4A4F5A;font-variant-numeric:tabular-nums"><strong style="color:#16181D;font-weight:600">{{ g.members }}</strong> members</span></span>
+</button></li>
+</sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{ gl.showList }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid #EFEEE9">
+<span style="font-size:13px;color:#6B7080;font-variant-numeric:tabular-nums">{{ gl.rangeLabel }}</span>
+<nav aria-label="Pagination" style="display:flex;align-items:center;gap:4px">
+<button onClick="{{ gl.prev }}" disabled="{{ gl.prevDis }}" aria-label="Previous page" style="width:{{ L.ctlH }};height:{{ L.ctlH }};display:grid;place-items:center;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;color:#16181D;cursor:pointer;opacity:{{ gl.prevOp }}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.chevL }}"></path></svg></button>
+<sc-if value="{{ L.notMobile }}" hint-placeholder-val="{{ true }}"><sc-for list="{{ gl.pages }}" as="p"><button onClick="{{ p.go }}" aria-current="{{ p.aria }}" aria-label="Page {{ p.n }}" style="min-width:40px;height:40px;padding:0 8px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer;font-variant-numeric:tabular-nums">{{ p.n }}</button></sc-for></sc-if>
+<sc-if value="{{ L.isMobile }}"><span style="padding:0 8px;font-size:13px;color:#4A4F5A;white-space:nowrap">Page {{ gl.page }} of {{ gl.pageCount }}</span></sc-if>
+<button onClick="{{ gl.next }}" disabled="{{ gl.nextDis }}" aria-label="Next page" style="width:{{ L.ctlH }};height:{{ L.ctlH }};display:grid;place-items:center;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;color:#16181D;cursor:pointer;opacity:{{ gl.nextOp }}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.chevR }}"></path></svg></button>
+</nav>
+</div>
+</sc-if>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{ R.gym }}">
+<div style="display:flex;flex-direction:column;gap:{{ L.gap }};animation:gl-page 200ms ease-out">
+<sc-if value="{{ L.notMobile }}">
+<button onClick="{{ gd.back }}" style="align-self:flex-start;display:flex;align-items:center;gap:6px;height:36px;padding:0 10px 0 6px;margin:-4px 0 -8px -6px;border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;font-weight:500;color:#4A4F5A;cursor:pointer" style-hover="background:#EFEEE9;color:#16181D"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.arrowLeft }}"></path></svg>Dashboard</button>
+</sc-if>
+<sc-if value="{{ gd.loading }}">
+<div aria-busy="true" aria-label="Loading gym" style="display:flex;flex-direction:column;gap:16px">
+<div style="height:28px;width:260px;max-width:70%;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div>
+<div style="height:14px;width:180px;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div>
+<div style="display:grid;grid-template-columns:{{ L.detailCols }};gap:16px"><div style="height:168px;border-radius:12px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div><div style="height:168px;border-radius:12px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div></div>
+<div style="height:220px;border-radius:12px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div>
+</div>
+</sc-if>
+<sc-if value="{{ gd.notFound }}">
+<div style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:64px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px">
+<div style="font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;font-weight:600;color:#6B7080;letter-spacing:.08em">404</div>
+<h2 style="margin:0;font-size:20px;line-height:28px;font-weight:600">Gym not found</h2>
+<p style="margin:0;max-width:380px;color:#6B7080">This gym may have been removed, or the link is incorrect.</p>
+<button onClick="{{ gd.back }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:0;background:#0B7A57;color:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#08664A" style-active="background:#065239">Back to dashboard</button>
+</div>
+</sc-if>
+<sc-if value="{{ gd.ready }}">
+<header style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><h1 style="margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.01em">{{ gd.name }}</h1><span style="display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border-radius:999px;background:{{ gd.badge.bg }};color:{{ gd.badge.fg }};font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:999px;background:{{ gd.badge.dot }}"></span>{{ gd.badge.label }}</span></div>
+<div style="font-size:14px;color:#6B7080">{{ gd.city }} · Joined {{ gd.created }}</div>
+</header>
+<div style="display:grid;grid-template-columns:{{ L.detailCols }};gap:16px">
+<section aria-labelledby="own-h" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:{{ L.cardPad }};display:flex;flex-direction:column;gap:12px;min-width:0">
+<h2 id="own-h" style="margin:0;font-size:13px;line-height:18px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.05em">Owner</h2>
+<div style="display:flex;align-items:center;gap:12px"><span style="width:40px;height:40px;flex:none;border-radius:999px;background:#F1F1EC;display:grid;place-items:center;font-weight:600;color:#4A4F5A">{{ gd.initials }}</span><span style="font-size:16px;line-height:24px;font-weight:600">{{ gd.owner }}</span></div>
+<div style="display:flex;flex-direction:column">
+<a href="{{ gd.tel }}" style="display:flex;align-items:center;gap:12px;min-height:44px;color:#16181D;text-decoration:none;border-top:1px solid #EFEEE9" style-hover="color:#07573F"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.phone }}"></path></svg><span style="font-variant-numeric:tabular-nums">{{ gd.phone }}</span></a>
+<a href="{{ gd.mailto }}" style="display:flex;align-items:center;gap:12px;min-height:44px;color:#16181D;text-decoration:none;border-top:1px solid #EFEEE9;min-width:0" style-hover="color:#07573F"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.mail }}"></path></svg><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ gd.email }}</span></a>
+</div>
+</section>
+<section aria-labelledby="sub-h" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:{{ L.cardPad }};display:flex;flex-direction:column;gap:12px;min-width:0">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h2 id="sub-h" style="margin:0;font-size:13px;line-height:18px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.05em">Subscription</h2><sc-if value="{{ gd.isTrial }}"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;background:#E8F0FB;color:#1D5FB8;font-size:12px;font-weight:600">Free trial</span></sc-if></div>
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap"><span style="font-size:18px;line-height:26px;font-weight:600">{{ gd.planName }}</span><span style="font-size:14px;color:#4A4F5A;font-variant-numeric:tabular-nums">{{ gd.planPrice }}</span></div>
+<dl style="margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+<div><dt style="font-size:12px;line-height:16px;color:#6B7080">{{ gd.startLabel }}</dt><dd style="margin:2px 0 0;font-weight:500">{{ gd.start }}</dd></div>
+<div><dt style="font-size:12px;line-height:16px;color:#6B7080">{{ gd.endLabel }}</dt><dd style="margin:2px 0 0;font-weight:500">{{ gd.end }}</dd></div>
+</dl>
+<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:{{ gd.tBg }};border:1px solid {{ gd.tBd }};color:{{ gd.tFg }}">
+<sc-if value="{{ gd.warnIcon }}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;margin-top:1px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.alert }}"></path></svg></sc-if>
+<div><div style="font-weight:600;font-variant-numeric:tabular-nums">{{ gd.daysText }}</div><sc-if value="{{ gd.hasHint }}"><div style="font-size:13px;line-height:18px">{{ gd.daysHint }}</div></sc-if></div>
+</div>
+</section>
+</div>
+
+<section aria-labelledby="pay-h" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;min-width:0">
+<div style="padding:{{ L.cardPad }};display:flex;flex-direction:column;gap:12px">
+<h2 id="pay-h" style="margin:0;font-size:13px;line-height:18px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.05em">Payments to Gymloop</h2>
+<sc-if value="{{ gd.paysReady }}" hint-placeholder-val="{{ true }}">
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+<div style="padding:12px;border-radius:8px;background:#FAFAF8;border:1px solid #EFEEE9"><div style="font-size:12px;line-height:16px;color:#6B7080">Total paid to date</div><div style="font-size:20px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums">{{ gd.totalPaid }}</div></div>
+<div style="padding:12px;border-radius:8px;background:#FAFAF8;border:1px solid #EFEEE9"><div style="font-size:12px;line-height:16px;color:#6B7080">Last payment</div><div style="font-size:20px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums">{{ gd.lastAmt }}</div><div style="font-size:12px;line-height:16px;color:#6B7080">{{ gd.lastDate }}</div></div>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{ gd.paysLoading }}"><div aria-busy="true" style="padding:0 20px 20px;display:flex;flex-direction:column;gap:10px"><sc-for list="{{ skel4 }}" as="x"><div style="height:36px;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div></sc-for></div></sc-if>
+<sc-if value="{{ gd.paysError }}">
+<div role="alert" style="margin:0 16px 16px;padding:16px;border-radius:8px;background:#FDECEA;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap"><span style="display:flex;align-items:center;gap:8px;color:#B42318;font-weight:500"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.alert }}"></path></svg>Couldn’t load payment history</span><button onClick="{{ gd.retryPays }}" style="height:{{ L.btnH }};padding:0 14px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer">Retry</button></div>
+</sc-if>
+<sc-if value="{{ gd.paysReady }}" hint-placeholder-val="{{ true }}">
+<sc-if value="{{ gd.noPays }}"><div style="padding:0 20px 20px;color:#6B7080">No payments yet — this gym is on a free trial.</div></sc-if>
+<sc-if value="{{ gd.hasPays }}">
+<sc-if value="{{ L.notMobile }}" hint-placeholder-val="{{ true }}">
+<div role="table" aria-label="Payment history">
+<div role="row" style="display:grid;grid-template-columns:{{ L.payCols }};gap:16px;padding:0 20px;height:36px;align-items:center;background:#FAFAF8;border-top:1px solid #EFEEE9;border-bottom:1px solid #EFEEE9;font-size:12px;font-weight:600;color:#5B606B;text-transform:uppercase;letter-spacing:.04em"><div role="columnheader">Date</div><div role="columnheader">Amount</div><div role="columnheader">Plan</div><div role="columnheader">Status</div></div>
+<sc-for list="{{ gd.pays }}" as="p"><div role="row" style="display:grid;grid-template-columns:{{ L.payCols }};gap:16px;padding:0 20px;min-height:44px;align-items:center;border-top:1px solid #EFEEE9"><div role="cell">{{ p.date }}</div><div role="cell" style="font-variant-numeric:tabular-nums;font-weight:500">{{ p.amount }}</div><div role="cell" style="color:#4A4F5A">{{ p.plan }}</div><div role="cell"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;background:{{ p.badge.bg }};color:{{ p.badge.fg }};font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:999px;background:{{ p.badge.dot }}"></span>{{ p.badge.label }}</span></div></div></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ L.isMobile }}">
+<ul aria-label="Payment history" style="list-style:none;margin:0;padding:0">
+<sc-for list="{{ gd.pays }}" as="p"><li style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;border-top:1px solid #EFEEE9"><div style="min-width:0"><div style="font-weight:500">{{ p.date }}</div><div style="font-size:12px;line-height:16px;color:#6B7080">{{ p.plan }}</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px"><span style="font-weight:600;font-variant-numeric:tabular-nums">{{ p.amount }}</span><span style="display:inline-flex;align-items:center;gap:6px;height:20px;padding:0 8px;border-radius:999px;background:{{ p.badge.bg }};color:{{ p.badge.fg }};font-size:11px;font-weight:600"><span style="width:6px;height:6px;border-radius:999px;background:{{ p.badge.dot }}"></span>{{ p.badge.label }}</span></div></li></sc-for>
+</ul>
+</sc-if>
+<sc-if value="{{ gd.moreP }}"><div style="padding:8px 12px;border-top:1px solid #EFEEE9"><button onClick="{{ gd.toggleP }}" style="width:100%;height:{{ L.btnH }};border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#07573F;cursor:pointer" style-hover="background:#F2F9F6">{{ gd.moreLabel }}</button></div></sc-if>
+</sc-if>
+</sc-if>
+</section>
+
+<section aria-labelledby="mem-h" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:{{ L.cardPad }};display:flex;flex-direction:column;gap:16px;min-width:0">
+<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap"><h2 id="mem-h" style="margin:0;font-size:13px;line-height:18px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.05em">Member summary</h2><span style="font-size:12px;color:#6B7080">Aggregates only · no individual member data</span></div>
+<div style="display:grid;grid-template-columns:{{ L.statCols }};gap:12px">
+<sc-for list="{{ gd.stats }}" as="t" hint-placeholder-count="5"><div style="padding:12px;border-radius:8px;background:#FAFAF8;border:1px solid #EFEEE9;min-width:0"><div style="font-size:12px;line-height:16px;color:#6B7080">{{ t.label }}</div><div style="font-size:20px;line-height:28px;font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere">{{ t.value }}</div><div style="font-size:12px;line-height:16px;color:#6B7080">{{ t.sub }}</div></div></sc-for>
+</div>
+<div>
+<div style="font-size:13px;font-weight:500;color:#4A4F5A">Members, last 6 months</div>
+<div role="img" aria-label="Bar chart of total members for the last six months" style="display:flex;align-items:flex-end;gap:12px;height:150px;padding-top:12px">
+<sc-for list="{{ gd.trend }}" as="b" hint-placeholder-count="6"><div style="flex:1;min-width:0;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px"><span style="font-size:12px;color:#4A4F5A;font-variant-numeric:tabular-nums">{{ b.v }}</span><div style="width:100%;max-width:44px;height:{{ b.h }};background:{{ b.c }};border-radius:6px 6px 2px 2px"></div><span style="font-size:12px;color:#6B7080">{{ b.m }}</span></div></sc-for>
+</div>
+</div>
+</section>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ R.broadcasts }}">
+<div style="display:flex;flex-direction:column;gap:{{ L.gap }};animation:gl-page 200ms ease-out">
+<sc-if value="{{ L.notMobile }}"><header><h1 style="margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.01em">Broadcasts</h1><p style="margin:4px 0 0;color:#6B7080">In-app announcements shown to gym owners.</p></header></sc-if>
+<div role="tablist" aria-label="Broadcasts" style="display:flex;gap:4px;border-bottom:1px solid #E6E5E0;margin-top:-8px">
+<sc-for list="{{ bc.tabs }}" as="t" hint-placeholder-count="3">
+<button role="tab" aria-selected="{{ t.aria }}" onClick="{{ t.go }}" style="display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;margin-bottom:-1px;border:0;border-bottom:2px solid {{ t.bd }};background:transparent;color:{{ t.fg }};font-family:inherit;font-size:14px;font-weight:{{ t.fw }};cursor:pointer" style-hover="color:#16181D">{{ t.label }}<sc-if value="{{ t.hasN }}"><span style="min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#EFEEE9;color:#4A4F5A;font-size:12px;font-weight:600;display:grid;place-items:center;font-variant-numeric:tabular-nums">{{ t.n }}</span></sc-if></button>
+</sc-for>
+</div>
+
+<sc-if value="{{ bc.compose }}">
+<div style="display:grid;grid-template-columns:{{ L.composeCols }};gap:24px;align-items:start">
+<section aria-label="Compose broadcast" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:{{ L.cardPad }};display:flex;flex-direction:column;gap:20px;min-width:0">
+<sc-if value="{{ bc.editing }}"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px;border-radius:8px;background:#FDF1DC;color:#8A5300;font-size:13px"><span><strong style="font-weight:600">Editing draft</strong> · last saved {{ bc.editedAt }}</span><button onClick="{{ bc.startNew }}" style="height:32px;padding:0 8px;border:0;background:transparent;color:#8A5300;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Start a new broadcast</button></div></sc-if>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;gap:8px"><label for="bc-title" style="font-size:14px;font-weight:500">Title <span style="color:#B42318" aria-hidden="true">*</span></label><span aria-live="polite" style="font-size:12px;color:{{ bc.titleNC }};font-variant-numeric:tabular-nums">{{ bc.titleN }}</span></div>
+<input id="bc-title" value="{{ bc.title }}" onChange="{{ bc.setTitle }}" maxLength="80" placeholder="e.g. Scheduled maintenance on 28 Sep" aria-invalid="{{ bc.hasETitle }}" style="height:{{ L.ctlH }};padding:0 12px;border:1px solid {{ bc.titleBd }};border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;background:#FFFFFF">
+<sc-if value="{{ bc.hasETitle }}"><span role="alert" style="font-size:13px;color:#B42318">{{ bc.eTitle }}</span></sc-if>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;gap:8px"><label for="bc-msg" style="font-size:14px;font-weight:500">Message <span style="color:#B42318" aria-hidden="true">*</span></label><span aria-live="polite" style="font-size:12px;color:{{ bc.msgNC }};font-variant-numeric:tabular-nums">{{ bc.msgN }}</span></div>
+<textarea id="bc-msg" value="{{ bc.message }}" onChange="{{ bc.setMsg }}" maxLength="1000" rows="6" placeholder="Write what gym owners need to know…" aria-invalid="{{ bc.hasEMsg }}" style="padding:10px 12px;border:1px solid {{ bc.msgBd }};border-radius:8px;font-family:inherit;font-size:14px;line-height:20px;color:#16181D;background:#FFFFFF;resize:vertical;min-height:136px"></textarea>
+<sc-if value="{{ bc.hasEMsg }}"><span role="alert" style="font-size:13px;color:#B42318">{{ bc.eMsg }}</span></sc-if>
+</div>
+<fieldset style="margin:0;padding:0;border:0;display:flex;flex-direction:column;gap:10px;min-width:0">
+<legend style="padding:0;margin-bottom:8px;font-size:14px;font-weight:500">Audience</legend>
+<div role="radiogroup" aria-label="Audience" style="display:grid;grid-template-columns:{{ L.audCols }};gap:8px">
+<sc-for list="{{ bc.aud }}" as="a" hint-placeholder-count="3">
+<button role="radio" aria-checked="{{ a.aria }}" onClick="{{ a.pick }}" style="display:flex;align-items:flex-start;gap:10px;padding:12px;min-height:44px;text-align:left;border:1px solid {{ a.bd }};background:{{ a.bg }};border-radius:10px;font-family:inherit;color:#16181D;cursor:pointer" style-hover="border-color:#8CC3AD">
+<span style="width:18px;height:18px;flex:none;margin-top:1px;border-radius:999px;border:2px solid {{ a.ring }};display:grid;place-items:center"><span style="width:8px;height:8px;border-radius:999px;background:{{ a.dot }}"></span></span>
+<span style="display:flex;flex-direction:column;gap:2px"><span style="font-weight:600">{{ a.label }}</span><span style="font-size:12px;line-height:16px;color:#6B7080">{{ a.sub }}</span></span>
+</button>
+</sc-for>
+</div>
+<sc-if value="{{ bc.byPlan }}">
+<div style="display:flex;flex-wrap:wrap;gap:8px">
+<sc-for list="{{ bc.planChips }}" as="p"><button role="checkbox" aria-checked="{{ p.aria }}" onClick="{{ p.toggle }}" style="display:inline-flex;align-items:center;gap:8px;height:{{ L.chipH }};padding:0 12px;border-radius:999px;border:1px solid {{ p.bd }};background:{{ p.bg }};color:{{ p.fg }};font-family:inherit;font-size:13px;font-weight:500;cursor:pointer"><sc-if value="{{ p.on }}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;margin-left:-2px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.check }}"></path></svg></sc-if>{{ p.label }}<span style="color:#6B7080;font-weight:400">{{ p.n }}</span></button></sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ bc.byGyms }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-if value="{{ bc.hasPicked }}"><div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center"><sc-for list="{{ bc.picked }}" as="p"><span style="display:inline-flex;align-items:center;gap:4px;height:32px;padding:0 4px 0 10px;border-radius:999px;background:#E4F2EC;color:#07573F;font-size:13px;font-weight:500">{{ p.name }}<button onClick="{{ p.remove }}" aria-label="Remove {{ p.name }}" style="width:28px;height:28px;display:grid;place-items:center;border:0;background:transparent;color:#07573F;border-radius:999px;cursor:pointer" style-hover="background:#D6ECE2"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="{{ I.x }}"></path></svg></button></span></sc-for><button onClick="{{ bc.clearPicked }}" style="height:32px;padding:0 8px;border:0;background:transparent;color:#4A4F5A;font-family:inherit;font-size:13px;cursor:pointer;text-decoration:underline;text-underline-offset:3px">Clear</button></div></sc-if>
+<div style="position:relative">
+<svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;pointer-events:none"><path d="{{ I.search }}"></path></svg>
+<input role="combobox" aria-expanded="{{ bc.pickOpen }}" aria-label="Search gyms to add" value="{{ bc.gq }}" onChange="{{ bc.setGq }}" onFocus="{{ bc.openPick }}" onBlur="{{ bc.closePick }}" placeholder="Search gyms by name or city" style="width:100%;height:{{ L.ctlH }};padding:0 12px 0 38px;border:1px solid #D4D3CC;border-radius:8px;font-family:inherit;font-size:14px;background:#FFFFFF;color:#16181D">
+</div>
+<sc-if value="{{ bc.pickOpen }}">
+<div role="listbox" aria-multiselectable="true" style="border:1px solid #E6E5E0;border-radius:10px;background:#FFFFFF;box-shadow:0 4px 12px rgba(16,24,40,.08);padding:4px;display:flex;flex-direction:column">
+<sc-for list="{{ bc.results }}" as="r"><button role="option" aria-selected="{{ r.aria }}" onMouseDown="{{ r.down }}" onClick="{{ r.toggle }}" style="display:flex;align-items:center;gap:10px;min-height:44px;padding:6px 10px;border:0;background:transparent;border-radius:6px;text-align:left;font-family:inherit;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3"><span style="width:18px;height:18px;flex:none;border-radius:4px;border:1.5px solid {{ r.boxBd }};background:{{ r.box }};display:grid;place-items:center;color:#FFFFFF"><sc-if value="{{ r.on }}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.check }}"></path></svg></sc-if></span><span style="display:flex;flex-direction:column;min-width:0"><span style="font-weight:500">{{ r.name }}</span><span style="font-size:12px;line-height:16px;color:#6B7080">{{ r.meta }}</span></span></button></sc-for>
+<sc-if value="{{ bc.noResults }}"><div style="padding:12px;color:#6B7080;font-size:13px">No gyms match that search.</div></sc-if>
+<sc-if value="{{ bc.moreRes }}"><div style="padding:8px 10px;color:#6B7080;font-size:12px;border-top:1px solid #EFEEE9">{{ bc.moreResLabel }}</div></sc-if>
+</div>
+</sc-if>
+</div>
+</sc-if>
+<sc-if value="{{ bc.hasEAud }}"><span role="alert" style="font-size:13px;color:#B42318">{{ bc.eAud }}</span></sc-if>
+<div aria-live="polite" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;background:{{ bc.reachBg }};color:{{ bc.reachFg }}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.users }}"></path></svg><span>Will reach <strong style="font-weight:600;font-variant-numeric:tabular-nums">{{ bc.reach }}</strong></span></div>
+</fieldset>
+<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;padding-top:4px;border-top:1px solid #EFEEE9;margin:0 -4px -4px;padding:16px 4px 4px">
+<sc-if value="{{ L.isMobile }}"><button onClick="{{ bc.openPreview }}" style="flex:1 1 100%;height:44px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;background:#F1F1EC;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer" style-active="background:#E6E5E0"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.eye }}"></path></svg>Preview</button></sc-if>
+<sc-if value="{{ L.isTablet }}"><button onClick="{{ bc.openPreview }}" style="margin-right:auto;height:40px;display:flex;align-items:center;gap:8px;padding:0 14px;border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#4A4F5A;cursor:pointer" style-hover="background:#F1F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.eye }}"></path></svg>Preview</button></sc-if>
+<button onClick="{{ bc.saveDraft }}" style="flex:1 1 0;max-width:{{ L.actMax }};height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer;white-space:nowrap" style-hover="background:#F6F6F3" style-active="background:#EFEEE9">Save as draft</button>
+<button onClick="{{ bc.publish }}" style="flex:1 1 0;max-width:{{ L.actMax }};height:{{ L.btnH }};padding:0 16px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer;white-space:nowrap" style-hover="background:#08664A" style-active="background:#065239">Publish</button>
+</div>
+</section>
+<sc-if value="{{ L.isDesktop }}" hint-placeholder-val="{{ true }}">
+<aside aria-label="Live preview" style="position:sticky;top:0;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#4A4F5A"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.eye }}"></path></svg>Live preview · gym owner’s app</div>
+<div style="border-radius:16px;background:#EFEEE9;padding:16px">
+<div style="background:#FFFFFF;border-radius:12px;box-shadow:0 1px 2px rgba(16,24,40,.06);padding:16px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:8px;background:#E4F2EC;color:#07573F;display:grid;place-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.megaphone }}"></path></svg></span><span style="font-size:12px;font-weight:600;color:#07573F">Announcement from Gymloop</span><span style="margin-left:auto;font-size:12px;color:#6B7080">{{ bc.pvWhen }}</span></div>
+<div style="font-size:16px;line-height:22px;font-weight:600;color:{{ bc.pvTC }};overflow-wrap:anywhere">{{ bc.pvTitle }}</div>
+<div style="font-size:14px;line-height:20px;color:{{ bc.pvMC }};white-space:pre-wrap;overflow-wrap:anywhere">{{ bc.pvMsg }}</div>
+<div style="display:flex;justify-content:flex-end;padding-top:4px"><span style="height:32px;padding:0 12px;border-radius:8px;background:#F1F1EC;font-size:13px;font-weight:600;display:grid;place-items:center">Got it</span></div>
+</div>
+</div>
+<p style="margin:0;font-size:12px;line-height:16px;color:#6B7080">Shown once in the owner’s notification feed, and pinned on their dashboard for 7 days.</p>
+</aside>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ bc.drafts }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-if value="{{ bc.drLoading }}"><sc-for list="{{ skel3 }}" as="x"><div style="height:112px;border-radius:12px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div></sc-for></sc-if>
+<sc-if value="{{ bc.drError }}"><div role="alert" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><h3 style="margin:0;font-size:16px;font-weight:600">Couldn’t load drafts</h3><p style="margin:0;color:#6B7080">Check your connection and try again.</p><button onClick="{{ bc.retryDr }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Try again</button></div></sc-if>
+<sc-if value="{{ bc.drEmpty }}"><div style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><div style="width:48px;height:48px;border-radius:12px;background:#F1F1EC;color:#6B7080;display:grid;place-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.edit }}"></path></svg></div><h3 style="margin:0;font-size:16px;font-weight:600">No drafts</h3><p style="margin:0;color:#6B7080;max-width:320px">Broadcasts you save without publishing will show up here.</p><button onClick="{{ bc.goCompose }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer" style-hover="background:#F6F6F3">Compose a broadcast</button></div></sc-if>
+<sc-if value="{{ bc.drReady }}">
+<sc-for list="{{ bc.draftList }}" as="d">
+<article style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:{{ L.cardPad }};display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center">
+<div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;background:#FDF1DC;color:#8A5300;font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:999px;background:#D08A1A"></span>Draft</span><h3 style="margin:0;font-size:15px;line-height:22px;font-weight:600;overflow-wrap:anywhere">{{ d.title }}</h3></div>
+<p style="margin:0;color:#4A4F5A;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden">{{ d.preview }}</p>
+<div style="font-size:12px;line-height:16px;color:#6B7080">{{ d.aud }} · {{ d.edited }}</div>
+</div>
+<div style="display:flex;gap:8px;flex:0 0 auto;margin-left:auto">
+<button onClick="{{ d.del }}" aria-label="Delete draft" title="Delete" style="width:{{ L.btnH }};height:{{ L.btnH }};display:grid;place-items:center;border:0;background:transparent;border-radius:8px;color:#B42318;cursor:pointer" style-hover="background:#FDECEA"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.trash }}"></path></svg></button>
+<button onClick="{{ d.edit }}" style="height:{{ L.btnH }};padding:0 14px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3">Edit</button>
+<button onClick="{{ d.publish }}" style="height:{{ L.btnH }};padding:0 14px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#08664A" style-active="background:#065239">Publish</button>
+</div>
+</article>
+</sc-for>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ bc.sent }}">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,180px);gap:8px">
+<div style="position:relative"><svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;pointer-events:none"><path d="{{ I.search }}"></path></svg><input type="search" value="{{ bc.sq }}" onChange="{{ bc.setSq }}" aria-label="Search sent broadcasts by title" placeholder="Search by title" style="width:100%;height:{{ L.ctlH }};padding:0 12px 0 38px;border:1px solid #D4D3CC;border-radius:8px;font-family:inherit;font-size:14px;background:#FFFFFF;color:#16181D"></div>
+<label style="position:relative;display:block;min-width:0"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Date range</span><select value="{{ bc.sr }}" onChange="{{ bc.setSr }}" style="appearance:none;width:100%;height:{{ L.ctlH }};padding:0 32px 0 12px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;cursor:pointer"><option value="all">All time</option><option value="7">Last 7 days</option><option value="30">Last 30 days</option><option value="90">Last 90 days</option></select><svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="{{ I.chevD }}"></path></svg></label>
+</div>
+<sc-if value="{{ bc.seLoading }}"><sc-for list="{{ skel4 }}" as="x"><div style="height:84px;border-radius:12px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div></sc-for></sc-if>
+<sc-if value="{{ bc.seError }}"><div role="alert" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><h3 style="margin:0;font-size:16px;font-weight:600">Couldn’t load sent broadcasts</h3><p style="margin:0;color:#6B7080">Check your connection and try again.</p><button onClick="{{ bc.retrySe }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Try again</button></div></sc-if>
+<sc-if value="{{ bc.seEmpty }}"><div style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><div style="width:48px;height:48px;border-radius:12px;background:#F1F1EC;color:#6B7080;display:grid;place-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.megaphone }}"></path></svg></div><h3 style="margin:0;font-size:16px;font-weight:600">No broadcasts sent yet</h3><p style="margin:0;color:#6B7080;max-width:320px">Published announcements and their audiences will be listed here.</p></div></sc-if>
+<sc-if value="{{ bc.seNoRes }}"><div style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><h3 style="margin:0;font-size:16px;font-weight:600">No broadcasts match</h3><p style="margin:0;color:#6B7080">Try another title or a wider date range.</p><button onClick="{{ bc.clearSent }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Clear filters</button></div></sc-if>
+<sc-if value="{{ bc.seReady }}">
+<ul style="list-style:none;margin:0;padding:0;background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;overflow:hidden">
+<sc-for list="{{ bc.sentList }}" as="b">
+<li style="border-top:1px solid #EFEEE9;margin-top:-1px"><button onClick="{{ b.open }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:14px {{ L.cardPad }};border:0;background:#FFFFFF;text-align:left;font-family:inherit;color:#16181D;cursor:pointer" style-hover="background:#FAFAF7" style-active="background:#F6F6F3">
+<span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font-size:15px;line-height:22px;font-weight:600;overflow-wrap:anywhere">{{ b.title }}</span><span style="color:#4A4F5A;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ b.preview }}</span><span style="font-size:12px;line-height:16px;color:#6B7080">{{ b.aud }} · {{ b.when }}</span></span>
+<svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;color:#9CA0A9;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.chevR }}"></path></svg>
+</button></li>
+</sc-for>
+</ul>
+</sc-if>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ R.plans }}">
+<div style="display:flex;flex-direction:column;gap:{{ L.gap }};animation:gl-page 200ms ease-out">
+<sc-if value="{{ L.notMobile }}"><header style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap"><div><h1 style="margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.01em">Plans</h1><p style="margin:4px 0 0;color:#6B7080">Gymloop subscription plans that gyms can choose from.</p></div>
+<button onClick="{{ pl.add }}" style="height:40px;padding:0 16px 0 12px;display:flex;align-items:center;gap:6px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#08664A" style-active="background:#065239"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="{{ I.plus }}"></path></svg>New plan</button></header></sc-if>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<div role="tablist" aria-label="Filter plans by status" style="flex:1 1 280px;max-width:{{ L.segMax }};display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;border-radius:10px;background:#EFEEE9">
+<sc-for list="{{ pl.seg }}" as="t" hint-placeholder-count="3"><button role="tab" aria-selected="{{ t.aria }}" onClick="{{ t.go }}" style="height:{{ L.segH }};display:flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:8px;background:{{ t.bg }};box-shadow:{{ t.sh }};color:{{ t.fg }};font-family:inherit;font-size:14px;font-weight:{{ t.fw }};cursor:pointer">{{ t.label }}<span style="font-size:12px;color:#6B7080;font-variant-numeric:tabular-nums">{{ t.n }}</span></button></sc-for>
+</div>
+<label style="position:relative;display:block;flex:1 1 160px;max-width:220px;margin-left:auto"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Sort plans</span><select value="{{ pl.ps }}" onChange="{{ pl.setPs }}" style="appearance:none;width:100%;height:{{ L.ctlH }};padding:0 32px 0 12px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;cursor:pointer"><option value="amount_asc">Amount: low to high</option><option value="amount_desc">Amount: high to low</option><option value="name">Name A–Z</option></select><svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;pointer-events:none"><path d="{{ I.chevD }}"></path></svg></label>
+<sc-if value="{{ L.isMobile }}"><button onClick="{{ pl.add }}" style="flex:1 1 120px;height:44px;display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-active="background:#065239"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="{{ I.plus }}"></path></svg>New plan</button></sc-if>
+</div>
+<sc-if value="{{ pl.loading }}"><div aria-busy="true" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:8px 0"><sc-for list="{{ skel4 }}" as="x"><div style="display:flex;gap:16px;padding:16px 20px;align-items:center"><div style="flex:1;height:14px;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div><div style="width:80px;height:14px;border-radius:6px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div><div style="width:40px;height:24px;border-radius:999px;background:linear-gradient(90deg,#EEEDE8 25%,#F7F6F2 50%,#EEEDE8 75%);background-size:200% 100%;animation:gl-shimmer 1.4s linear infinite"></div></div></sc-for></div></sc-if>
+<sc-if value="{{ pl.error }}"><div role="alert" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><h3 style="margin:0;font-size:16px;font-weight:600">Couldn’t load plans</h3><p style="margin:0;color:#6B7080">Check your connection and try again.</p><button onClick="{{ pl.retry }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Try again</button></div></sc-if>
+<sc-if value="{{ pl.empty }}"><div style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><div style="width:48px;height:48px;border-radius:12px;background:#F1F1EC;color:#6B7080;display:grid;place-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.layers }}"></path></svg></div><h3 style="margin:0;font-size:16px;font-weight:600">No plans yet</h3><p style="margin:0;color:#6B7080;max-width:320px">Create your first plan so gyms can subscribe to Gymloop.</p><button onClick="{{ pl.add }}" style="margin-top:8px;height:{{ L.btnH }};padding:0 16px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#08664A">Create plan</button></div></sc-if>
+<sc-if value="{{ pl.filteredEmpty }}"><div style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:40px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px"><h3 style="margin:0;font-size:16px;font-weight:600">{{ pl.filteredLabel }}</h3><button onClick="{{ pl.showAll }}" style="margin-top:4px;height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer">Show all plans</button></div></sc-if>
+<sc-if value="{{ pl.table }}" hint-placeholder-val="{{ true }}">
+<div role="table" aria-label="Plans" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;overflow:hidden">
+<div role="row" style="display:grid;grid-template-columns:{{ L.planCols }};gap:16px;padding:0 20px;height:40px;align-items:center;background:#FAFAF8;border-bottom:1px solid #EFEEE9;font-size:12px;font-weight:600;color:#5B606B;text-transform:uppercase;letter-spacing:.04em"><div role="columnheader">Plan ID</div><div role="columnheader">Display name</div><div role="columnheader" style="text-align:right">Monthly</div><div role="columnheader" style="text-align:right">Gyms</div><div role="columnheader">Status</div><div role="columnheader"><span style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Actions</span></div></div>
+<sc-for list="{{ pl.rows }}" as="p" hint-placeholder-count="6">
+<div role="row" style="display:grid;grid-template-columns:{{ L.planCols }};gap:16px;padding:0 20px;min-height:56px;align-items:center;border-top:1px solid #EFEEE9">
+<div role="cell" style="font-family:'Geist Mono',ui-monospace,monospace;font-size:13px;color:#4A4F5A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.id }}</div>
+<div role="cell" style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</div>
+<div role="cell" style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500">{{ p.amount }}</div>
+<div role="cell" style="text-align:right;font-variant-numeric:tabular-nums;color:#4A4F5A">{{ p.gyms }}</div>
+<div role="cell"><button role="switch" aria-checked="{{ p.aria }}" aria-label="{{ p.toggleLabel }}" onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:10px;height:40px;padding:0 4px;margin-left:-4px;border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:500;color:#16181D;cursor:pointer;border-radius:8px"><span style="width:40px;height:24px;flex:none;border-radius:999px;background:{{ p.track }};padding:2px;transition:background 150ms"><span style="display:block;width:20px;height:20px;border-radius:999px;background:#FFFFFF;box-shadow:0 1px 2px rgba(16,24,40,.2);transform:{{ p.knob }};transition:transform 150ms ease-out"></span></span>{{ p.state }}</button></div>
+<div role="cell" style="text-align:right"><button onClick="{{ p.edit }}" style="height:36px;padding:0 10px;display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#4A4F5A;cursor:pointer" style-hover="background:#F1F1EC;color:#16181D"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.edit }}"></path></svg>Edit</button></div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ pl.cards }}">
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ pl.rows }}" as="p">
+<article style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px"><div style="min-width:0"><h3 style="margin:0;font-size:15px;line-height:22px;font-weight:600">{{ p.name }}</h3><div style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;line-height:16px;color:#6B7080;overflow-wrap:anywhere">{{ p.id }}</div></div>
+<button role="switch" aria-checked="{{ p.aria }}" aria-label="{{ p.toggleLabel }}" onClick="{{ p.toggle }}" style="display:flex;align-items:center;gap:8px;height:44px;margin:-6px -4px 0 0;padding:0 4px;border:0;background:transparent;font-family:inherit;font-size:13px;font-weight:500;color:#16181D;cursor:pointer">{{ p.state }}<span style="width:40px;height:24px;flex:none;border-radius:999px;background:{{ p.track }};padding:2px"><span style="display:block;width:20px;height:20px;border-radius:999px;background:#FFFFFF;box-shadow:0 1px 2px rgba(16,24,40,.2);transform:{{ p.knob }};transition:transform 150ms ease-out"></span></span></button></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:8px;border-top:1px solid #EFEEE9"><span style="font-variant-numeric:tabular-nums"><strong style="font-weight:600">{{ p.amount }}</strong><span style="color:#6B7080">/month · {{ p.gymsLabel }}</span></span><button onClick="{{ p.edit }}" style="height:44px;padding:0 12px;margin:-8px -8px -8px 0;display:flex;align-items:center;gap:6px;border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#07573F;cursor:pointer" style-active="background:#F2F9F6">Edit</button></div>
+</article>
+</sc-for>
+</div>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ R.settings }}">
+<div style="display:flex;flex-direction:column;gap:{{ L.gap }};max-width:720px;animation:gl-page 200ms ease-out">
+<sc-if value="{{ L.notMobile }}"><header><h1 style="margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.01em">Settings</h1><p style="margin:4px 0 0;color:#6B7080">Your Super Admin contact details and account.</p></header></sc-if>
+<form onSubmit="{{ st.submit }}" aria-labelledby="cd-h" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;display:flex;flex-direction:column">
+<div style="padding:{{ L.cardPad }};display:flex;flex-direction:column;gap:18px">
+<div><h2 id="cd-h" style="margin:0;font-size:16px;line-height:24px;font-weight:600">Contact details</h2><p style="margin:2px 0 0;font-size:13px;color:#6B7080">Used for platform alerts and shown to gym owners on support screens.</p></div>
+<sc-if value="{{ st.hasError }}"><div role="alert" style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;background:#FDECEA;color:#B42318;font-size:13px;line-height:18px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.alert }}"></path></svg><span>{{ st.error }}</span></div></sc-if>
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="st-phone" style="font-size:14px;font-weight:500">Phone number</label>
+<div style="display:flex;height:{{ L.ctlH }};border:1px solid {{ st.phoneBd }};border-radius:8px;overflow:hidden;background:#FFFFFF;max-width:360px"><span style="flex:none;display:grid;place-items:center;padding:0 12px;background:#F6F6F3;border-right:1px solid #E6E5E0;color:#4A4F5A;font-weight:500;font-variant-numeric:tabular-nums">+91</span><input id="st-phone" type="tel" inputMode="numeric" autoComplete="tel-national" value="{{ st.phone }}" onChange="{{ st.setPhone }}" onBlur="{{ st.blurPhone }}" aria-invalid="{{ st.hasEPhone }}" placeholder="98765 43210" style="flex:1;min-width:0;border:0;padding:0 12px;font-family:inherit;font-size:14px;color:#16181D;background:transparent;font-variant-numeric:tabular-nums;letter-spacing:.02em"></div>
+<sc-if value="{{ st.hasEPhone }}"><span role="alert" style="font-size:13px;color:#B42318">{{ st.ePhone }}</span></sc-if>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="st-email" style="font-size:14px;font-weight:500">Email address</label>
+<input id="st-email" type="email" autoComplete="email" value="{{ st.email }}" onChange="{{ st.setEmail }}" onBlur="{{ st.blurEmail }}" aria-invalid="{{ st.hasEEmail }}" placeholder="name@example.com" style="height:{{ L.ctlH }};max-width:360px;padding:0 12px;border:1px solid {{ st.emailBd }};border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;background:#FFFFFF">
+<sc-if value="{{ st.hasEEmail }}"><span role="alert" style="font-size:13px;color:#B42318">{{ st.eEmail }}</span></sc-if>
+</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:12px {{ L.cardPad }};border-top:1px solid #EFEEE9;background:#FAFAF8;border-radius:0 0 12px 12px">
+<span style="font-size:13px;color:#6B7080">{{ st.hint }}</span>
+<div style="display:flex;gap:8px">
+<sc-if value="{{ st.dirty }}"><button type="button" onClick="{{ st.reset }}" style="height:{{ L.btnH }};padding:0 14px;border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#4A4F5A;cursor:pointer" style-hover="background:#EFEEE9">Discard</button></sc-if>
+<sc-if value="{{ st.canSave }}"><button type="submit" style="height:{{ L.btnH }};padding:0 16px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#08664A" style-active="background:#065239">Save changes</button></sc-if>
+<sc-if value="{{ st.cantSave }}" hint-placeholder-val="{{ true }}"><button type="submit" disabled="{{ true }}" style="height:{{ L.btnH }};padding:0 16px;border:0;background:#E6E5E0;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#8A8F9C;cursor:not-allowed">Save changes</button></sc-if>
+<sc-if value="{{ st.saving }}"><button type="button" disabled="{{ true }}" aria-busy="true" style="height:{{ L.btnH }};padding:0 16px;display:flex;align-items:center;gap:8px;border:0;background:#0B7A57;opacity:.85;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:progress"><span style="width:16px;height:16px;border-radius:999px;border:2px solid rgba(255,255,255,.35);border-top-color:#FFFFFF;animation:gl-spin 700ms linear infinite"></span>Saving…</button></sc-if>
+</div>
+</div>
+</form>
+<section aria-labelledby="ac-h" style="background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;padding:{{ L.cardPad }};display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+<div><h2 id="ac-h" style="margin:0;font-size:16px;line-height:24px;font-weight:600">Account</h2><p style="margin:2px 0 0;font-size:13px;color:#6B7080">Signed in as Super Admin on this device.</p></div>
+<button onClick="{{ st.logout }}" style="height:{{ L.btnH }};padding:0 16px 0 12px;display:flex;align-items:center;gap:8px;border:0;background:#B42318;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#962018" style-active="background:#7A1A12"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.logout }}"></path></svg>Log out</button>
+</section>
+</div>
+</sc-if>
+</div>
+</main>
+<sc-if value="{{ L.isMobile }}">
+<nav aria-label="Primary" style="flex:none;height:64px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#FFFFFF;border-top:1px solid #E6E5E0;padding-bottom:env(safe-area-inset-bottom)">
+<sc-for list="{{ nav }}" as="n" hint-placeholder-count="4">
+<button onClick="{{ n.go }}" aria-current="{{ n.aria }}" style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:transparent;color:{{ n.tabFg }};font-family:inherit;font-size:11px;line-height:14px;font-weight:{{ n.fw }};cursor:pointer;min-height:44px" style-active="background:#F6F6F3">
+<span style="width:44px;height:28px;border-radius:999px;display:grid;place-items:center;background:{{ n.pill }}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ n.icon }}"></path></svg></span>
+<span>{{ n.label }}</span>
+</button>
+</sc-for>
+</nav>
+</sc-if>
+</div>
+
+<sc-if value="{{ menuOpen }}">
+<div onClick="{{ tb.closeMenu }}" style="position:absolute;inset:0;z-index:40"></div>
+<div role="menu" aria-label="Account" style="position:absolute;top:52px;right:8px;z-index:41;width:220px;background:#FFFFFF;border:1px solid #E6E5E0;border-radius:12px;box-shadow:0 8px 24px rgba(16,24,40,.12);padding:6px;animation:gl-modal 140ms ease-out;transform-origin:top right">
+<div style="padding:8px 10px 10px;border-bottom:1px solid #EFEEE9;margin-bottom:4px"><div style="font-weight:600">Super Admin</div><div style="font-size:12px;color:#6B7080">ops@gymloop.in</div></div>
+<button role="menuitem" onClick="{{ tb.goSettings }}" style="width:100%;display:flex;align-items:center;gap:10px;height:44px;padding:0 10px;border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;cursor:pointer" style-active="background:#F1F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.sliders }}"></path></svg>Settings</button>
+<button role="menuitem" onClick="{{ tb.logout }}" style="width:100%;display:flex;align-items:center;gap:10px;height:44px;padding:0 10px;border:0;background:transparent;border-radius:8px;font-family:inherit;font-size:14px;color:#B42318;cursor:pointer" style-active="background:#FDECEA"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.logout }}"></path></svg>Log out</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ ovl.preview }}">
+<div onClick="{{ closePreview }}" style="position:absolute;inset:0;z-index:50;background:rgba(22,24,29,.48);display:flex;align-items:{{ OV.vAlign }};justify-content:center;padding:{{ OV.dPad }};animation:gl-fade 150ms ease-out">
+<div role="dialog" aria-modal="true" aria-labelledby="pv-h" onClick="{{ stop }}" style="width:100%;max-width:{{ OV.dMax }};max-height:{{ OV.vMaxH }};overflow-y:auto;background:#FFFFFF;border-radius:{{ OV.dRadius }};box-shadow:0 16px 40px rgba(16,24,40,.18);animation:{{ OV.dAnim }};display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 8px 8px 16px;border-bottom:1px solid #EFEEE9"><h2 id="pv-h" style="margin:0;font-size:16px;line-height:24px;font-weight:600">Preview</h2><button onClick="{{ closePreview }}" aria-label="Close preview" style="width:44px;height:44px;display:grid;place-items:center;border:0;background:transparent;border-radius:8px;color:#4A4F5A;cursor:pointer" style-hover="background:#F1F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round"><path d="{{ I.x }}"></path></svg></button></div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:13px;color:#4A4F5A">How gym owners will see it in their app</div>
+<div style="border-radius:16px;background:#EFEEE9;padding:14px">
+<div style="background:#FFFFFF;border-radius:12px;box-shadow:0 1px 2px rgba(16,24,40,.06);padding:16px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:28px;height:28px;border-radius:8px;background:#E4F2EC;color:#07573F;display:grid;place-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.megaphone }}"></path></svg></span><span style="font-size:12px;font-weight:600;color:#07573F">Announcement from Gymloop</span><span style="margin-left:auto;font-size:12px;color:#6B7080">{{ bc.pvWhen }}</span></div>
+<div style="font-size:16px;line-height:22px;font-weight:600;color:{{ bc.pvTC }};overflow-wrap:anywhere">{{ bc.pvTitle }}</div>
+<div style="font-size:14px;line-height:20px;color:{{ bc.pvMC }};white-space:pre-wrap;overflow-wrap:anywhere">{{ bc.pvMsg }}</div>
+<div style="display:flex;justify-content:flex-end;padding-top:4px"><span style="height:32px;padding:0 12px;border-radius:8px;background:#F1F1EC;font-size:13px;font-weight:600;display:grid;place-items:center">Got it</span></div>
+</div>
+</div>
+<div style="font-size:13px;color:#4A4F5A">Audience: <strong style="font-weight:600">{{ bc.reach }}</strong></div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ ovl.sent }}">
+<div onClick="{{ closeSent }}" style="position:absolute;inset:0;z-index:50;background:rgba(22,24,29,.40);display:flex;justify-content:{{ OV.pJustify }};align-items:stretch;animation:gl-fade 150ms ease-out">
+<div role="dialog" aria-modal="true" aria-labelledby="sd-h" onClick="{{ stop }}" style="width:100%;max-width:{{ OV.pMax }};height:100%;background:#FFFFFF;box-shadow:-8px 0 32px rgba(16,24,40,.14);animation:{{ OV.pAnim }};display:flex;flex-direction:column">
+<div style="flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;height:56px;padding:0 8px 0 16px;border-bottom:1px solid #EFEEE9"><span style="font-size:13px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.05em">Sent broadcast</span><button onClick="{{ closeSent }}" aria-label="Close" style="width:44px;height:44px;display:grid;place-items:center;border:0;background:transparent;border-radius:8px;color:#4A4F5A;cursor:pointer" style-hover="background:#F1F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round"><path d="{{ I.x }}"></path></svg></button></div>
+<div style="flex:1;overflow-y:auto;padding:20px 16px 24px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:8px"><span style="align-self:flex-start;display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;background:#E4F2EC;color:#07573F;font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:999px;background:#0B7A57"></span>Published</span><h2 id="sd-h" style="margin:0;font-size:20px;line-height:28px;font-weight:600;overflow-wrap:anywhere">{{ sd.title }}</h2><div style="font-size:13px;color:#6B7080">{{ sd.when }}</div></div>
+<div style="font-size:14px;line-height:22px;color:#16181D;white-space:pre-wrap;overflow-wrap:anywhere">{{ sd.message }}</div>
+<div style="display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:1px solid #EFEEE9">
+<div style="display:flex;justify-content:space-between;gap:12px"><span style="font-size:13px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.05em">Audience</span><span style="font-size:13px;color:#4A4F5A">Reached {{ sd.reach }}</span></div>
+<div style="font-weight:500">{{ sd.aud }}</div>
+<sc-if value="{{ sd.isAll }}"><div style="font-size:13px;color:#6B7080">{{ sd.allNote }}</div></sc-if>
+<ul style="list-style:none;margin:0;padding:0;border:1px solid #EFEEE9;border-radius:10px;overflow:hidden">
+<sc-for list="{{ sd.items }}" as="it"><li style="display:flex;justify-content:space-between;gap:12px;padding:10px 12px;border-top:1px solid #EFEEE9;margin-top:-1px"><span style="font-weight:500">{{ it.name }}</span><span style="font-size:13px;color:#6B7080">{{ it.meta }}</span></li></sc-for>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ ovl.ed }}">
+<div onClick="{{ ed.close }}" style="position:absolute;inset:0;z-index:55;background:rgba(22,24,29,.48);display:flex;align-items:{{ OV.eAlign }};justify-content:center;padding:{{ OV.dPad }};animation:gl-fade 150ms ease-out">
+<form role="dialog" aria-modal="true" aria-labelledby="ed-h" onSubmit="{{ ed.submit }}" onClick="{{ stop }}" style="width:100%;max-width:{{ OV.eMax }};height:{{ OV.eH }};max-height:{{ OV.eMaxH }};background:#FFFFFF;border-radius:{{ OV.eRadius }};box-shadow:0 16px 40px rgba(16,24,40,.18);animation:{{ OV.dAnim }};display:flex;flex-direction:column;margin:0">
+<div style="flex:none;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;padding:16px 8px 12px 20px;border-bottom:1px solid #EFEEE9"><div><h2 id="ed-h" style="margin:0;font-size:18px;line-height:26px;font-weight:600">{{ ed.title }}</h2><p style="margin:2px 0 0;font-size:13px;color:#6B7080">{{ ed.sub }}</p></div><button type="button" onClick="{{ ed.close }}" aria-label="Close" style="width:44px;height:44px;flex:none;margin-top:-6px;display:grid;place-items:center;border:0;background:transparent;border-radius:8px;color:#4A4F5A;cursor:pointer" style-hover="background:#F1F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round"><path d="{{ I.x }}"></path></svg></button></div>
+<div style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:18px">
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="ed-id" style="font-size:14px;font-weight:500">Plan ID <sc-if value="{{ ed.isNew }}"><span style="color:#B42318" aria-hidden="true">*</span></sc-if></label>
+<sc-if value="{{ ed.isNew }}"><input id="ed-id" value="{{ ed.id }}" onChange="{{ ed.setId }}" onBlur="{{ ed.blurId }}" aria-invalid="{{ ed.hasEId }}" autoComplete="off" spellCheck="false" placeholder="e.g. growth_monthly" style="height:{{ L.ctlH }};padding:0 12px;border:1px solid {{ ed.idBd }};border-radius:8px;font-family:'Geist Mono',ui-monospace,monospace;font-size:14px;color:#16181D;background:#FFFFFF"></sc-if>
+<sc-if value="{{ ed.locked }}"><div style="position:relative"><input id="ed-id" value="{{ ed.id }}" readOnly="{{ true }}" aria-describedby="ed-id-lock" style="width:100%;height:{{ L.ctlH }};padding:0 40px 0 12px;border:1px solid #E6E5E0;border-radius:8px;font-family:'Geist Mono',ui-monospace,monospace;font-size:14px;color:#4A4F5A;background:#F6F6F3;cursor:not-allowed"><svg viewBox="0 0 24 24" aria-hidden="true" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:#6B7080;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ I.lock }}"></path></svg></div><span id="ed-id-lock" style="font-size:12px;line-height:16px;color:#6B7080">Locked after creation — gym subscriptions and payment records reference this ID.</span></sc-if>
+<sc-if value="{{ ed.hasEId }}"><span role="alert" style="font-size:13px;color:#B42318">{{ ed.eId }}</span></sc-if>
+<sc-if value="{{ ed.isNew }}"><span style="font-size:12px;line-height:16px;color:#6B7080">Lowercase letters, numbers and underscores. Can’t be changed later.</span></sc-if>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;justify-content:space-between;gap:8px"><label for="ed-name" style="font-size:14px;font-weight:500">Display name <span style="color:#B42318" aria-hidden="true">*</span></label><span style="font-size:12px;color:{{ ed.nameNC }};font-variant-numeric:tabular-nums">{{ ed.nameN }}</span></div>
+<input id="ed-name" value="{{ ed.name }}" onChange="{{ ed.setName }}" onBlur="{{ ed.blurName }}" aria-invalid="{{ ed.hasEName }}" maxLength="40" placeholder="e.g. Growth" style="height:{{ L.ctlH }};padding:0 12px;border:1px solid {{ ed.nameBd }};border-radius:8px;font-family:inherit;font-size:14px;color:#16181D;background:#FFFFFF">
+<sc-if value="{{ ed.hasEName }}"><span role="alert" style="font-size:13px;color:#B42318">{{ ed.eName }}</span></sc-if>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px">
+<label for="ed-amt" style="font-size:14px;font-weight:500">Monthly amount <span style="color:#B42318" aria-hidden="true">*</span></label>
+<div style="display:flex;height:{{ L.ctlH }};border:1px solid {{ ed.amtBd }};border-radius:8px;overflow:hidden;background:#FFFFFF;max-width:240px"><span style="flex:none;display:grid;place-items:center;width:40px;background:#F6F6F3;border-right:1px solid #E6E5E0;color:#4A4F5A;font-weight:500">₹</span><input id="ed-amt" inputMode="numeric" value="{{ ed.amount }}" onChange="{{ ed.setAmt }}" onBlur="{{ ed.blurAmt }}" aria-invalid="{{ ed.hasEAmt }}" placeholder="1,999" style="flex:1;min-width:0;border:0;padding:0 12px;font-family:inherit;font-size:14px;color:#16181D;background:transparent;font-variant-numeric:tabular-nums"><span style="flex:none;display:grid;place-items:center;padding:0 12px;color:#6B7080;font-size:13px">/month</span></div>
+<sc-if value="{{ ed.hasEAmt }}"><span role="alert" style="font-size:13px;color:#B42318">{{ ed.eAmt }}</span></sc-if>
+<span style="font-size:12px;line-height:16px;color:#6B7080;font-variant-numeric:tabular-nums">{{ ed.perMonth }}</span>
+</div>
+<button type="button" role="switch" aria-checked="{{ ed.aria }}" onClick="{{ ed.toggle }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;padding:10px 12px;border:1px solid #E6E5E0;border-radius:10px;background:#FAFAF8;font-family:inherit;text-align:left;color:#16181D;cursor:pointer"><span style="display:flex;flex-direction:column"><span style="font-weight:500">Active</span><span style="font-size:12px;line-height:16px;color:#6B7080">{{ ed.activeLabel }}</span></span><span style="width:40px;height:24px;flex:none;border-radius:999px;background:{{ ed.track }};padding:2px"><span style="display:block;width:20px;height:20px;border-radius:999px;background:#FFFFFF;box-shadow:0 1px 2px rgba(16,24,40,.2);transform:{{ ed.knob }};transition:transform 150ms ease-out"></span></span></button>
+</div>
+<div style="flex:none;display:flex;flex-direction:{{ OV.btnDir }};gap:8px;justify-content:flex-end;padding:12px 20px calc(12px + env(safe-area-inset-bottom));border-top:1px solid #EFEEE9">
+<button type="button" onClick="{{ ed.close }}" style="height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3">Cancel</button>
+<sc-if value="{{ ed.notSaving }}"><button type="submit" style="height:{{ L.btnH }};padding:0 16px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#08664A" style-active="background:#065239">{{ ed.primary }}</button></sc-if>
+<sc-if value="{{ ed.saving }}"><button type="button" disabled="{{ true }}" aria-busy="true" style="height:{{ L.btnH }};padding:0 16px;display:flex;align-items:center;justify-content:center;gap:8px;border:0;background:#0B7A57;opacity:.85;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:progress"><span style="width:16px;height:16px;border-radius:999px;border:2px solid rgba(255,255,255,.35);border-top-color:#FFFFFF;animation:gl-spin 700ms linear infinite"></span>Saving…</button></sc-if>
+</div>
+</form>
+</div>
+</sc-if>
+
+<sc-if value="{{ ovl.cf }}">
+<div onClick="{{ closeCf }}" style="position:absolute;inset:0;z-index:60;background:rgba(22,24,29,.48);display:flex;align-items:{{ OV.dAlign }};justify-content:center;padding:{{ OV.dPad }};animation:gl-fade 150ms ease-out">
+<div role="alertdialog" aria-modal="true" aria-labelledby="cf-t" aria-describedby="cf-b" onClick="{{ stop }}" style="width:100%;max-width:{{ OV.dMax }};background:#FFFFFF;border-radius:{{ OV.dRadius }};box-shadow:0 16px 40px rgba(16,24,40,.18);padding:{{ OV.dInner }};animation:{{ OV.dAnim }};display:flex;flex-direction:column;gap:16px">
+<sc-if value="{{ L.isMobile }}"><div aria-hidden="true" style="width:36px;height:4px;border-radius:2px;background:#D4D3CC;margin:-8px auto 0"></div></sc-if>
+<div style="display:flex;gap:14px;align-items:flex-start">
+<div style="width:40px;height:40px;flex:none;border-radius:999px;background:{{ cf.iconBg }};color:{{ cf.iconFg }};display:grid;place-items:center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="{{ cf.iconPath }}"></path></svg></div>
+<div style="min-width:0;flex:1;padding-top:1px"><h2 id="cf-t" style="margin:0;font-size:17px;line-height:24px;font-weight:600">{{ cf.title }}</h2><p id="cf-b" style="margin:4px 0 0;color:#4A4F5A">{{ cf.body }}</p></div>
+</div>
+<sc-if value="{{ cf.hasRows }}"><dl style="margin:0;background:#FAFAF8;border:1px solid #EFEEE9;border-radius:10px;padding:2px 14px"><sc-for list="{{ cf.rows }}" as="r"><div style="display:flex;gap:16px;justify-content:space-between;padding:10px 0;border-top:{{ r.bt }}"><dt style="font-size:13px;color:#6B7080;flex:none">{{ r.k }}</dt><dd style="margin:0;font-size:13px;font-weight:500;text-align:right;overflow-wrap:anywhere;min-width:0">{{ r.v }}</dd></div></sc-for></dl></sc-if>
+<div style="display:flex;flex-direction:{{ OV.btnDir }};gap:8px;justify-content:flex-end;flex-wrap:wrap">
+<button onClick="{{ closeCf }}" style="height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3" style-active="background:#EFEEE9">{{ cf.cancel }}</button>
+<sc-if value="{{ cf.hasAlt }}"><button onClick="{{ cf.altFn }}" style="height:{{ L.btnH }};padding:0 16px;border:1px solid #D4D3CC;background:#FFFFFF;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#16181D;cursor:pointer" style-hover="background:#F6F6F3">{{ cf.alt }}</button></sc-if>
+<sc-if value="{{ cf.isPrimary }}"><button onClick="{{ cf.okFn }}" style="height:{{ L.btnH }};padding:0 16px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#08664A" style-active="background:#065239">{{ cf.ok }}</button></sc-if>
+<sc-if value="{{ cf.isDanger }}"><button onClick="{{ cf.okFn }}" style="height:{{ L.btnH }};padding:0 16px;border:0;background:#B42318;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#962018" style-active="background:#7A1A12">{{ cf.ok }}</button></sc-if>
+</div>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ ovl.toast }}">
+<div role="status" aria-live="polite" style="position:absolute;z-index:70;left:{{ L.toastL }};right:{{ L.toastR }};bottom:{{ L.toastB }};width:{{ L.toastW }};display:flex;align-items:center;gap:10px;padding:10px 8px 10px 14px;background:#16181D;color:#FFFFFF;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,40,.24);animation:gl-toast 180ms ease-out">
+<svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px;flex:none;color:{{ toast.iconC }};fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="{{ toast.icon }}"></path></svg>
+<span style="flex:1;min-width:0;font-weight:500">{{ toast.msg }}</span>
+<button onClick="{{ toast.close }}" aria-label="Dismiss" style="width:32px;height:32px;flex:none;display:grid;place-items:center;border:0;background:transparent;color:#C9C8C1;border-radius:6px;cursor:pointer" style-hover="background:rgba(255,255,255,.1)"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round"><path d="{{ I.x }}"></path></svg></button>
+</div>
+</sc-if>
+
+<sc-if value="{{ loggedOut }}">
+<div style="position:absolute;inset:0;z-index:80;background:#F6F6F3;display:grid;place-items:center;padding:24px;animation:gl-fade 200ms ease-out">
+<div style="width:100%;max-width:380px;background:#FFFFFF;border:1px solid #E6E5E0;border-radius:16px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px">
+<div style="width:40px;height:40px;border-radius:10px;background:#0B7A57;color:#FFFFFF;display:grid;place-items:center;font-weight:700;font-size:18px">G</div>
+<h2 style="margin:6px 0 0;font-size:20px;line-height:28px;font-weight:600">You’ve been logged out</h2>
+<p style="margin:0;color:#6B7080">In the app this redirects to the existing Gymloop sign-in screen.</p>
+<button onClick="{{ relogin }}" style="margin-top:8px;width:100%;height:44px;border:0;background:#0B7A57;border-radius:8px;font-family:inherit;font-size:14px;font-weight:600;color:#FFFFFF;cursor:pointer" style-hover="background:#08664A">Sign in again</button>
+</div>
+</div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;initialRoute&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dashboard&quot;,&quot;gym&quot;,&quot;broadcasts&quot;,&quot;plans&quot;,&quot;settings&quot;],&quot;default&quot;:&quot;dashboard&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;initialTab&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;compose&quot;,&quot;drafts&quot;,&quot;sent&quot;],&quot;default&quot;:&quot;compose&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;demoState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;ready&quot;,&quot;loading&quot;,&quot;empty&quot;,&quot;error&quot;],&quot;default&quot;:&quot;ready&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;overlay&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;none&quot;,&quot;logout&quot;,&quot;menu&quot;,&quot;planNew&quot;,&quot;planEdit&quot;,&quot;planIdTaken&quot;,&quot;saving&quot;,&quot;deactivate&quot;,&quot;filled&quot;,&quot;validation&quot;,&quot;gymPicker&quot;,&quot;publish&quot;,&quot;preview&quot;,&quot;unsaved&quot;,&quot;deleteDraft&quot;,&quot;sentDetail&quot;,&quot;toast&quot;,&quot;toastError&quot;,&quot;settingsInvalid&quot;,&quot;settingsDirty&quot;,&quot;settingsError&quot;],&quot;default&quot;:&quot;none&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;gymId&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;dashQuery&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;height&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  static T = new Date(2026, 8, 24, 11, 30);
+  static MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  static fd(d){ return String(d.getDate()).padStart(2,'0')+' '+this.MON[d.getMonth()]+' '+d.getFullYear(); }
+  static ft(d){ let h=d.getHours(); const m=String(d.getMinutes()).padStart(2,'0'); const ap=h>=12?'PM':'AM'; h=h%12||12; return h+':'+m+' '+ap; }
+  static inr(n){ return '\u20B9'+Math.round(n).toLocaleString('en-IN'); }
+  static num(n){ return Math.round(n).toLocaleString('en-IN'); }
+  static add(d,n){ return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n,d.getHours(),d.getMinutes()); }
+  static addM(d,n){ return new Date(d.getFullYear(),d.getMonth()+n,d.getDate()); }
+  static days(a,b){ return Math.round((new Date(b.getFullYear(),b.getMonth(),b.getDate())-new Date(a.getFullYear(),a.getMonth(),a.getDate()))/86400000); }
+  static slug(s){ return s.toLowerCase().replace(/&/g,'and').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  static I = {
+    grid:'M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z',
+    megaphone:'M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 8.5a4.5 4.5 0 0 1 0 7M18 5.5a9 9 0 0 1 0 13',
+    layers:'M12 2 2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5',
+    sliders:'M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6',
+    logout:'M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9',
+    search:'M11 3a8 8 0 1 0 0 16a8 8 0 1 0 0-16zM21 21l-4.35-4.35',
+    chevL:'M15 18l-6-6 6-6', chevR:'M9 18l6-6-6-6', chevD:'M6 9l6 6 6-6',
+    x:'M18 6 6 18M6 6l12 12', check:'M20 6 9 17l-5-5',
+    lock:'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
+    phone:'M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z',
+    mail:'M3 5h18v14H3zM3 6l9 7 9-7', plus:'M12 5v14M5 12h14',
+    eye:'M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12zM12 9a3 3 0 1 0 0 6a3 3 0 1 0 0-6z',
+    alert:'M12 9v4M12 17h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z',
+    trash:'M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6', edit:'M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z',
+    panel:'M3 3h18v18H3zM9 3v18', refresh:'M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5',
+    users:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8a4 4 0 1 0 0-8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75',
+    inbox:'M22 12h-6l-2 3h-4l-2-3H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z',
+    arrowLeft:'M19 12H5M12 19l-7-7 7-7', info:'M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zM12 16v-4M12 8h.01',
+    calendar:'M3 5h18v16H3zM16 3v4M8 3v4M3 10h18', checkCircle:'M12 2a10 10 0 1 0 0 20a10 10 0 1 0 0-20zM8 12l3 3 5-6'
+  };
+  static SB = {
+    Active:{bg:'#E5F3EA',fg:'#17703A',dot:'#1F9D55'}, Trial:{bg:'#E8F0FB',fg:'#1D5FB8',dot:'#3B7DDD'},
+    Expired:{bg:'#FDECEA',fg:'#B42318',dot:'#D92D20'}, Suspended:{bg:'#EEEEF0',fg:'#3F3F46',dot:'#52525B'},
+    Inactive:{bg:'#F1F1EC',fg:'#5B606B',dot:'#9CA0A9'}, Draft:{bg:'#FDF1DC',fg:'#8A5300',dot:'#D08A1A'},
+    Published:{bg:'#E4F2EC',fg:'#07573F',dot:'#0B7A57'}, Paid:{bg:'#E5F3EA',fg:'#17703A',dot:'#1F9D55'},
+    Failed:{bg:'#FDECEA',fg:'#B42318',dot:'#D92D20'}, Pending:{bg:'#FDF1DC',fg:'#8A5300',dot:'#D08A1A'}
+  };
+  static build(){
+    const C=this, T=C.T; let s=48271; const r=()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; };
+    const plans=[
+      {id:'starter_monthly',name:'Starter',amount:999,active:true},
+      {id:'growth_monthly',name:'Growth',amount:1999,active:true},
+      {id:'pro_monthly',name:'Pro',amount:3499,active:true},
+      {id:'studio_plus_monthly',name:'Studio Plus',amount:6999,active:true},
+      {id:'basic_legacy',name:'Basic (Legacy)',amount:799,active:false},
+      {id:'founders_annual',name:"Founders' Club",amount:1499,active:false}];
+    const PW=['starter_monthly','starter_monthly','growth_monthly','growth_monthly','growth_monthly','pro_monthly','pro_monthly','studio_plus_monthly','basic_legacy'];
+    const NAMES=['Iron Temple Fitness','Muscle Factory','FitNation Studio','Pulse Gym','Gold Coast Fitness','Beast Mode Gym','Kaya Fitness Studio','Shakti Strength Club','Urban Sweat','The Lift Lab','Flex Zone','Core Collective','Anvil Fitness','Peak Performance Gym','Bodyworks Wellness','Titan Gym','Zenith Fitness','Red Dumbbell','Kinetic Club','Arena 24','Spartan Fitness','Vayu Yoga & Fitness','Hustle House','Momentum Gym','Rise & Grind Fitness','Steel City Gym','Evolve Fitness','Navy Blue Fitness','Tribe Strength','Prana Movement Studio','Gravity Gym','Crossroads CrossFit','Olympia Fitness','Sunrise Health Club','Metro Muscle','Endurance Hub','Warrior Fitness','Green Leaf Gym','Powerhouse Gym','The Barbell Club','Stride Fitness','Mehta Fitness Point','Balance Studio','Apex Athletics','Namma Fitness','Dhoom Fitness'];
+    const CITIES=['Pune','Mumbai','Bengaluru','Hyderabad','Chennai','Delhi','Ahmedabad','Jaipur','Kochi','Indore','Lucknow','Chandigarh'];
+    const FIRST=['Rohan','Priya','Arjun','Sneha','Vikram','Ananya','Karthik','Meera','Aditya','Neha','Farhan','Kavya','Siddharth','Pooja','Rahul','Divya','Imran','Lakshmi','Harsh','Ishita'];
+    const LAST=['Deshmukh','Nair','Mehta','Kulkarni','Singh','Iyer','Reddy','Joshi','Rao','Gupta','Qureshi','Menon','Jain','Patil','Verma','Pillai','Sheikh','Krishnan','Agarwal','Bose'];
+    const gyms=NAMES.map((name,i)=>{
+      const fn=FIRST[(i*7+3)%FIRST.length], ln=LAST[(i*11+2)%LAST.length]; const x=r();
+      const status=[0,3,4,9,17].includes(i)?'Active':(i===1||i===6)?'Trial':i===2?'Expired':i===5?'Suspended':x<.6?'Active':x<.74?'Trial':x<.9?'Expired':'Suspended';
+      const planId=status==='Trial'?PW[Math.floor(r()*8)]:PW[Math.floor(r()*PW.length)];
+      let created,start,end;
+      if(status==='Trial'){ created=C.add(T,-(1+Math.floor(r()*12))); start=created; end=C.add(created,14); }
+      else if([3,9,17].includes(i)){ created=C.add(T,-(2+Math.floor(r()*18))); start=created; end=C.addM(created,1); }
+      else { created=C.add(T,-(70+Math.floor(r()*880)));
+        end=status==='Active'?C.add(T,(i===4||i%9===4)?1+Math.floor(r()*5):7+Math.floor(r()*23)):C.add(T,-(1+Math.floor(r()*45)));
+        start=C.add(end,-30); }
+      const plan=plans.find(p=>p.id===planId); const pays=[];
+      if(status!=='Trial'){
+        let d=new Date(created); const stop=status==='Active'?T:C.add(end,-30);
+        while(d<=stop){ pays.push({d:new Date(d),amount:plan.amount,plan:plan.name,status:'Paid'}); d=C.addM(d,1); }
+        if(pays.length>3&&r()<.35){ const k=1+Math.floor(r()*(pays.length-2)); pays.splice(k,0,{d:C.add(pays[k].d,-3),amount:plan.amount,plan:plan.name,status:'Failed'}); }
+        if(status!=='Active') pays.push({d:end,amount:plan.amount,plan:plan.name,status:'Failed'});
+        if(status==='Active'&&i%7===3&&pays.length>1) pays[pays.length-1].status='Pending';
+      }
+      pays.reverse();
+      const paid=pays.filter(p=>p.status==='Paid');
+      const total=status==='Trial'?15+Math.floor(r()*70):60+Math.floor(r()*560);
+      const active=Math.round(total*(.66+r()*.26)); const fee=[900,1200,1500,1800,2200,2500][Math.floor(r()*6)];
+      const trend=[]; for(let k=5;k>=0;k--) trend.push(Math.max(5,Math.round(total*(1-.045*k-r()*.02)))); trend[5]=total;
+      return {id:C.slug(name),name,city:CITIES[Math.floor(r()*CITIES.length)],owner:fn+' '+ln,
+        phone:['9','8','7'][i%3]+String(Math.floor(r()*1e9)).padStart(9,'0'),email:fn.toLowerCase()+'@'+C.slug(name).replace(/-/g,'')+'.in',
+        planId,status,created,start,end,pays,totalPaid:paid.reduce((a,p)=>a+p.amount,0),lastPaid:paid[0]||null,
+        m:{total,active,expired:total-active,newM:2+Math.floor(r()*Math.max(3,total/14)),rev:Math.round(active*fee*.42/100)*100,trend}};
+    });
+    const at=(d,h,m)=>new Date(2026,d[1],d[0],h,m);
+    const trialIds=gyms.filter(g=>g.status==='Trial').map(g=>g.id);
+    const sent=[
+      {id:'b6',title:'Scheduled maintenance on 28 Sep',message:'Gymloop will be unavailable from 1:00 AM to 3:00 AM IST on Sunday, 28 Sep 2026 while we upgrade our servers.\n\nCheck-ins recorded offline during this window will sync automatically once we are back.',audience:'all',plans:[],gyms:[],reach:46,at:at([22,8],18,30)},
+      {id:'b5',title:'New: automatic renewal reminders',message:'Members now get an in-app reminder 3 days before their membership expires. You can turn this off anytime under Gym settings \u2192 Reminders.',audience:'plan',plans:['pro_monthly','studio_plus_monthly'],gyms:[],reach:12,at:at([15,8],11,5)},
+      {id:'b4',title:'GST invoices are now downloadable',message:'Every Gymloop payment now comes with a GST invoice. Find them under Billing \u2192 Invoices.',audience:'all',plans:[],gyms:[],reach:45,at:at([2,8],10,0)},
+      {id:'b3',title:'Your free trial ends soon',message:'Pick a plan before your trial ends to keep your members, attendance and payment history.',audience:'gyms',plans:[],gyms:trialIds.slice(0,5),reach:Math.min(5,trialIds.length),at:at([28,7],9,15)},
+      {id:'b2',title:'Festive offer: Pro at Growth price',message:'Upgrade to Pro before 31 Oct 2026 and pay the Growth price for your first two months.',audience:'plan',plans:['starter_monthly','growth_monthly'],gyms:[],reach:24,at:at([10,7],16,45)},
+      {id:'b1',title:'Welcome to the new Gymloop dashboard',message:'We have redesigned the owner dashboard around what you check most: today\u2019s check-ins, dues and renewals.',audience:'all',plans:[],gyms:[],reach:41,at:at([18,6],12,0)}];
+    const drafts=[
+      {id:'d2',title:'Price revision from 01 Nov 2026',message:'The Basic (Legacy) plan will move to \u20B9999/month from 01 Nov 2026. Your features stay the same.',audience:'plan',plans:['basic_legacy'],gyms:[],edited:at([23,8],17,20)},
+      {id:'d1',title:'Support hours during Diwali',message:'Our support team will be available 10:00 AM to 4:00 PM from 07 Nov to 10 Nov 2026.',audience:'all',plans:[],gyms:[],edited:at([19,8],13,40)}];
+    return {plans,gyms,sent,drafts};
+  }
+  static D = this.build();
+  static blank(){ return {title:'',message:'',audience:'all',plans:[],gyms:[],gq:'',pick:false,submitted:false,dirty:false,editingId:null,editedAt:null}; }
+  static sample(){ return {...this.blank(),title:'New: member attendance heatmaps',message:'You can now see which hours your gym is busiest. Open Reports \u2192 Attendance to find the new heatmap, and use it to plan trainer shifts.',audience:'plan',plans:['growth_monthly','pro_monthly'],dirty:true}; }
+
+  rootRef = React.createRef();
+  scrollRef = React.createRef();
+  state = {w:0,q:'',fPlan:'',fStatus:'',fCity:'',sort:'newest',page:1,fix:{},kfix:{},plans:Component.D.plans.map(p=>({...p})),drafts:Component.D.drafts.map(p=>({...p})),sent:Component.D.sent.map(p=>({...p})),pf:'all',ps:'amount_asc',sq:'',sr:'all',allPays:false};
+
+  componentDidMount(){
+    const el=this.rootRef.current;
+    if(el){ this.setState({w:el.offsetWidth}); if(window.ResizeObserver){ this.ro=new ResizeObserver(e=>{ const w=Math.round(e[0].contentRect.width); if(w!==this.state.w) this.setState({w}); }); this.ro.observe(el); } }
+    this.onKey=e=>{ if(e.key==='Escape') this.closeTop(); };
+    document.addEventListener('keydown',this.onKey);
+    this.applyProps();
+  }
+  componentWillUnmount(){ this.ro&&this.ro.disconnect(); document.removeEventListener('keydown',this.onKey); clearTimeout(this.tt); }
+  componentDidUpdate(p){ const k=['initialRoute','initialTab','demoState','overlay','gymId','dashQuery']; if(k.some(x=>p[x]!==this.props[x])) this.applyProps(); }
+  applyProps(){
+    const p=this.props, D=Component.D, empty=p.demoState==='empty';
+    this.setState({route:undefined,tab:undefined,gymId:undefined,dsO:undefined,fix:{},kfix:{},cf:null,ed:null,sentId:null,preview:false,menu:false,cmp:null,loggedOut:false,st:null,saved:null,toast:null,
+      plans:empty?[]:D.plans.map(x=>({...x})),drafts:empty?[]:D.drafts.map(x=>({...x})),sent:empty?[]:D.sent.map(x=>({...x})),q:p.dashQuery||'',page:1},()=>this.openOverlay(p.overlay));
+  }
+  openOverlay(o){
+    const C=Component, gp=()=>this.state.plans.find(x=>x.id==='growth_monthly');
+    if(o==='logout') this.askLogout();
+    else if(o==='menu') this.setState({menu:true});
+    else if(o==='planNew') this.openEditor();
+    else if(o==='planEdit') this.openEditor(gp());
+    else if(o==='planIdTaken'){ this.openEditor(); this.setState(s=>({ed:{...s.ed,id:'pro_monthly',name:'Pro Plus',amount:'4999',submitted:true}})); }
+    else if(o==='saving'){ this.openEditor(gp()); this.setState(s=>({ed:{...s.ed,saving:true}})); }
+    else if(o==='deactivate') this.togglePlan(gp());
+    else if(o==='filled') this.setState({cmp:C.sample()});
+    else if(o==='validation') this.setState({cmp:{...C.blank(),submitted:'publish'}});
+    else if(o==='gymPicker') this.setState({cmp:{...C.blank(),title:'Your free trial ends soon',audience:'gyms',gyms:C.D.gyms.filter(g=>g.status==='Trial').slice(0,2).map(g=>g.id),gq:'fit',pick:true,dirty:true}});
+    else if(o==='publish') this.setState({cmp:C.sample()},()=>this.publishCompose());
+    else if(o==='preview') this.setState({cmp:C.sample(),preview:true});
+    else if(o==='unsaved') this.setState({cmp:C.sample()},()=>this.setTab('drafts'));
+    else if(o==='deleteDraft'&&this.state.drafts[0]) this.askDeleteDraft(this.state.drafts[0]);
+    else if(o==='sentDetail'&&this.state.sent[0]) this.setState({sentId:this.state.sent[0].id});
+    else if(o==='toast') this.toast('success','Plan created',true);
+    else if(o==='toastError') this.toast('error','Couldn\u2019t save changes. Try again.',true);
+    else if(o==='settingsInvalid') this.setState({st:{phone:'98765',email:'ops@gymloop',touched:{phone:true,email:true},submitted:true}});
+    else if(o==='settingsDirty') this.setState({st:{phone:'9123456780',email:'ops@gymloop.in',touched:{}}});
+    else if(o==='settingsError') this.setState({st:{phone:'9123456780',email:'ops@gymloop.in',touched:{},error:'Couldn\u2019t save your changes. Check your connection and try again.'}});
+  }
+  closeTop(){ const s=this.state; if(s.cf) this.setState({cf:null}); else if(s.ed&&!s.ed.saving) this.setState({ed:null}); else if(s.sentId) this.setState({sentId:null}); else if(s.preview) this.setState({preview:false}); else if(s.menu) this.setState({menu:false}); }
+
+  ds(){ return this.state.dsO ?? this.props.demoState ?? 'ready'; }
+  sec(n){ return this.state.fix[n] ?? this.ds(); }
+  retry(n){ this.setState(s=>({fix:{...s.fix,[n]:'loading'}})); setTimeout(()=>this.setState(s=>({fix:{...s.fix,[n]:'ready'}})),700); }
+  route(){ return this.state.route ?? this.props.initialRoute ?? 'dashboard'; }
+  tab(){ return this.state.tab ?? this.props.initialTab ?? 'compose'; }
+  gymId(){ return this.state.gymId || this.props.gymId || Component.D.gyms[4].id; }
+  cmp(){ return this.state.cmp || Component.blank(); }
+  gyms(){ return this.ds()==='empty'?[]:Component.D.gyms; }
+  planOf(id){ return this.state.plans.find(p=>p.id===id)||Component.D.plans.find(p=>p.id===id)||{id,name:id,amount:0}; }
+
+  toast(kind,msg,persist){ clearTimeout(this.tt); this.setState({toast:{kind,msg,k:Date.now()}}); if(!persist) this.tt=setTimeout(()=>this.setState({toast:null}),3200); }
+  nav(route,extra){ this.setState({route,menu:false,sentId:null,...(extra||{})}); const sc=this.scrollRef.current; if(sc) sc.scrollTop=0; }
+  go(route,extra){
+    if(this.route()==='broadcasts'&&route!=='broadcasts'&&this.cmp().dirty){
+      this.guard(()=>this.nav(route,extra)); return; }
+    this.nav(route,extra);
+  }
+  guard(then){
+    this.setState({menu:false,cf:{title:'Discard unsaved changes?',body:'Your broadcast in Compose hasn\u2019t been saved.',ok:'Discard',danger:true,icon:'alert',cancel:'Keep editing',
+      alt:'Save as draft',onAlt:()=>{ if(this.saveDraft()) { this.setState({cf:null}); then(); } else this.setState({cf:null}); },
+      onOk:()=>{ this.setState({cmp:null,cf:null}); then(); }}});
+  }
+  setTab(t){ if(this.tab()==='compose'&&t!=='compose'&&this.cmp().dirty){ this.guard(()=>this.setState({tab:t})); return; } this.setState({tab:t}); }
+  askLogout(){ this.setState({menu:false,cf:{title:'Log out of Super Admin?',body:'You\u2019ll need to sign in again to manage gyms, broadcasts and plans.',ok:'Log out',danger:true,icon:'logout',onOk:()=>this.setState({loggedOut:true,cf:null})}}); }
+
+  audSum(b){ if(b.audience==='all') return 'All gyms'; if(b.audience==='plan'){ const n=b.plans.length; return n+' plan'+(n===1?'':'s')+' \u00B7 '+b.plans.map(id=>this.planOf(id).name).join(', '); } const n=b.gyms.length; return n+' gym'+(n===1?'':'s'); }
+  reachOf(b){ const G=this.gyms(); return b.audience==='all'?G.length:b.audience==='plan'?G.filter(g=>b.plans.includes(g.planId)).length:b.gyms.length; }
+  cmpErrors(c,mode){ const e={}; if(!c.title.trim()) e.title='Add a title'; if(mode==='publish'){ if(!c.message.trim()) e.message='Write a message'; if(c.audience==='plan'&&!c.plans.length) e.aud='Pick at least one plan'; if(c.audience==='gyms'&&!c.gyms.length) e.aud='Pick at least one gym'; } return e; }
+  setCmp(patch){ this.setState(s=>({cmp:{...(s.cmp||Component.blank()),...patch,dirty:true}})); }
+  saveDraft(){
+    const c=this.cmp(); const e=this.cmpErrors(c,'draft');
+    if(Object.keys(e).length){ this.setState({cmp:{...c,submitted:'draft'}}); return false; }
+    const now=new Date(); const d={id:c.editingId||('d'+Date.now()),title:c.title.trim(),message:c.message,audience:c.audience,plans:c.plans,gyms:c.gyms,edited:now};
+    this.setState(s=>({drafts:c.editingId?s.drafts.map(x=>x.id===c.editingId?d:x):[d,...s.drafts],cmp:{...c,editingId:d.id,editedAt:now,dirty:false,submitted:false}}));
+    this.toast('success','Draft saved'); return true;
+  }
+  publishCompose(){
+    const c=this.cmp(); const e=this.cmpErrors(c,'publish');
+    if(Object.keys(e).length){ this.setState({cmp:{...c,submitted:'publish'}}); return; }
+    this.askPublish(c,()=>this.setState(s=>({cmp:null,tab:'sent',drafts:c.editingId?s.drafts.filter(x=>x.id!==c.editingId):s.drafts})));
+  }
+  askPublish(b,after){
+    const n=this.reachOf(b);
+    this.setState({cf:{title:'Publish this broadcast?',body:'It will appear immediately in the Gymloop app for every gym owner in the audience. Published broadcasts can\u2019t be edited.',ok:'Publish to '+Component.num(n)+' gym'+(n===1?'':'s'),icon:'megaphone',
+      rows:[{k:'Title',v:b.title},{k:'Audience',v:this.audSum(b)},{k:'Reach',v:Component.num(n)+' gym'+(n===1?'':'s')}],
+      onOk:()=>{ const item={id:'b'+Date.now(),title:b.title.trim(),message:b.message,audience:b.audience,plans:b.plans,gyms:b.gyms,reach:n,at:new Date()}; this.setState(s=>({sent:[item,...s.sent],cf:null})); after&&after(); this.toast('success','Broadcast published to '+Component.num(n)+' gym'+(n===1?'':'s')); }}});
+  }
+  askDeleteDraft(d){ this.setState({cf:{title:'Delete this draft?',body:'\u201C'+d.title+'\u201D will be permanently deleted. This can\u2019t be undone.',ok:'Delete draft',danger:true,icon:'trash',onOk:()=>{ this.setState(s=>({drafts:s.drafts.filter(x=>x.id!==d.id),cf:null,cmp:s.cmp&&s.cmp.editingId===d.id?null:s.cmp})); this.toast('success','Draft deleted'); }}}); }
+  editDraft(d){ const load=()=>this.setState({tab:'compose',cmp:{...Component.blank(),title:d.title,message:d.message,audience:d.audience,plans:[...d.plans],gyms:[...d.gyms],editingId:d.id,editedAt:d.edited}}); if(this.cmp().dirty) this.guard(load); else load(); }
+
+  openEditor(p){ this.setState({ed:p?{isNew:false,id:p.id,name:p.name,amount:String(p.amount),active:p.active,touched:{},submitted:false,saving:false}:{isNew:true,id:'',name:'',amount:'',active:true,touched:{},submitted:false,saving:false}}); }
+  edErrors(ed){ const e={}; if(ed.isNew){ if(!ed.id) e.id='Plan ID is required'; else if(!/^[a-z0-9_]+$/.test(ed.id)) e.id='Use lowercase letters, numbers and underscores only'; else if(this.state.plans.some(p=>p.id===ed.id)) e.id='Plan ID already exists'; }
+    if(!ed.name.trim()) e.name='Display name is required'; else if(ed.name.length>40) e.name='Keep it under 40 characters';
+    if(!ed.amount) e.amount='Monthly amount is required'; else if(Number(ed.amount)<=0) e.amount='Amount must be more than \u20B90'; return e; }
+  saveEditor(){
+    const ed=this.state.ed; const e=this.edErrors(ed);
+    if(Object.keys(e).length){ this.setState({ed:{...ed,submitted:true}}); return; }
+    this.setState({ed:{...ed,saving:true}});
+    setTimeout(()=>{ const p={id:ed.id,name:ed.name.trim(),amount:Number(ed.amount),active:ed.active};
+      this.setState(s=>({ed:null,plans:ed.isNew?[...s.plans,p]:s.plans.map(x=>x.id===p.id?p:x)})); this.toast('success',ed.isNew?'Plan created':'Changes saved'); },800);
+  }
+  togglePlan(p){
+    if(!p) return; const n=this.gyms().filter(g=>g.planId===p.id).length;
+    const set=v=>{ this.setState(s=>({plans:s.plans.map(x=>x.id===p.id?{...x,active:v}:x),cf:null})); this.toast('success',p.name+(v?' activated':' deactivated')); };
+    if(p.active&&n>0) this.setState({cf:{title:'Deactivate '+p.name+'?',body:Component.num(n)+' gym'+(n===1?' is':'s are')+' on this plan. They keep it until renewal; new gyms can\u2019t select it.',ok:'Deactivate plan',danger:true,icon:'alert',onOk:()=>set(false)}});
+    else set(!p.active);
+  }
+
+  renderVals(){
+    const C=Component, I=C.I, s=this.state, T=C.T, route=this.route(), ds=this.ds();
+    const w=s.w||1280, isMobile=w<768, isTablet=w>=768&&w<1024, isDesktop=w>=1024;
+    const collapsed=isTablet?!s.tabExpand:!!s.collapsed;
+    const btnH=isMobile?'44px':'40px';
+    const L={isMobile,isTablet,isDesktop,notMobile:!isMobile,showSidebar:!isMobile,collapsed,expanded:!collapsed,
+      sideW:collapsed?'72px':'240px',navJustify:collapsed?'center':'flex-start',rootH:this.props.height||'100vh',
+      pagePad:isMobile?'16px 16px 24px':isTablet?'24px':'32px 32px 48px',gap:isMobile?'16px':'24px',
+      kpiCols:isDesktop?'repeat(4,minmax(0,1fr))':'repeat(2,minmax(0,1fr))',kpiGap:isMobile?'8px':'16px',kpiPad:isMobile?'14px':'20px',kpiVal:isMobile?'20px':'28px',kpiH:isMobile?'104px':'128px',
+      gymCols:isDesktop?'minmax(0,2.2fr) minmax(0,1fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) 88px':'minmax(0,2fr) minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) 76px',
+      toolCols:isDesktop?'minmax(200px,1fr) repeat(4,minmax(0,148px))':isTablet?'repeat(4,minmax(0,1fr))':'repeat(2,minmax(0,1fr))',searchSpan:isDesktop?'auto':'1 / -1',
+      ctlH:btnH,btnH,chipH:isMobile?'44px':'32px',cardPad:isMobile?'16px':'20px',
+      detailCols:isMobile?'minmax(0,1fr)':'repeat(2,minmax(0,1fr))',statCols:isDesktop?'repeat(5,minmax(0,1fr))':isTablet?'repeat(3,minmax(0,1fr))':'repeat(2,minmax(0,1fr))',
+      payCols:'minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) 96px',
+      composeCols:isDesktop?'minmax(0,1fr) 360px':'minmax(0,1fr)',audCols:isMobile?'minmax(0,1fr)':'repeat(3,minmax(0,1fr))',
+      planCols:'minmax(0,1.4fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,.7fr) minmax(0,1.1fr) 88px',
+      toastPos:isMobile?'left:16px;right:16px;bottom:80px':'right:24px;bottom:24px',
+      actMax:isMobile?'none':'180px',segMax:isMobile?'100%':'360px',segH:isMobile?'38px':'34px',
+      toastL:isMobile?'16px':'auto',toastR:isMobile?'16px':'24px',toastB:isMobile?'80px':'24px',toastW:isMobile?'auto':'380px'};
+    const OV={dAlign:isMobile?'flex-end':'center',dPad:isMobile?'0':'24px',dMax:isMobile?'100%':'440px',dRadius:isMobile?'16px 16px 0 0':'12px',dInner:isMobile?'20px 16px calc(16px + env(safe-area-inset-bottom))':'24px',dAnim:isMobile?'gl-sheet 240ms cubic-bezier(.2,.8,.2,1)':'gl-modal 160ms ease-out',btnDir:isMobile?'column-reverse':'row',
+      eAlign:isMobile?'stretch':'center',eMax:isMobile?'100%':'480px',eH:isMobile?'100%':'auto',eMaxH:isMobile?'100%':'calc(100% - 48px)',eRadius:isMobile?'0':'12px',
+      pJustify:isMobile?'center':'flex-end',pMax:isMobile?'100%':'460px',pAnim:isMobile?'gl-sheet 240ms cubic-bezier(.2,.8,.2,1)':'gl-panel 220ms cubic-bezier(.2,.8,.2,1)',
+      vAlign:isMobile?'flex-end':'center',vMaxH:isMobile?'90%':'calc(100% - 48px)'};
+    const R={dashboard:route==='dashboard',gym:route==='gym',broadcasts:route==='broadcasts',plans:route==='plans',settings:route==='settings'};
+    const titles={dashboard:'Dashboard',gym:'Gym details',broadcasts:'Broadcasts',plans:'Plans',settings:'Settings'};
+    const nav=[['dashboard','Dashboard','grid'],['broadcasts','Broadcasts','megaphone'],['plans','Plans','layers'],['settings','Settings','sliders']].map(([id,label,ic])=>{
+      const a=route===id||(id==='dashboard'&&route==='gym');
+      return {id,label,icon:I[ic],aria:a?'page':undefined,bg:a?'#E4F2EC':'transparent',fg:a?'#07573F':'#4A4F5A',tabFg:a?'#07573F':'#5B606B',pill:a?'#E4F2EC':'transparent',fw:a?600:500,go:()=>this.go(id)};
+    });
+    const tb={showBack:route==='gym',showLogo:route!=='gym',back:()=>this.nav('dashboard'),title:titles[route],menuOpen:!!s.menu,toggleMenu:()=>this.setState({menu:!s.menu}),closeMenu:()=>this.setState({menu:false}),goSettings:()=>this.go('settings'),logout:()=>this.askLogout()};
+    const badge=k=>({...C.SB[k],label:k});
+
+    // Dashboard
+    const G=this.gyms(), inM=d=>d.getFullYear()===2026&&d.getMonth()===8;
+    const nNew=G.filter(g=>inM(g.created)).length, nAct=G.filter(g=>g.status==='Active').length, mem=G.reduce((a,g)=>a+g.m.total,0);
+    const coll=G.reduce((a,g)=>a+g.totalPaid,0), collM=G.reduce((a,g)=>a+g.pays.filter(p=>p.status==='Paid'&&inM(p.d)).reduce((x,p)=>x+p.amount,0),0);
+    const kd=[['Total gyms',C.num(G.length),'+'+nNew,'this month','#07573F'],['Active gyms',C.num(nAct),(G.length?Math.round(nAct/G.length*100):0)+'%','of total','#16181D'],['Total members',C.num(mem),'Across',C.num(G.length)+' gyms','#6B7080'],['Total collected',C.inr(coll),C.inr(collM),'this month','#16181D']];
+    const kpis=kd.map((k,i)=>{ const st=s.kfix[i]??(ds==='loading'?'loading':ds==='error'&&i>=2?'error':'ready');
+      return {label:k[0],value:k[1],subStrong:k[2],subRest:k[3],subColor:k[4],ready:st==='ready',loading:st==='loading',error:st==='error',
+        retry:()=>{ this.setState(x=>({kfix:{...x.kfix,[i]:'loading'}})); setTimeout(()=>this.setState(x=>({kfix:{...x.kfix,[i]:'ready'}})),700); }}; });
+    const q=s.q.trim().toLowerCase();
+    let list=G.filter(g=>(!q||g.name.toLowerCase().includes(q)||g.owner.toLowerCase().includes(q)||g.city.toLowerCase().includes(q))&&(!s.fPlan||g.planId===s.fPlan)&&(!s.fStatus||g.status===s.fStatus)&&(!s.fCity||g.city===s.fCity));
+    list=[...list].sort(s.sort==='name'?(a,b)=>a.name.localeCompare(b.name):s.sort==='members'?(a,b)=>b.m.total-a.m.total:(a,b)=>b.created-a.created);
+    const per=20, pc=Math.max(1,Math.ceil(list.length/per)), page=Math.min(s.page,pc), ls=this.sec('list');
+    const hasF=!!(q||s.fPlan||s.fStatus||s.fCity);
+    const chips=[]; if(s.q.trim()) chips.push({label:'\u201C'+s.q.trim()+'\u201D',clear:()=>this.setState({q:'',page:1})});
+    if(s.fPlan) chips.push({label:'Plan: '+this.planOf(s.fPlan).name,clear:()=>this.setState({fPlan:'',page:1})});
+    if(s.fStatus) chips.push({label:'Status: '+s.fStatus,clear:()=>this.setState({fStatus:'',page:1})});
+    if(s.fCity) chips.push({label:'City: '+s.fCity,clear:()=>this.setState({fCity:'',page:1})});
+    const clearAll=()=>this.setState({q:'',fPlan:'',fStatus:'',fCity:'',page:1});
+    const fsel=v=>v?{bd:'#8CC3AD',bg:'#F2F9F6'}:{bd:'#D4D3CC',bg:'#FFFFFF'};
+    const showList=ls==='ready'&&list.length>0;
+    const gl={q:s.q,setQ:e=>this.setState({q:e.target.value,page:1}),fPlan:s.fPlan,fStatus:s.fStatus,fCity:s.fCity,sort:s.sort,
+      setPlan:e=>this.setState({fPlan:e.target.value,page:1}),setStatus:e=>this.setState({fStatus:e.target.value,page:1}),setCity:e=>this.setState({fCity:e.target.value,page:1}),setSort:e=>this.setState({sort:e.target.value,page:1}),
+      planS:fsel(s.fPlan),statusS:fsel(s.fStatus),cityS:fsel(s.fCity),hasSearch:!!s.q,clearQ:()=>this.setState({q:'',page:1}),
+      chips,hasChips:chips.length>0,clearAll,
+      countLabel:ls!=='ready'?'':hasF?C.num(list.length)+' of '+C.num(G.length):C.num(G.length)+' total',
+      showSkeleton:ls==='loading',showError:ls==='error',showEmpty:ls==='ready'&&G.length===0,showNoResults:ls==='ready'&&G.length>0&&list.length===0,
+      noResTitle:s.q.trim()?'No gyms match \u201C'+s.q.trim()+'\u201D':'No gyms match these filters',
+      showTable:showList&&!isMobile,showCards:showList&&isMobile,showList,retry:()=>this.retry('list'),
+      rows:list.slice((page-1)*per,page*per).map(g=>({id:g.id,name:g.name,city:g.city,owner:g.owner,plan:this.planOf(g.planId).name,badge:badge(g.status),members:C.num(g.m.total),
+        open:()=>this.go('gym',{gymId:g.id}),key:e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); this.go('gym',{gymId:g.id}); } }})),
+      rangeLabel:list.length?((page-1)*per+1)+'\u2013'+Math.min(page*per,list.length)+' of '+C.num(list.length):'',
+      page,pageCount:pc,prevDis:page<=1,nextDis:page>=pc,prevOp:page<=1?.4:1,nextOp:page>=pc?.4:1,
+      prev:()=>this.setState({page:Math.max(1,page-1)}),next:()=>this.setState({page:Math.min(pc,page+1)}),
+      pages:Array.from({length:pc},(_,i)=>({n:i+1,aria:i+1===page?'page':undefined,bg:i+1===page?'#16181D':'#FFFFFF',fg:i+1===page?'#FFFFFF':'#16181D',bd:i+1===page?'#16181D':'#D4D3CC',go:()=>this.setState({page:i+1})}))};
+
+    // Gym detail
+    const g=G.find(x=>x.id===this.gymId()), dsD=this.sec('detail');
+    const gd={loading:dsD==='loading',notFound:dsD!=='loading'&&!g,ready:dsD!=='loading'&&!!g,back:()=>this.nav('dashboard')};
+    if(g){
+      const plan=this.planOf(g.planId), dl=C.days(T,g.end), trial=g.status==='Trial';
+      const tone=dl<0?{bg:'#FDECEA',fg:'#B42318',bd:'#F6C9C4'}:dl<7?{bg:'#FDF1DC',fg:'#8A5300',bd:'#F2D7A6'}:{bg:'#F6F6F3',fg:'#16181D',bd:'#E6E5E0'};
+      const ps=this.sec('pays'), shown=s.allPays?g.pays:g.pays.slice(0,6), mt=g.m;
+      const months=[]; for(let k=5;k>=0;k--) months.push(C.MON[(8-k+12)%12]); const mx=Math.max(...mt.trend);
+      Object.assign(gd,{name:g.name,badge:badge(g.status),city:g.city,created:C.fd(g.created),owner:g.owner,initials:g.owner.split(' ').map(x=>x[0]).join(''),
+        phone:'+91 '+g.phone.slice(0,5)+' '+g.phone.slice(5),tel:'tel:+91'+g.phone,email:g.email,mailto:'mailto:'+g.email,
+        planName:plan.name,planPrice:C.inr(plan.amount)+'/month',isTrial:trial,startLabel:trial?'Trial started':'Started',start:C.fd(g.start),
+        endLabel:trial?'Trial ends':dl<0?'Expired on':'Renews on',end:C.fd(g.end),
+        daysText:dl<0?'Expired '+(-dl)+' day'+(dl===-1?'':'s')+' ago':dl===0?'Expires today':dl+' day'+(dl===1?'':'s')+' remaining',
+        daysHint:dl<0?'Access is limited until the gym renews.':dl<7?(trial?'Trial ends soon.':'Renewal is due soon.'):'',hasHint:dl<7,
+        tBg:tone.bg,tFg:tone.fg,tBd:tone.bd,warnIcon:dl<7,
+        paysLoading:ps==='loading',paysError:ps==='error',paysReady:ps!=='loading'&&ps!=='error',retryPays:()=>this.retry('pays'),
+        hasPays:g.pays.length>0,noPays:g.pays.length===0,totalPaid:C.inr(g.totalPaid),lastAmt:g.lastPaid?C.inr(g.lastPaid.amount):'\u2014',lastDate:g.lastPaid?'on '+C.fd(g.lastPaid.d):'No successful payments',
+        pays:shown.map(p=>({date:C.fd(p.d),amount:C.inr(p.amount),plan:p.plan,badge:badge(p.status)})),
+        moreP:g.pays.length>6,moreLabel:s.allPays?'Show fewer':'Show all '+g.pays.length+' payments',toggleP:()=>this.setState({allPays:!s.allPays}),
+        stats:[{label:'Total members',value:C.num(mt.total),sub:'All time'},{label:'Active',value:C.num(mt.active),sub:Math.round(mt.active/mt.total*100)+'% of total'},{label:'Expired',value:C.num(mt.expired),sub:'Membership lapsed'},{label:'New this month',value:'+'+C.num(mt.newM),sub:'Since 01 Sep 2026'},{label:'Revenue this month',value:C.inr(mt.rev),sub:'Collected from members'}],
+        trend:mt.trend.map((v,k)=>({v:C.num(v),m:months[k],h:Math.round(16+v/mx*84)+'px',c:k===5?'#0B7A57':'#BFDDD0'}))});
+    }
+
+    // Broadcasts
+    const tab=this.tab(), c=this.cmp(), err=c.submitted?this.cmpErrors(c,c.submitted):{}, reach=this.reachOf(c);
+    const cnt=(n,m)=>n>=m?'#B42318':n>=m*.9?'#8A5300':'#6B7080';
+    const inp=bad=>bad?'#D92D20':'#D4D3CC';
+    const gq=c.gq.trim().toLowerCase(), gRes=G.filter(x=>!gq||x.name.toLowerCase().includes(gq)||x.city.toLowerCase().includes(gq));
+    const drafts=[...s.drafts].sort((a,b)=>b.edited-a.edited), dsDr=this.sec('drafts'), dsSe=this.sec('sent');
+    const sq=s.sq.trim().toLowerCase(), rng={all:1e9,'7':7,'30':30,'90':90}[s.sr];
+    const sentF=[...s.sent].sort((a,b)=>b.at-a.at).filter(b=>(!sq||b.title.toLowerCase().includes(sq))&&C.days(b.at,T)<=rng);
+    const tabs=[['compose','Compose',''],['drafts','Drafts',String(s.drafts.length)],['sent','Sent',String(s.sent.length)]].map(([id,label,n])=>({label,n,hasN:!!n,aria:tab===id?'true':'false',fg:tab===id?'#16181D':'#6B7080',bd:tab===id?'#0B7A57':'transparent',fw:tab===id?600:500,go:()=>this.setTab(id)}));
+    const bc={tabs,compose:tab==='compose',drafts:tab==='drafts',sent:tab==='sent',
+      title:c.title,message:c.message,titleN:c.title.length+'/80',msgN:c.message.length+'/1000',titleNC:cnt(c.title.length,80),msgNC:cnt(c.message.length,1000),
+      setTitle:e=>this.setCmp({title:e.target.value.slice(0,80)}),setMsg:e=>this.setCmp({message:e.target.value.slice(0,1000)}),
+      eTitle:err.title||'',hasETitle:!!err.title,eMsg:err.message||'',hasEMsg:!!err.message,eAud:err.aud||'',hasEAud:!!err.aud,titleBd:inp(err.title),msgBd:inp(err.message),
+      aud:[['all','All gyms','Every gym on Gymloop'],['plan','By plan','Gyms on selected plans'],['gyms','Specific gyms','Hand-pick individual gyms']].map(([id,label,sub])=>{ const on=c.audience===id; return {label,sub,on,aria:on?'true':'false',bd:on?'#0B7A57':'#D4D3CC',bg:on?'#F2F9F6':'#FFFFFF',ring:on?'#0B7A57':'#9CA0A9',dot:on?'#0B7A57':'transparent',pick:()=>this.setCmp({audience:id})}; }),
+      byPlan:c.audience==='plan',byGyms:c.audience==='gyms',
+      planChips:s.plans.map(p=>{ const on=c.plans.includes(p.id), n=G.filter(x=>x.planId===p.id).length; return {label:p.name,n:n+' gym'+(n===1?'':'s'),on,aria:on?'true':'false',bg:on?'#E4F2EC':'#FFFFFF',bd:on?'#8CC3AD':'#D4D3CC',fg:on?'#07573F':'#16181D',toggle:()=>this.setCmp({plans:on?c.plans.filter(x=>x!==p.id):[...c.plans,p.id]})}; }),
+      gq:c.gq,setGq:e=>this.setCmp({gq:e.target.value,pick:true}),openPick:()=>this.setState(x=>({cmp:{...(x.cmp||C.blank()),pick:true}})),closePick:()=>this.setState(x=>({cmp:{...(x.cmp||C.blank()),pick:false}})),
+      pickOpen:c.pick&&c.audience==='gyms',
+      picked:c.gyms.map(id=>{ const x=C.D.gyms.find(y=>y.id===id); return {name:x?x.name:id,remove:()=>this.setCmp({gyms:c.gyms.filter(y=>y!==id)})}; }),hasPicked:c.gyms.length>0,
+      clearPicked:()=>this.setCmp({gyms:[]}),
+      results:gRes.slice(0,6).map(x=>{ const on=c.gyms.includes(x.id); return {name:x.name,meta:x.city+' \u00B7 '+this.planOf(x.planId).name,on,aria:on?'true':'false',box:on?'#0B7A57':'#FFFFFF',boxBd:on?'#0B7A57':'#9CA0A9',down:e=>e.preventDefault(),toggle:()=>this.setCmp({gyms:on?c.gyms.filter(y=>y!==x.id):[...c.gyms,x.id]})}; }),
+      noResults:gRes.length===0,moreRes:gRes.length>6,moreResLabel:'+'+(gRes.length-6)+' more \u2014 keep typing to narrow down',
+      reach:C.num(reach)+' gym'+(reach===1?'':'s'),reachZero:reach===0,reachBg:reach===0?'#F6F6F3':'#E4F2EC',reachFg:reach===0?'#6B7080':'#07573F',
+      editing:!!c.editingId,editedAt:c.editedAt?C.fd(c.editedAt)+', '+C.ft(c.editedAt):'',dirty:c.dirty,
+      startNew:()=>{ const f=()=>this.setState({cmp:null}); if(c.dirty) this.guard(f); else f(); },
+      saveDraft:()=>this.saveDraft(),publish:()=>this.publishCompose(),openPreview:()=>this.setState({preview:true}),
+      pvTitle:c.title.trim()||'Your announcement title',pvMsg:c.message.trim()||'Your message will appear here as gym owners will see it.',pvTC:c.title.trim()?'#16181D':'#9CA0A9',pvMC:c.message.trim()?'#4A4F5A':'#9CA0A9',pvWhen:'Just now',
+      drLoading:dsDr==='loading',drError:dsDr==='error',drEmpty:dsDr==='ready'&&drafts.length===0,drReady:dsDr==='ready'&&drafts.length>0,retryDr:()=>this.retry('drafts'),goCompose:()=>this.setTab('compose'),
+      draftList:drafts.map(d=>({title:d.title,preview:d.message||'No message yet',aud:this.audSum(d),edited:'Edited '+C.fd(d.edited),edit:()=>this.editDraft(d),
+        publish:()=>{ const e=this.cmpErrors(d,'publish'); if(Object.keys(e).length){ this.editDraft(d); setTimeout(()=>this.setState(x=>({cmp:{...x.cmp,submitted:'publish'}})),0); return; } this.askPublish(d,()=>this.setState(x=>({drafts:x.drafts.filter(y=>y.id!==d.id),tab:'sent'}))); },
+        del:()=>this.askDeleteDraft(d)})),
+      sq:s.sq,setSq:e=>this.setState({sq:e.target.value}),sr:s.sr,setSr:e=>this.setState({sr:e.target.value}),clearSent:()=>this.setState({sq:'',sr:'all'}),
+      seLoading:dsSe==='loading',seError:dsSe==='error',seEmpty:dsSe==='ready'&&s.sent.length===0,seNoRes:dsSe==='ready'&&s.sent.length>0&&sentF.length===0,seReady:dsSe==='ready'&&sentF.length>0,retrySe:()=>this.retry('sent'),
+      sentList:sentF.map(b=>({title:b.title,preview:b.message,aud:this.audSum(b),when:C.fd(b.at)+', '+C.ft(b.at),reach:C.num(b.reach)+' gyms',open:()=>this.setState({sentId:b.id})}))};
+    const sb=s.sent.find(b=>b.id===s.sentId);
+    const sd=sb?{title:sb.title,message:sb.message,when:C.fd(sb.at)+' at '+C.ft(sb.at),aud:this.audSum(sb),reach:C.num(sb.reach)+' gym'+(sb.reach===1?'':'s'),
+      isAll:sb.audience==='all',allNote:'Every gym on Gymloop at the time of publishing.',
+      items:sb.audience==='plan'?sb.plans.map(id=>({name:this.planOf(id).name,meta:C.num(G.filter(x=>x.planId===id).length)+' gyms today'})):sb.gyms.map(id=>{ const x=C.D.gyms.find(y=>y.id===id); return {name:x?x.name:id,meta:x?x.city:''}; }),
+      listLabel:sb.audience==='plan'?'Plans':'Gyms'}:{};
+
+    // Plans
+    const plDs=this.sec('plans'), P=s.plans, cntOn=P.filter(p=>p.active).length;
+    let pList=P.filter(p=>s.pf==='all'||(s.pf==='active'?p.active:!p.active));
+    pList=[...pList].sort(s.ps==='amount_desc'?(a,b)=>b.amount-a.amount:s.ps==='name'?(a,b)=>a.name.localeCompare(b.name):(a,b)=>a.amount-b.amount);
+    const pl={seg:[['all','All',P.length],['active','Active',cntOn],['inactive','Inactive',P.length-cntOn]].map(([id,label,n])=>{ const on=s.pf===id; return {label,n:String(n),aria:on?'true':'false',bg:on?'#FFFFFF':'transparent',fg:on?'#16181D':'#5B606B',sh:on?'0 1px 2px rgba(16,24,40,.08), 0 0 0 1px rgba(16,24,40,.06)':'none',fw:on?600:500,go:()=>this.setState({pf:id})}; }),
+      ps:s.ps,setPs:e=>this.setState({ps:e.target.value}),add:()=>this.openEditor(),
+      loading:plDs==='loading',error:plDs==='error',empty:plDs==='ready'&&P.length===0,filteredEmpty:plDs==='ready'&&P.length>0&&pList.length===0,
+      filteredLabel:'No '+s.pf+' plans',showAll:()=>this.setState({pf:'all'}),retry:()=>this.retry('plans'),
+      table:plDs==='ready'&&pList.length>0&&!isMobile,cards:plDs==='ready'&&pList.length>0&&isMobile,
+      rows:pList.map(p=>{ const n=G.filter(x=>x.planId===p.id).length; return {id:p.id,name:p.name,amount:C.inr(p.amount),gyms:C.num(n),gymsLabel:C.num(n)+' gym'+(n===1?'':'s'),active:p.active,
+        state:p.active?'Active':'Inactive',aria:p.active?'true':'false',track:p.active?'#0B7A57':'#C9C8C1',knob:p.active?'translateX(16px)':'translateX(0)',badge:badge(p.active?'Active':'Inactive'),
+        toggle:()=>this.togglePlan(p),edit:()=>this.openEditor(p),toggleLabel:(p.active?'Deactivate ':'Activate ')+p.name}; })};
+
+    let edv={};
+    if(s.ed){ const ed=s.ed, e=this.edErrors(ed), show=f=>(ed.submitted||ed.touched[f])&&e[f];
+      const idErr=ed.isNew&&(show('id')||(e.id==='Plan ID already exists'?e.id:''));
+      const upd=patch=>this.setState(x=>({ed:{...x.ed,...patch}})), touch=f=>()=>this.setState(x=>x.ed?{ed:{...x.ed,touched:{...x.ed.touched,[f]:true}}}:{});
+      edv={title:ed.isNew?'New plan':'Edit plan',sub:ed.isNew?'Gyms can subscribe to this plan once it\u2019s active.':'Changes apply to new subscriptions and renewals.',isNew:ed.isNew,locked:!ed.isNew,
+        id:ed.id,name:ed.name,amount:ed.amount?Number(ed.amount).toLocaleString('en-IN'):'',active:ed.active,saving:!!ed.saving,notSaving:!ed.saving,
+        setId:e2=>upd({id:e2.target.value.slice(0,40)}),setName:e2=>upd({name:e2.target.value.slice(0,40)}),setAmt:e2=>upd({amount:e2.target.value.replace(/\D/g,'').replace(/^0+/,'').slice(0,7)}),
+        blurId:touch('id'),blurName:touch('name'),blurAmt:touch('amount'),toggle:()=>upd({active:!ed.active}),
+        track:ed.active?'#0B7A57':'#C9C8C1',knob:ed.active?'translateX(16px)':'translateX(0)',aria:ed.active?'true':'false',activeLabel:ed.active?'Active \u2014 gyms can select this plan':'Inactive \u2014 hidden from gyms',
+        eId:idErr||'',hasEId:!!idErr,eName:show('name')||'',hasEName:!!show('name'),eAmt:show('amount')||'',hasEAmt:!!show('amount'),
+        idBd:idErr?'#D92D20':'#D4D3CC',nameBd:show('name')?'#D92D20':'#D4D3CC',amtBd:show('amount')?'#D92D20':'#D4D3CC',
+        nameN:ed.name.length+'/40',nameNC:cnt(ed.name.length,40),perMonth:ed.amount?C.inr(Number(ed.amount))+' per month':'Whole rupees, charged monthly',
+        primary:ed.isNew?'Create plan':'Save changes',submit:e2=>{ e2.preventDefault(); if(!ed.saving) this.saveEditor(); },close:()=>{ if(!ed.saving) this.setState({ed:null}); }};
+    }
+
+    // Settings
+    const saved=s.saved||{phone:'9876543210',email:'ops@gymloop.in'}, f=s.st||{phone:saved.phone,email:saved.email,touched:{}};
+    const fe={}; if(!/^[6-9]\d{9}$/.test(f.phone)) fe.phone=f.phone?'Enter a 10-digit mobile number starting with 6, 7, 8 or 9':'Phone number is required';
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(f.email.trim())) fe.email=f.email.trim()?'Enter a valid email address, like name@example.com':'Email address is required';
+    const sh=k=>(f.submitted||f.touched[k])&&fe[k], dirty=f.phone!==saved.phone||f.email.trim()!==saved.email;
+    const updS=patch=>this.setState(x=>({st:{...(x.st||f),...patch,error:null}}));
+    const stv={phone:f.phone,email:f.email,setPhone:e=>updS({phone:e.target.value.replace(/\D/g,'').slice(0,10)}),setEmail:e=>updS({email:e.target.value}),
+      blurPhone:()=>updS({touched:{...f.touched,phone:true}}),blurEmail:()=>updS({touched:{...f.touched,email:true}}),
+      ePhone:sh('phone')||'',hasEPhone:!!sh('phone'),eEmail:sh('email')||'',hasEEmail:!!sh('email'),phoneBd:sh('phone')?'#D92D20':'#D4D3CC',emailBd:sh('email')?'#D92D20':'#D4D3CC',
+      canSave:dirty&&!f.saving,cantSave:!dirty&&!f.saving,saving:!!f.saving,dirty,hint:dirty?'You have unsaved changes':'No changes to save',
+      error:f.error||'',hasError:!!f.error,
+      reset:()=>this.setState({st:null}),
+      submit:e=>{ e.preventDefault(); if(!dirty||f.saving) return; if(Object.keys(fe).length){ this.setState({st:{...f,submitted:true}}); return; }
+        this.setState({st:{...f,saving:true,error:null}});
+        setTimeout(()=>{ if(ds==='error'&&!f.retried){ this.setState(x=>({st:{...x.st,saving:false,retried:true,error:'Couldn\u2019t save your changes. Check your connection and try again.'}})); this.toast('error','Couldn\u2019t save changes'); return; }
+          this.setState({saved:{phone:f.phone,email:f.email.trim()},st:null}); this.toast('success','Contact details saved'); },900); },
+      logout:()=>this.askLogout()};
+
+    // Overlays
+    const cf=s.cf?{...s.cf,iconPath:I[s.cf.icon||'info'],iconBg:s.cf.danger?'#FDECEA':'#E4F2EC',iconFg:s.cf.danger?'#B42318':'#07573F',cancel:s.cf.cancel||'Cancel',
+      hasRows:!!(s.cf.rows&&s.cf.rows.length),rows:(s.cf.rows||[]).map((r,i)=>({...r,bt:i?'1px solid #EFEEE9':'0'})),hasAlt:!!s.cf.alt,isDanger:!!s.cf.danger,isPrimary:!s.cf.danger,
+      okFn:()=>s.cf.onOk&&s.cf.onOk(),altFn:()=>s.cf.onAlt&&s.cf.onAlt()}:{};
+    const toast=s.toast?{msg:s.toast.msg,ok:s.toast.kind==='success',bad:s.toast.kind==='error',icon:s.toast.kind==='success'?I.checkCircle:I.alert,iconC:s.toast.kind==='success'?'#6FD3A8':'#FF9A8F',close:()=>this.setState({toast:null})}:{};
+
+    return {rootRef:this.rootRef,scrollRef:this.scrollRef,stop:e=>e.stopPropagation(),I,L,OV,R,nav,tb,todayLabel:C.fd(T),
+      skel4:[1,2,3,4],skel6:[1,2,3,4,5,6],skel3:[1,2,3],
+      menuOpen:!!s.menu&&isMobile,loggedOut:!!s.loggedOut,relogin:()=>this.applyProps(),
+      toggleCollapse:()=>isTablet?this.setState({tabExpand:!s.tabExpand}):this.setState({collapsed:!s.collapsed}),collapseLabel:collapsed?'Expand sidebar':'Collapse sidebar',askLogout:()=>this.askLogout(),
+      kpis,gl,gd,bc,sd,pl,ed:edv,st:stv,cf,toast,
+      ovl:{cf:!!s.cf,ed:!!s.ed,sent:!!sb,preview:!!s.preview&&!isDesktop,toast:!!s.toast},
+      closeCf:()=>this.setState({cf:null}),closeSent:()=>this.setState({sentId:null}),closePreview:()=>this.setState({preview:false})};
+  }
+}
+</script>
+</body>
+</html>

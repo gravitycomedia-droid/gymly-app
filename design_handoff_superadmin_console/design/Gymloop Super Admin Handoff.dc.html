@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>html,body{margin:0;background:#E9E8E3}*{box-sizing:border-box}body{font-family:Geist,ui-sans-serif,system-ui,sans-serif;color:#16181D;-webkit-font-smoothing:antialiased}a{color:#07573F}a:hover{color:#065239}</style>
+</helmet>
+<div style="padding:56px 64px 96px;display:flex;flex-direction:column;gap:64px;min-width:1400px;font-size:14px;line-height:20px">
+
+<header style="display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:48px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:14px">
+<div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:9px;background:#0B7A57;color:#FFFFFF;display:grid;place-items:center;font-weight:700;font-size:18px">G</div><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#4A4F5A;letter-spacing:.04em">GYMLOOP · SUPER ADMIN CONSOLE · HANDOFF v1 · 24 SEP 2026</span></div>
+<h1 style="margin:0;font-size:44px;line-height:50px;font-weight:600;letter-spacing:-0.025em;max-width:760px">A calm, data-dense admin console that works as well on a phone as on a desktop.</h1>
+<p style="margin:0;font-size:16px;line-height:24px;color:#4A4F5A;max-width:700px">Every frame on this board is the live prototype (<a href="Gymloop Console.dc.html">Gymloop Console</a>) mounted at a fixed width — what you see is what the clickable build does. Click anything inside a frame; each frame keeps its own state.</p>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:20px 22px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Assumptions</div>
+<ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;color:#4A4F5A">
+<li>No Gymloop brand tokens were provided (the attached design system is empty), so this proposes a system: warm-grey neutrals, one green accent, Geist type.</li>
+<li>Breakpoints follow Tailwind defaults: base = mobile (&lt;768), <code>md</code> = tablet (768–1023), <code>lg</code> = desktop (≥1024).</li>
+<li>KPI strip on mobile is a <strong>2×2 compact grid</strong>, not a horizontal scroller — all four totals are visible at once with no hidden content or swipe affordance.</li>
+<li>Filters use styled native <code>&lt;select&gt;</code>s: they open the OS picker on phones (best tap ergonomics), cost zero JS, and map 1:1 to Tailwind.</li>
+<li>"Total collected" = sum of <em>Paid</em> payments to Gymloop. "Active gyms" counts Active status only (trials excluded).</li>
+<li>Light mode only for v1 — dark mode left out rather than half-done.</li>
+</ul>
+</div>
+</header>
+
+<section id="tokens" style="display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;font-weight:600;padding:3px 8px;background:#16181D;color:#FFFFFF;border-radius:5px">01</span><h2 style="margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-0.015em">Design tokens</h2></div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+<div style="grid-column:1 / 3;background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:18px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Colour</div>
+<sc-for list="{{ colorGroups }}" as="cg" hint-placeholder-count="4">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="font-size:13px;font-weight:600">{{ cg.name }}</div>
+<div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px">
+<sc-for list="{{ cg.items }}" as="c"><div style="display:flex;flex-direction:column;gap:6px;min-width:0"><div style="height:48px;border-radius:8px;background:{{ c.hex }};border:1px solid rgba(22,24,29,.08)"></div><div style="font-size:12px;line-height:16px;font-weight:600">{{ c.name }}</div><div style="font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;line-height:14px;color:#4A4F5A">{{ c.hex }}</div><div style="font-size:11px;line-height:14px;color:#6B7080">{{ c.use }}</div></div></sc-for>
+</div></div>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:10px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Type · Geist / Geist Mono</div>
+<sc-for list="{{ typeScale }}" as="t"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-top:1px solid #EFEEE9;padding-top:8px"><span style="font-size:{{ t.size }};line-height:{{ t.lh }};font-weight:{{ t.w }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ t.sample }}</span><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:#6B7080;white-space:nowrap">{{ t.spec }}</span></div></sc-for>
+<div style="font-size:12px;color:#6B7080">All numbers use <code>tabular-nums</code>. Plan IDs use Geist Mono 13/14px.</div>
+</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px">
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:10px"><div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Spacing · 4px base</div>
+<sc-for list="{{ spacing }}" as="sp"><div style="display:flex;align-items:center;gap:10px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;width:64px;color:#4A4F5A">{{ sp.tw }}</span><span style="height:10px;width:{{ sp.px }};background:#8CC3AD;border-radius:2px"></span><span style="font-size:12px;color:#6B7080">{{ sp.px }} · {{ sp.use }}</span></div></sc-for></div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px"><div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Radius</div>
+<sc-for list="{{ radii }}" as="r"><div style="display:flex;align-items:center;gap:12px"><span style="width:44px;height:32px;border:1.5px solid #0B7A57;background:#F2F9F6;border-radius:{{ r.px }}"></span><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;color:#4A4F5A;width:92px">{{ r.tw }}</span><span style="font-size:12px;color:#6B7080">{{ r.use }}</span></div></sc-for></div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px"><div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Shadow</div>
+<sc-for list="{{ shadows }}" as="sh"><div style="display:flex;align-items:center;gap:14px"><span style="width:56px;height:36px;flex:none;border-radius:8px;background:#FFFFFF;box-shadow:{{ sh.css }}"></span><div style="min-width:0"><div style="font-size:12px;font-weight:600">{{ sh.name }} <span style="font-weight:400;color:#6B7080">· {{ sh.use }}</span></div><div style="font-family:'Geist Mono',ui-monospace,monospace;font-size:10px;line-height:14px;color:#6B7080;overflow-wrap:anywhere">{{ sh.css }}</div></div></div></sc-for></div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:8px"><div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Motion · Framer Motion</div>
+<sc-for list="{{ motion }}" as="m"><div style="border-top:1px solid #EFEEE9;padding-top:6px"><div style="font-size:12px;font-weight:600">{{ m.name }}</div><div style="font-family:'Geist Mono',ui-monospace,monospace;font-size:10.5px;line-height:15px;color:#4A4F5A">{{ m.spec }}</div></div></sc-for>
+<div style="font-size:12px;color:#6B7080">Respect <code>prefers-reduced-motion</code>: use <code>useReducedMotion()</code> and drop transforms, keep opacity.</div></div>
+</div>
+<div style="background:#16181D;color:#E6E5E0;border-radius:12px;padding:22px 24px;display:grid;grid-template-columns:260px minmax(0,1fr);gap:24px">
+<div><div style="font-size:12px;font-weight:600;color:#9CA0A9;text-transform:uppercase;letter-spacing:.06em">tailwind.config.js</div><p style="margin:8px 0 0;font-size:13px;line-height:19px;color:#C9C8C1">Extend — don’t replace — the default theme. Semantic names so components read <code style="color:#6FD3A8">bg-accent hover:bg-accent-700</code>.</p></div>
+<pre style="margin:0;font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;line-height:18px;white-space:pre-wrap;color:#E6E5E0">{{ twConfig }}</pre>
+</div>
+</section>
+
+<section id="components" style="display:flex;flex-direction:column;gap:24px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;font-weight:600;padding:3px 8px;background:#16181D;color:#FFFFFF;border-radius:5px">02</span><h2 style="margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-0.015em">Components</h2><span style="color:#4A4F5A">Defined once, reused on every screen. Mobile variants are 44px tall; desktop 40px.</span></div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:20px">
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Buttons</div>
+<div style="display:grid;grid-template-columns:90px repeat(5,minmax(0,1fr));gap:10px;align-items:center">
+<span></span><span style="font-size:12px;color:#6B7080">Default</span><span style="font-size:12px;color:#6B7080">Hover</span><span style="font-size:12px;color:#6B7080">Pressed</span><span style="font-size:12px;color:#6B7080">Disabled</span><span style="font-size:12px;color:#6B7080">Loading</span>
+<sc-for list="{{ buttons }}" as="b">
+<span style="font-size:13px;font-weight:600">{{ b.name }}</span>
+<sc-for list="{{ b.states }}" as="s"><span style="height:40px;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 12px;border-radius:8px;background:{{ s.bg }};color:{{ s.fg }};border:1px solid {{ s.bd }};font-size:14px;font-weight:600;white-space:nowrap;box-shadow:{{ s.ring }}"><sc-if value="{{ s.spin }}"><span style="width:14px;height:14px;border-radius:999px;border:2px solid {{ s.spinBg }};border-top-color:{{ s.fg }}"></span></sc-if>{{ s.label }}</span></sc-for>
+</sc-for>
+</div>
+<div style="font-size:12px;color:#6B7080">Focus (all variants): <code>focus-visible:outline-2 outline-offset-2 outline-accent</code>. Loading keeps width, sets <code>aria-busy</code>, disables clicks.</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Status badges · always dot + text</div>
+<div style="display:flex;flex-wrap:wrap;gap:8px"><sc-for list="{{ badges }}" as="b"><span style="display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 8px;border-radius:999px;background:{{ b.bg }};color:{{ b.fg }};font-size:12px;font-weight:600"><span style="width:6px;height:6px;border-radius:999px;background:{{ b.dot }}"></span>{{ b.label }}</span></sc-for></div>
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em;margin-top:6px">Plan badge · neutral outline</div>
+<div style="display:flex;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid #D4D3CC;border-radius:6px;font-size:12px;font-weight:500">Growth</span><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border:1px solid #D4D3CC;border-radius:6px;font-size:12px;font-weight:500">Studio Plus</span></div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Toast</div>
+<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#16181D;color:#FFFFFF;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,40,.24)"><span style="width:10px;height:10px;border-radius:999px;background:#6FD3A8"></span><span style="flex:1;font-weight:500">Plan created</span><span style="color:#C9C8C1">✕</span></div>
+<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#16181D;color:#FFFFFF;border-radius:10px;box-shadow:0 8px 24px rgba(16,24,40,.24)"><span style="width:10px;height:10px;border-radius:999px;background:#FF9A8F"></span><span style="flex:1;font-weight:500">Couldn’t save changes. Try again.</span><span style="color:#C9C8C1">✕</span></div>
+<div style="font-size:12px;color:#6B7080">Bottom-right on desktop (380px), full-width above the tab bar on mobile. Auto-dismiss 3.2s, <code>role="status"</code>.</div>
+</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Text inputs</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">Default</span><span style="height:40px;display:flex;align-items:center;padding:0 12px;border:1px solid #D4D3CC;border-radius:8px;color:#8A8F9C">e.g. Growth</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">Focus</span><span style="height:40px;display:flex;align-items:center;padding:0 12px;border:1px solid #D4D3CC;border-radius:8px;outline:2px solid #0B7A57;outline-offset:2px">Growth</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">Error</span><span style="height:40px;display:flex;align-items:center;padding:0 12px;border:1px solid #D92D20;border-radius:8px;font-family:'Geist Mono',ui-monospace,monospace">pro_monthly</span><span style="font-size:13px;color:#B42318">Plan ID already exists</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">Locked (edit mode)</span><span style="height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border:1px solid #E6E5E0;background:#F6F6F3;border-radius:8px;font-family:'Geist Mono',ui-monospace,monospace;color:#4A4F5A">growth_monthly<span style="font-family:Geist;font-size:12px;color:#6B7080">Locked</span></span></div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Specialised inputs</div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="display:flex;justify-content:space-between"><span style="font-size:14px;font-weight:500">Textarea + counter</span><span style="font-size:12px;color:#8A5300">912/1000</span></span><span style="height:64px;padding:10px 12px;border:1px solid #D4D3CC;border-radius:8px;color:#4A4F5A">Counter turns amber at 90%, red at the limit.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">Phone · +91 prefix</span><span style="height:40px;display:flex;border:1px solid #D4D3CC;border-radius:8px;overflow:hidden"><span style="display:grid;place-items:center;padding:0 12px;background:#F6F6F3;border-right:1px solid #E6E5E0;font-weight:500;color:#4A4F5A">+91</span><span style="display:flex;align-items:center;padding:0 12px">9876543210</span></span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font-size:14px;font-weight:500">Currency · ₹ prefix</span><span style="height:40px;display:flex;border:1px solid #D4D3CC;border-radius:8px;overflow:hidden;max-width:240px"><span style="display:grid;place-items:center;width:40px;background:#F6F6F3;border-right:1px solid #E6E5E0;font-weight:500;color:#4A4F5A">₹</span><span style="flex:1;display:flex;align-items:center;padding:0 12px">1,25,000</span><span style="display:grid;place-items:center;padding:0 12px;color:#6B7080;font-size:13px">/month</span></span></div>
+<div style="display:flex;gap:20px;align-items:center"><span style="display:flex;align-items:center;gap:10px"><span style="width:40px;height:24px;border-radius:999px;background:#0B7A57;padding:2px"><span style="display:block;width:20px;height:20px;border-radius:999px;background:#FFFFFF;transform:translateX(16px)"></span></span>Active</span><span style="display:flex;align-items:center;gap:10px"><span style="width:40px;height:24px;border-radius:999px;background:#C9C8C1;padding:2px"><span style="display:block;width:20px;height:20px;border-radius:999px;background:#FFFFFF"></span></span>Inactive</span></div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Search · filters · segmented</div>
+<span style="height:40px;display:flex;align-items:center;gap:10px;padding:0 12px;border:1px solid #D4D3CC;border-radius:8px;color:#8A8F9C">⌕ Search gym, owner or city</span>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px"><span style="height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border:1px solid #D4D3CC;border-radius:8px">All plans <span style="color:#6B7080">▾</span></span><span style="height:40px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border:1px solid #8CC3AD;background:#F2F9F6;border-radius:8px">Trial <span style="color:#6B7080">▾</span></span></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap"><span style="height:32px;display:flex;align-items:center;gap:6px;padding:0 10px 0 12px;border-radius:999px;border:1px solid #BFDDD0;background:#E4F2EC;color:#07573F;font-size:13px;font-weight:500">Status: Trial ✕</span><span style="height:32px;display:flex;align-items:center;gap:4px;padding:0 6px 0 10px;border-radius:999px;background:#E4F2EC;color:#07573F;font-size:13px;font-weight:500">Pulse Gym ✕</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;border-radius:10px;background:#EFEEE9"><span style="height:34px;display:grid;place-items:center;border-radius:8px;background:#FFFFFF;box-shadow:0 1px 2px rgba(16,24,40,.08),0 0 0 1px rgba(16,24,40,.06);font-weight:600">All 6</span><span style="height:34px;display:grid;place-items:center;color:#5B606B;font-weight:500">Active 4</span><span style="height:34px;display:grid;place-items:center;color:#5B606B;font-weight:500">Inactive 2</span></div>
+<div style="font-size:12px;color:#6B7080">Selected filter = accent border + tint. Removable chips mirror active filters with “Clear all”.</div>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Navigation items</div>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+<span style="height:40px;display:flex;align-items:center;gap:12px;padding:0 10px;border-radius:8px;color:#4A4F5A;font-weight:500">▦ Default</span>
+<span style="height:40px;display:flex;align-items:center;gap:12px;padding:0 10px;border-radius:8px;background:#F1F1EC;color:#4A4F5A;font-weight:500">▦ Hover</span>
+<span style="height:40px;display:flex;align-items:center;gap:12px;padding:0 10px;border-radius:8px;background:#E4F2EC;color:#07573F;font-weight:600">▦ Active</span>
+<span style="height:40px;display:flex;align-items:center;gap:12px;padding:0 10px;border-radius:8px;color:#4A4F5A;font-weight:500;outline:2px solid #0B7A57;outline-offset:2px">▦ Focus</span>
+</div>
+<div style="font-size:12px;color:#6B7080">Sidebar 240px ↔ 72px icon rail (labels become <code>title</code> tooltips). Bottom tab: 64px bar, active = green pill behind icon + semibold label. Active item has <code>aria-current="page"</code>.</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">KPI card · default / loading / error</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<div style="border:1px solid #E6E5E0;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px"><span style="font-size:12px;color:#4A4F5A;font-weight:500">Total gyms</span><span style="font-size:22px;font-weight:600">46</span><span style="font-size:11px;color:#6B7080"><b style="color:#07573F">+11</b> this month</span></div>
+<div style="border:1px solid #E6E5E0;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#4A4F5A;font-weight:500">Total gyms</span><span style="height:20px;width:70%;border-radius:6px;background:#EEEDE8"></span><span style="height:10px;width:45%;border-radius:6px;background:#EEEDE8"></span></div>
+<div style="border:1px solid #E6E5E0;border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:8px"><span style="font-size:12px;color:#4A4F5A;font-weight:500">Total gyms</span><span style="font-size:12px;color:#B42318">⚠ Couldn’t load</span><span style="align-self:flex-start;height:28px;padding:0 8px;display:grid;place-items:center;border:1px solid #D4D3CC;border-radius:8px;font-size:12px;font-weight:500">Retry</span></div>
+</div>
+<div style="font-size:12px;color:#6B7080">Each card fetches/fails independently; retry re-queries only that card.</div>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:12px">
+<div style="font-size:12px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Feedback states</div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center">
+<div style="border:1px solid #E6E5E0;border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:32px;height:32px;border-radius:8px;background:#F1F1EC"></span><b style="font-size:13px">Empty</b><span style="font-size:11px;line-height:14px;color:#6B7080">Icon · title · 1 line · optional CTA</span></div>
+<div style="border:1px solid #E6E5E0;border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="width:32px;height:32px;border-radius:8px;background:#FDECEA"></span><b style="font-size:13px">Error</b><span style="font-size:11px;line-height:14px;color:#6B7080">Red tile · “Try again” secondary</span></div>
+<div style="border:1px solid #E6E5E0;border-radius:12px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:6px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;font-weight:600;color:#6B7080">404</span><b style="font-size:13px">Not found</b><span style="font-size:11px;line-height:14px;color:#6B7080">Primary “Back to dashboard”</span></div>
+</div>
+<div style="font-size:12px;color:#6B7080">Skeletons use <code>#EEEDE8→#F7F6F2</code> shimmer, sized to the real content so layout doesn’t jump. Pagination, modal/sheet, confirm dialog and multi-select are shown live in §03.</div>
+</div>
+</div>
+</section>
+
+<sc-for list="{{ boards }}" as="bd" hint-placeholder-count="2">
+<section id="{{ bd.id }}" style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;font-weight:600;padding:3px 8px;background:#16181D;color:#FFFFFF;border-radius:5px">{{ bd.num }}</span><h2 style="margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-0.015em">{{ bd.title }}</h2><span style="color:#4A4F5A">{{ bd.sub }}</span></div>
+<sc-for list="{{ bd.rows }}" as="row">
+<div style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:10px"><h3 style="margin:0;font-size:17px;line-height:24px;font-weight:600">{{ row.title }}</h3><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#6B7080">{{ row.path }}</span></div>
+<div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap">
+<sc-for list="{{ row.frames }}" as="f">
+<div style="display:flex;flex-direction:column;gap:8px;flex:none">
+<div style="display:flex;align-items:center;gap:8px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:11px;font-weight:600;padding:2px 6px;background:#FFFFFF;border:1px solid #DCDBD5;border-radius:4px">{{ f.w }}</span><span style="font-size:12px;color:#4A4F5A">{{ f.label }}</span></div>
+<div style="width:{{ f.wpx }};height:{{ f.hpx }};background:#F6F6F3;border-radius:{{ f.radius }};overflow:hidden;box-shadow:0 0 0 1px #CFCEC7, 0 12px 32px rgba(16,24,40,.10)">
+<dc-import name="Gymloop Console" initial-route="{{ f.route }}" initial-tab="{{ f.tab }}" demo-state="{{ f.ds }}" overlay="{{ f.ov }}" gym-id="{{ f.gym }}" dash-query="{{ f.q }}" height="{{ f.hpx }}" hint-size="100%,100%"></dc-import>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+</sc-for>
+</section>
+</sc-for>
+
+<section id="notes" style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;align-items:baseline;gap:14px"><span style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;font-weight:600;padding:3px 8px;background:#16181D;color:#FFFFFF;border-radius:5px">05</span><h2 style="margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-0.015em">Implementation notes</h2><span style="color:#4A4F5A">Per screen: layout, components, data. Money stored as integer rupees; format with <code>Intl.NumberFormat('en-IN')</code>.</span></div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+<sc-for list="{{ notes }}" as="n" hint-placeholder-count="6">
+<article style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:flex;flex-direction:column;gap:14px">
+<div><h3 style="margin:0;font-size:17px;line-height:24px;font-weight:600">{{ n.title }}</h3><div style="font-family:'Geist Mono',ui-monospace,monospace;font-size:12px;color:#07573F">{{ n.route }}</div></div>
+<div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:11px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Layout</div><ul style="margin:0;padding-left:16px;display:flex;flex-direction:column;gap:3px;color:#4A4F5A;font-size:13px;line-height:19px"><sc-for list="{{ n.layout }}" as="l"><li>{{ l }}</li></sc-for></ul></div>
+<div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:11px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Components</div><div style="display:flex;flex-wrap:wrap;gap:4px"><sc-for list="{{ n.comps }}" as="c"><span style="font-size:12px;padding:2px 8px;border-radius:999px;background:#F1F1EC;color:#4A4F5A">{{ c }}</span></sc-for></div></div>
+<div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:11px;font-weight:600;color:#6B7080;text-transform:uppercase;letter-spacing:.06em">Data</div><div style="font-family:'Geist Mono',ui-monospace,monospace;font-size:11.5px;line-height:17px;background:#FAFAF8;border:1px solid #EFEEE9;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:2px"><sc-for list="{{ n.data }}" as="d"><div style="display:flex;justify-content:space-between;gap:12px"><span style="color:#16181D;overflow-wrap:anywhere">{{ d.f }}</span><span style="color:#07573F;text-align:right;flex:none;max-width:55%">{{ d.t }}</span></div></sc-for></div></div>
+</article>
+</sc-for>
+</div>
+<div style="background:#FFFFFF;border:1px solid #DCDBD5;border-radius:12px;padding:22px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px;color:#4A4F5A;font-size:13px;line-height:19px">
+<div><div style="font-size:12px;font-weight:600;color:#16181D;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Overlays</div>Desktop modal: centred, max-w 440 (confirm) / 480 (plan form), <code>scale .96→1</code>. Mobile: confirm = bottom sheet with grab handle, buttons stacked (primary on top); plan form & sent detail = full-screen sheet. Sent detail on desktop = right side panel 460px. All: backdrop click + Esc close, focus trapped (<code>focus-trap-react</code> or Headless UI <code>Dialog</code>), focus returns to trigger.</div>
+<div><div style="font-size:12px;font-weight:600;color:#16181D;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Unsaved changes</div>Compose is dirty once any field changes. Switching tab or route opens “Discard unsaved changes?” with Keep editing / Save as draft / Discard. Also register <code>beforeunload</code> and React Router’s <code>useBlocker</code> for hard navigation.</div>
+<div><div style="font-size:12px;font-weight:600;color:#16181D;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Formatting helpers</div><code>formatINR(125000)</code> → ₹1,25,000 · <code>formatDate(d)</code> → 24 Sep 2026 (<code>en-GB</code>, day 2-digit, month short) · time → 6:30 PM IST. Status is never colour-only: badges carry text; days-remaining carries text + icon.</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals(){
+    const F=(w,label,o)=>{ const h=w===375?760:w===768?960:820; return {w:String(w),wpx:w+'px',hpx:h+'px',radius:w===375?'28px':'12px',label,route:o.r||'dashboard',tab:o.t||'compose',ds:o.d||'ready',ov:o.o||'none',gym:o.g||'',q:o.q||''}; };
+    const three=(o,l)=>[F(375,l||'Mobile',o),F(768,l||'Tablet',o),F(1280,l||'Desktop',o)];
+    const MF='muscle-factory', EX='fitnation-studio';
+    const boards=[
+      {id:'screens',num:'03',title:'Screens at 375 · 768 · 1280',sub:'Default (ready) state of every route. Tablet shows the collapsed icon rail.',rows:[
+        {title:'Dashboard',path:'/superadmin',frames:three({r:'dashboard'})},
+        {title:'Gym detail',path:'/superadmin/gyms/:gymId',frames:three({r:'gym'})},
+        {title:'Broadcasts · Compose',path:'/superadmin/broadcasts',frames:three({r:'broadcasts',o:'filled'})},
+        {title:'Broadcasts · Drafts & Sent',path:'/superadmin/broadcasts?tab=…',frames:[F(375,'Drafts',{r:'broadcasts',t:'drafts'}),F(768,'Sent',{r:'broadcasts',t:'sent'}),F(1280,'Sent · detail side panel',{r:'broadcasts',t:'sent',o:'sentDetail'})]},
+        {title:'Plans',path:'/superadmin/plans',frames:three({r:'plans'})},
+        {title:'Settings',path:'/superadmin/settings',frames:three({r:'settings'})}]},
+      {id:'states',num:'04',title:'States, overlays & flows',sub:'Loading, empty, error and success states; modals ↔ sheets. Mobile + desktop per state.',rows:[
+        {title:'Shell · logout & account menu',path:'nav',frames:[F(375,'Top-bar account menu',{o:'menu'}),F(375,'Logout confirm · bottom sheet',{o:'logout'}),F(1280,'Logout confirm · modal',{o:'logout'})]},
+        {title:'Dashboard · loading',path:'skeletons',frames:[F(375,'Loading',{d:'loading'}),F(1280,'Loading',{d:'loading'})]},
+        {title:'Dashboard · error',path:'per-card + list retry',frames:[F(375,'Error',{d:'error'}),F(1280,'Error',{d:'error'})]},
+        {title:'Dashboard · empty & no results',path:'',frames:[F(375,'No gyms yet',{d:'empty'}),F(375,'No search results',{q:'zumba'}),F(1280,'No search results',{q:'zumba'})]},
+        {title:'Gym detail · variants',path:'',frames:[F(375,'Trial gym',{r:'gym',g:MF}),F(1280,'Expired gym',{r:'gym',g:EX})]},
+        {title:'Gym detail · loading, section error, 404',path:'',frames:[F(375,'Loading',{r:'gym',d:'loading'}),F(375,'Payments error',{r:'gym',d:'error'}),F(375,'404',{r:'gym',g:'missing'}),F(1280,'404',{r:'gym',g:'missing'})]},
+        {title:'Compose · validation, targeting, preview',path:'',frames:[F(375,'Validation errors',{r:'broadcasts',o:'validation'}),F(375,'Preview sheet',{r:'broadcasts',o:'preview'}),F(1280,'Specific gyms multi-select',{r:'broadcasts',o:'gymPicker'})]},
+        {title:'Compose · publish & unsaved guard',path:'',frames:[F(375,'Publish confirm',{r:'broadcasts',o:'publish'}),F(1280,'Publish confirm',{r:'broadcasts',o:'publish'}),F(1280,'Unsaved changes',{r:'broadcasts',o:'unsaved'})]},
+        {title:'Drafts & Sent · detail, delete, empty',path:'',frames:[F(375,'Sent detail · full-screen sheet',{r:'broadcasts',t:'sent',o:'sentDetail'}),F(375,'Delete draft',{r:'broadcasts',t:'drafts',o:'deleteDraft'}),F(1280,'Empty drafts',{r:'broadcasts',t:'drafts',d:'empty'})]},
+        {title:'Plans · add & edit',path:'',frames:[F(375,'New plan · full-screen sheet',{r:'plans',o:'planNew'}),F(375,'Edit · Plan ID locked',{r:'plans',o:'planEdit'}),F(1280,'Plan ID already exists',{r:'plans',o:'planIdTaken'}),F(1280,'Saving',{r:'plans',o:'saving'})]},
+        {title:'Plans · deactivate, toast, empty, loading',path:'',frames:[F(375,'Deactivate warning',{r:'plans',o:'deactivate'}),F(1280,'Deactivate warning',{r:'plans',o:'deactivate'}),F(1280,'Success toast',{r:'plans',o:'toast'}),F(375,'Empty',{r:'plans',d:'empty'}),F(375,'Loading',{r:'plans',d:'loading'})]},
+        {title:'Settings · edit, validation, error',path:'',frames:[F(375,'Dirty — Save enabled',{r:'settings',o:'settingsDirty'}),F(375,'Validation',{r:'settings',o:'settingsInvalid'}),F(1280,'Save failed',{r:'settings',o:'settingsError'})]}]}];
+    const colorGroups=[
+      {name:'Neutrals',items:[{name:'canvas',hex:'#F6F6F3',use:'App background'},{name:'surface',hex:'#FFFFFF',use:'Cards, bars'},{name:'subtle',hex:'#FAFAF8',use:'Table head, tiles'},{name:'muted',hex:'#F1F1EC',use:'Hover fill, icon tile'},{name:'line',hex:'#E6E5E0',use:'Card borders'},{name:'line-strong',hex:'#D4D3CC',use:'Input borders'}]},
+      {name:'Ink',items:[{name:'ink',hex:'#16181D',use:'Primary text'},{name:'ink-2',hex:'#4A4F5A',use:'Secondary text'},{name:'ink-3',hex:'#6B7080',use:'Meta (4.8:1)'},{name:'ink-disabled',hex:'#8A8F9C',use:'Disabled, placeholder'},{name:'line-soft',hex:'#EFEEE9',use:'Row dividers'},{name:'scrim',hex:'#16181D7A',use:'Backdrop 48%'}]},
+      {name:'Accent · the only brand colour',items:[{name:'accent',hex:'#0B7A57',use:'Primary, focus'},{name:'accent-700',hex:'#08664A',use:'Hover'},{name:'accent-800',hex:'#065239',use:'Pressed'},{name:'accent-ink',hex:'#07573F',use:'Text on soft'},{name:'accent-soft',hex:'#E4F2EC',use:'Active nav, chips'},{name:'accent-tint',hex:'#F2F9F6',use:'Selected field'}]},
+      {name:'Semantic · status only',items:[{name:'success',hex:'#17703A',use:'on #E5F3EA'},{name:'info',hex:'#1D5FB8',use:'Trial · on #E8F0FB'},{name:'warning',hex:'#8A5300',use:'< 7 days · on #FDF1DC'},{name:'danger',hex:'#B42318',use:'Expired, destructive'},{name:'danger-soft',hex:'#FDECEA',use:'Error surfaces'},{name:'neutral',hex:'#3F3F46',use:'Suspended · on #EEEEF0'}]}];
+    const typeScale=[{sample:'₹13,55,383',size:'28px',lh:'34px',w:600,spec:'kpi · 28/34 600 · mobile 20'},{sample:'Dashboard',size:'24px',lh:'32px',w:600,spec:'h1 · 24/32 600'},{sample:'Gym not found',size:'20px',lh:'28px',w:600,spec:'h2 / stat · 20/28'},{sample:'New plan',size:'18px',lh:'26px',w:600,spec:'dialog · 18/26'},{sample:'Gyms',size:'16px',lh:'24px',w:600,spec:'section · 16/24'},{sample:'Iron Temple Fitness',size:'15px',lh:'22px',w:600,spec:'card title · 15/22'},{sample:'Body and controls',size:'14px',lh:'20px',w:400,spec:'body · 14/20'},{sample:'Helper and meta text',size:'13px',lh:'18px',w:400,spec:'small · 13/18'},{sample:'BADGES · TABLE HEAD',size:'12px',lh:'16px',w:600,spec:'caption · 12/16'},{sample:'Tab label',size:'11px',lh:'14px',w:500,spec:'tab bar · 11/14'}];
+    const spacing=[['1','4px','icon gap'],['2','8px','control gap'],['3','12px','card inner'],['4','16px','mobile page / card'],['5','20px','desktop card'],['6','24px','section gap'],['8','32px','desktop page'],['12','48px','empty state']].map(([t,px,use])=>({tw:'p-'+t,px,use}));
+    const radii=[['rounded-md','6px','Plan badge, skeleton'],['rounded-lg','8px','Buttons, inputs'],['rounded-[10px]','10px','Options, toast'],['rounded-xl','12px','Cards, modals'],['rounded-2xl','16px','Sheet top corners'],['rounded-full','999px','Status badge, chips']].map(([tw,px,use])=>({tw,px,use}));
+    const shadows=[{name:'sm',css:'0 1px 2px rgba(16,24,40,.06)',use:'segmented'},{name:'md',css:'0 4px 12px rgba(16,24,40,.08)',use:'popovers'},{name:'lg',css:'0 16px 40px rgba(16,24,40,.18)',use:'modals, sheets'},{name:'toast',css:'0 8px 24px rgba(16,24,40,.24)',use:'toasts'}];
+    const motion=[{name:'Page',spec:'opacity 0→1, y 6→0 · 200ms easeOut'},{name:'Modal (desktop)',spec:'scale .96→1, opacity · 160ms easeOut'},{name:'Sheet (mobile)',spec:'y 100%→0 · spring stiffness 400 damping 40'},{name:'Side panel',spec:'x 100%→0 · 220ms [.2,.8,.2,1]'},{name:'Backdrop / toast',spec:'fade 150ms · toast y 8→0 180ms'},{name:'Skeleton',spec:'bg-position shimmer 1.4s linear ∞'}];
+    const btn=(bg,fg,bd,label)=>({bg,fg,bd,label,ring:'none',spin:false,spinBg:'transparent'});
+    const buttons=[
+      {name:'Primary',states:[btn('#0B7A57','#FFFFFF','#0B7A57','Publish'),btn('#08664A','#FFFFFF','#08664A','Publish'),btn('#065239','#FFFFFF','#065239','Publish'),btn('#E6E5E0','#8A8F9C','#E6E5E0','Publish'),{...btn('#0B7A57','#FFFFFF','#0B7A57','Saving…'),spin:true,spinBg:'rgba(255,255,255,.35)'}]},
+      {name:'Secondary',states:[btn('#FFFFFF','#16181D','#D4D3CC','Save draft'),btn('#F6F6F3','#16181D','#D4D3CC','Save draft'),btn('#EFEEE9','#16181D','#D4D3CC','Save draft'),btn('#FFFFFF','#8A8F9C','#E6E5E0','Save draft'),{...btn('#FFFFFF','#16181D','#D4D3CC','Saving…'),spin:true,spinBg:'#E6E5E0'}]},
+      {name:'Ghost',states:[btn('transparent','#4A4F5A','transparent','Edit'),btn('#F1F1EC','#16181D','transparent','Edit'),btn('#E6E5E0','#16181D','transparent','Edit'),btn('transparent','#9CA0A9','transparent','Edit'),{...btn('transparent','#4A4F5A','transparent','Loading'),spin:true,spinBg:'#E6E5E0'}]},
+      {name:'Danger',states:[btn('#B42318','#FFFFFF','#B42318','Log out'),btn('#962018','#FFFFFF','#962018','Log out'),btn('#7A1A12','#FFFFFF','#7A1A12','Log out'),btn('#F3D3CF','#FFFFFF','#F3D3CF','Log out'),{...btn('#B42318','#FFFFFF','#B42318','Deleting…'),spin:true,spinBg:'rgba(255,255,255,.35)'}]}];
+    const badges=[['Active','#E5F3EA','#17703A','#1F9D55'],['Trial','#E8F0FB','#1D5FB8','#3B7DDD'],['Expired','#FDECEA','#B42318','#D92D20'],['Suspended','#EEEEF0','#3F3F46','#52525B'],['Inactive','#F1F1EC','#5B606B','#9CA0A9'],['Draft','#FDF1DC','#8A5300','#D08A1A'],['Published','#E4F2EC','#07573F','#0B7A57'],['Paid','#E5F3EA','#17703A','#1F9D55'],['Failed','#FDECEA','#B42318','#D92D20'],['Pending','#FDF1DC','#8A5300','#D08A1A']].map(([label,bg,fg,dot])=>({label,bg,fg,dot}));
+    const twConfig=`module.exports = {
+  theme: { extend: {
+    fontFamily: { sans: ['Geist','ui-sans-serif','system-ui'], mono: ['Geist Mono','ui-monospace'] },
+    colors: {
+      canvas: '#F6F6F3', surface: '#FFFFFF', subtle: '#FAFAF8', muted: '#F1F1EC',
+      line: { DEFAULT: '#E6E5E0', soft: '#EFEEE9', strong: '#D4D3CC' },
+      ink: { DEFAULT: '#16181D', 2: '#4A4F5A', 3: '#6B7080', disabled: '#8A8F9C' },
+      accent: { DEFAULT: '#0B7A57', 700: '#08664A', 800: '#065239', ink: '#07573F', soft: '#E4F2EC', tint: '#F2F9F6', line: '#8CC3AD' },
+      success: { DEFAULT: '#17703A', soft: '#E5F3EA' }, info: { DEFAULT: '#1D5FB8', soft: '#E8F0FB' },
+      warning: { DEFAULT: '#8A5300', soft: '#FDF1DC' }, danger: { DEFAULT: '#B42318', 700: '#962018', 800: '#7A1A12', soft: '#FDECEA' },
+    },
+    boxShadow: { sm: '0 1px 2px rgba(16,24,40,.06)', md: '0 4px 12px rgba(16,24,40,.08)', lg: '0 16px 40px rgba(16,24,40,.18)', toast: '0 8px 24px rgba(16,24,40,.24)' },
+    keyframes: { shimmer: { '0%': { backgroundPosition: '200% 0' }, '100%': { backgroundPosition: '-200% 0' } } },
+    animation: { shimmer: 'shimmer 1.4s linear infinite' },
+  } },
+};`;
+    const D=(f,t)=>({f,t});
+    const notes=[
+      {title:'App shell',route:'/superadmin/*',layout:['<768: 56px top bar (title, back on detail, avatar menu) + 64px bottom tab bar; content scrolls between.','768–1023: 72px icon rail, expandable to 240px.','≥1024: 240px sidebar, collapsible to 72px; state persisted in localStorage.','Content max-w 1200px; padding 16 / 24 / 32px.'],comps:['Sidebar','TopBar','BottomTabBar','NavItem','AccountMenu','ConfirmDialog','Toast'],data:[D('superAdmin.email','string'),D('auth.signOut()','Firebase Auth')]},
+      {title:'Dashboard',route:'/superadmin',layout:['KPI grid: grid-cols-2 → lg:grid-cols-4, gap 8 / 16px.','Toolbar: search full row + 2×2 selects (mobile); 4 cols (tablet); 1 row (desktop).','md+: grid-rows table, sticky header, 20/page. Mobile: divided card list + compact pager.','Filters/search/page in URL query (?q=&plan=&status=&city=&sort=&page=) so Back restores them.'],comps:['KpiCard','SearchInput','FilterSelect','FilterChip','DataTable','GymListCard','StatusBadge','PlanBadge','Pagination','EmptyState','ErrorState','Skeleton'],data:[D('stats.totalGyms','number'),D('stats.newGymsThisMonth','number'),D('stats.activeGyms','number'),D('stats.totalMembers','number'),D('stats.totalCollected','number (₹)'),D('stats.collectedThisMonth','number (₹)'),D('gyms[].id','string'),D('gyms[].name','string'),D('gyms[].city','string'),D('gyms[].ownerName','string'),D('gyms[].planId','string'),D('gyms[].status','active|trial|expired|suspended'),D('gyms[].memberCount','number'),D('gyms[].createdAt','Timestamp')]},
+      {title:'Gym detail',route:'/superadmin/gyms/:gymId',layout:['Owner + Subscription: 1 col → md:2 cols. Payments + Members full width.','Payments: md+ 4-col table; mobile stacked rows. Latest 6, “Show all”.','Stat grid 2 → 3 (md) → 5 (lg) cols. Bar chart = flex divs, no chart lib.','Days remaining: neutral ≥7, warning <7, danger <0 (text + icon).'],comps:['BackButton','StatusBadge','OwnerCard','SubscriptionCard','PaymentTable','PaymentListItem','StatTile','BarChart','NotFound','ErrorState'],data:[D('gym.ownerPhone','string (10 digits)'),D('gym.ownerEmail','string'),D('gym.subscription.startAt','Timestamp'),D('gym.subscription.endAt','Timestamp'),D('gym.subscription.isTrial','boolean'),D('payments[].paidAt','Timestamp'),D('payments[].amount','number (₹)'),D('payments[].planName','string'),D('payments[].status','paid|failed|pending'),D('gym.stats.totalMembers','number'),D('gym.stats.activeMembers','number'),D('gym.stats.expiredMembers','number'),D('gym.stats.newThisMonth','number'),D('gym.stats.revenueThisMonth','number (₹)'),D('gym.stats.history[6]','{month, count}')]},
+      {title:'Broadcasts',route:'/superadmin/broadcasts?tab=compose|drafts|sent',layout:['Compose lg: form + 360px sticky preview. <lg: “Preview” opens sheet (mobile) / modal (tablet).','Audience radio cards: 1 col mobile, 3 cols md+.','Reach count recomputed live from gyms matching audience.','Sent detail: right panel 460px (md+), full-screen sheet (mobile).'],comps:['Tabs','TextInput','TextareaCounter','RadioCard','PlanChip','GymMultiSelect','ReachBanner','AnnouncementPreview','DraftCard','SentListItem','SidePanel','ConfirmDialog'],data:[D('broadcast.title','string ≤80'),D('broadcast.message','string ≤1000'),D('broadcast.audience.type','all|plans|gyms'),D('broadcast.audience.planIds','string[]'),D('broadcast.audience.gymIds','string[]'),D('broadcast.status','draft|published'),D('broadcast.reachCount','number (at publish)'),D('broadcast.updatedAt','Timestamp'),D('broadcast.publishedAt','Timestamp | null')]},
+      {title:'Plans',route:'/superadmin/plans',layout:['Segmented All/Active/Inactive with counts + sort select; mobile adds full-width “New plan”.','md+: table with inline switch; mobile: cards.','Editor: modal 480px (md+), full-screen sheet (mobile). Plan ID read-only + lock in edit.','Deactivate with gyms > 0 → warning dialog first.'],comps:['SegmentedControl','SortSelect','DataTable','PlanCard','Switch','Modal/Sheet','CurrencyInput','ConfirmDialog','Toast'],data:[D('plans/{planId}','doc id = Plan ID'),D('plan.displayName','string ≤40'),D('plan.monthlyAmount','integer > 0 (₹)'),D('plan.isActive','boolean'),D('plan.gymCount','count() aggregate'),D('plan.createdAt','Timestamp')]},
+      {title:'Settings',route:'/superadmin/settings',layout:['Single column, max-w 720px.','Save disabled until a value differs from saved; “Discard” resets.','Validate on blur and on submit: phone /^[6-9]\\d{9}$/, email RFC-lite.','Save failure → inline banner + error toast; values kept.'],comps:['PhoneInput','TextInput','Button','Banner','Toast','ConfirmDialog'],data:[D('superAdmin.phone','string (10 digits, stored +91…)'),D('superAdmin.email','string'),D('superAdmin.updatedAt','Timestamp')]}];
+    return {boards,colorGroups,typeScale,spacing,radii,shadows,motion,buttons,badges,twConfig,notes};
+  }
+}
+</script>
+</body>
+</html>

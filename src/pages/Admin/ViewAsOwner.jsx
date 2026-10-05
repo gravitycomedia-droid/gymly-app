@@ -12,6 +12,9 @@ import {
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase/config';
 import { useToast } from '../../context/ToastContext';
+// This panel keeps the original control-plane stylesheet: it is a dense,
+// desktop-only data view that the new console intentionally does not restyle.
+import './SuperAdminDashboard.css';
 
 const PAGE = 20;
 
