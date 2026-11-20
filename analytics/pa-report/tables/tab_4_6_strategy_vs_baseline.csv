@@ -1,0 +1,15 @@
+metric,baseline,strategy,delta,delta_pct
+member_add_conversion_pct,30.85,40.0,9.149999999999999,29.7
+gyms_onboarded_2026,87.0,111.0,24.0,27.6
+paid_subscriptions,21.0,26.0,5.0,23.8
+avg_monthly_churn_pct,14.319999999999999,11.943,-2.376999999999999,-16.6
+renewal_rate_pct,61.55,68.82,7.269999999999996,11.8
+members_in_window,20017.0,23090.0,3073.0,15.4
+active_members_oct31,9788.0,12862.0,3074.0,31.4
+wam_avg_last8,6622.125,8528.0,1905.875,28.8
+member_fee_revenue_inr,148474600.0,185986600.0,37512000.0,25.3
+saved_by_reminder,0.0,2984.0,2984.0,
+saved_by_alert,0.0,1110.0,1110.0,
+reminders_sent,0.0,109191.0,109191.0,
+at_risk_alerts,0.0,13826.0,13826.0,
+alert_returns,0.0,4126.0,4126.0,

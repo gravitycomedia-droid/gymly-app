@@ -140,15 +140,15 @@ AB = {
     "flag": "checkout_variant",
     "variants": ["control", "new_design"],
     "split": 0.5,
-    "test_days": 28,
     "test_start": date(2026, 11, 2),
-    "daily_checkout_views": 32,               # assumed test traffic (pooled paid-acquisition + strategy funnel); stated in report
-    "attempt_rate": {"control": 0.60, "new_design": 0.68},   # P(click pay | checkout_viewed)
-    "payment_fail_rate": {"control": 0.08, "new_design": 0.085},
+    "daily_checkout_views": 32,               # ASSUMED test traffic (pooled paid acquisition + strategy funnel); stated in report
+    "attempt_rate": {"control": 0.52, "new_design": 0.61},   # P(click pay | checkout_viewed)
+    "payment_fail_rate": {"control": 0.08, "new_design": 0.085},   # guardrail: Razorpay payment failures / attempts
+    "refund_rate": {"control": 0.02, "new_design": 0.02},
     "alpha": 0.05,
     "power": 0.80,
-    "mde_abs": 0.10,                          # minimum detectable effect, absolute pp on checkout -> paid
-    "refund_rate": {"control": 0.02, "new_design": 0.02},
+    "mde_abs": 0.08,                          # minimum detectable effect, absolute pp on checkout -> paid
+    # test length is derived from the sample-size calculation (rounded up to whole weeks), see ab_test.py
 }
 
 # ── Churn model (4.8) ────────────────────────────────────────────────────────
@@ -163,9 +163,15 @@ MODEL = {
 }
 
 # ── Plot style ───────────────────────────────────────────────────────────────
+# validated categorical palette (dataviz skill reference instance; first 3 slots pass all-pairs CVD checks)
 PALETTE = {
-    "primary": "#2F5D8A", "secondary": "#E07B39", "tertiary": "#4C9F70",
-    "neutral": "#8A8F98", "danger": "#C0392B", "light": "#D6DEE8",
+    "primary": "#2a78d6",    # baseline / slot 1
+    "secondary": "#eb6834",  # strategy / new_design / slot 2
+    "tertiary": "#1baf7a",   # slot 3
+    "neutral": "#8a8f98", "muted": "#c9ccd1", "ink": "#0b0b0b", "ink2": "#52514e",
+    "critical": "#e34948",   # status only (highlighted problem step)
 }
-TIER_COLOR = {"low": "#8FB3D9", "mid": "#2F5D8A", "premium": "#E07B39"}
+WORLD_COLOR = {"baseline": PALETTE["primary"], "strategy": PALETTE["secondary"]}
+VARIANT_COLOR = {"control": PALETTE["primary"], "new_design": PALETTE["secondary"]}
+TIER_COLOR = {"low": PALETTE["primary"], "mid": PALETTE["secondary"], "premium": PALETTE["tertiary"]}
 DPI = 300

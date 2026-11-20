@@ -1,0 +1,5 @@
+plan_months,expiring,churned,churn_at_expiry_pct,monthly_equiv_churn_pct,plan_name
+1,15055,5343,35.49,35.49,Monthly
+3,7241,2876,39.72,15.52,Quarterly
+6,2758,1266,45.9,9.73,Half-yearly
+12,1099,571,51.96,5.93,Annual

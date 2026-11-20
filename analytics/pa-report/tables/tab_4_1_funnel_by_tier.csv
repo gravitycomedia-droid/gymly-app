@@ -1,0 +1,31 @@
+gym_tier,step_no,step,ga4_event,count,step_conversion_pct,drop_off_pct,overall_conversion_pct,median_hours_from_prev
+low,1,landing_visit,page_view,1367,,,100.0,
+low,2,signup_started,page_view (/owner/register),739,54.06,45.94,54.06,0.07
+low,3,signup_completed,sign_up,489,66.17,33.83,35.77,0.1
+low,4,gym_profile_completed,(none — Onboarding step 1),334,68.3,31.7,24.43,0.48
+low,5,first_plan_created,(none — Onboarding step 2),207,61.98,38.02,15.14,1.84
+low,6,first_member_added,member_added (is_first_member=true),58,28.02,71.98,4.24,36.7
+low,7,first_checkin_recorded,scan_processed (server),38,65.52,34.48,2.78,51.86
+low,8,trial_started,trial_start (server),31,81.58,18.42,2.27,72.74
+low,9,checkout_viewed,checkout_started,22,70.97,29.03,1.61,225.04
+low,10,subscription_paid,"purchase (server, Razorpay webhook)",8,36.36,63.64,0.59,0.31
+mid,1,landing_visit,page_view,1178,,,100.0,
+mid,2,signup_started,page_view (/owner/register),680,57.72,42.28,57.72,0.07
+mid,3,signup_completed,sign_up,440,64.71,35.29,37.35,0.09
+mid,4,gym_profile_completed,(none — Onboarding step 1),296,67.27,32.73,25.13,0.51
+mid,5,first_plan_created,(none — Onboarding step 2),178,60.14,39.86,15.11,1.76
+mid,6,first_member_added,member_added (is_first_member=true),54,30.34,69.66,4.58,28.18
+mid,7,first_checkin_recorded,scan_processed (server),30,55.56,44.44,2.55,38.69
+mid,8,trial_started,trial_start (server),19,63.33,36.67,1.61,156.88
+mid,9,checkout_viewed,checkout_started,11,57.89,42.11,0.93,177.79
+mid,10,subscription_paid,"purchase (server, Razorpay webhook)",6,54.55,45.45,0.51,0.2
+premium,1,landing_visit,page_view,455,,,100.0,
+premium,2,signup_started,page_view (/owner/register),263,57.8,42.2,57.8,0.08
+premium,3,signup_completed,sign_up,169,64.26,35.74,37.14,0.08
+premium,4,gym_profile_completed,(none — Onboarding step 1),129,76.33,23.67,28.35,0.6
+premium,5,first_plan_created,(none — Onboarding step 2),85,65.89,34.11,18.68,2.51
+premium,6,first_member_added,member_added (is_first_member=true),33,38.82,61.18,7.25,52.95
+premium,7,first_checkin_recorded,scan_processed (server),19,57.58,42.42,4.18,31.62
+premium,8,trial_started,trial_start (server),17,89.47,10.53,3.74,106.66
+premium,9,checkout_viewed,checkout_started,11,64.71,35.29,2.42,225.0
+premium,10,subscription_paid,"purchase (server, Razorpay webhook)",7,63.64,36.36,1.54,0.14

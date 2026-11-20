@@ -57,7 +57,8 @@ def style():
         "axes.grid": True, "grid.color": "#E6E6E6", "grid.linewidth": 0.6, "axes.axisbelow": True,
         "font.size": 10, "axes.labelsize": 10, "xtick.labelsize": 9, "ytick.labelsize": 9,
         "legend.frameon": False, "legend.fontsize": 9,
-        "axes.prop_cycle": matplotlib.cycler(color=[C.PALETTE[k] for k in ("primary", "secondary", "tertiary", "neutral", "danger")]),
+        "axes.prop_cycle": matplotlib.cycler(color=[C.PALETTE[k] for k in ("primary", "secondary", "tertiary", "neutral")]),
+        "text.color": C.PALETTE["ink"], "axes.labelcolor": C.PALETTE["ink"], "xtick.color": C.PALETTE["ink2"], "ytick.color": C.PALETTE["ink2"],
     })
 
 

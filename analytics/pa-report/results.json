@@ -1,0 +1,1446 @@
+{
+  "ab_test": {
+    "arms": {
+      "control": {
+        "ci_high": 0.5457,
+        "ci_low": 0.4683,
+        "conversion": 0.507,
+        "n": 641,
+        "paid": 325,
+        "payment_fail_rate": 0.058,
+        "refund_rate": 0.0246
+      },
+      "new_design": {
+        "ci_high": 0.5847,
+        "ci_low": 0.5089,
+        "conversion": 0.5468,
+        "n": 662,
+        "paid": 362,
+        "payment_fail_rate": 0.0812,
+        "refund_rate": 0.011
+      }
+    },
+    "ci95_diff": [
+      -0.0144,
+      0.094
+    ],
+    "decision": "Inconclusive: lift not significant at alpha=0.05 — keep control, extend the test or re-power for a smaller MDE",
+    "design": {
+      "alpha": 0.05,
+      "assumed_daily_checkout_views": 32,
+      "baseline_conversion": 0.4773,
+      "days_needed_at_current_baseline_traffic": 8458.8804,
+      "mde_abs": 0.08,
+      "n_per_arm_required": 612,
+      "power": 0.8,
+      "test_days": 42
+    },
+    "flag": "checkout_variant",
+    "flag_status": "proposed (not present in codebase; see RECON.md)",
+    "guardrail": {
+      "ci95_diff": [
+        -0.0133,
+        0.0598
+      ],
+      "control": 0.058,
+      "diff": 0.0232,
+      "metric": "payment-failure rate (failed / attempted Razorpay payments)",
+      "new_design": 0.0812,
+      "p_value": 0.2177,
+      "passed": false,
+      "tolerance_abs": 0.03
+    },
+    "lift_abs": 0.0398,
+    "lift_rel_pct": 7.8513,
+    "p_value": 0.1502,
+    "population": "owners reaching checkout_viewed, 50/50 random assignment",
+    "significant": false,
+    "srm": {
+      "chi2": 0.3384,
+      "control_n": 641,
+      "new_design_n": 662,
+      "p_value": 0.5607,
+      "srm_detected": false
+    },
+    "variants": [
+      "control",
+      "new_design"
+    ],
+    "z": 1.4389
+  },
+  "assumptions": {
+    "AB": {
+      "alpha": 0.05,
+      "attempt_rate": {
+        "control": 0.52,
+        "new_design": 0.61
+      },
+      "daily_checkout_views": 32,
+      "flag": "checkout_variant",
+      "mde_abs": 0.08,
+      "payment_fail_rate": {
+        "control": 0.08,
+        "new_design": 0.085
+      },
+      "power": 0.8,
+      "refund_rate": {
+        "control": 0.02,
+        "new_design": 0.02
+      },
+      "split": 0.5,
+      "test_start": "2026-11-02",
+      "variants": [
+        "control",
+        "new_design"
+      ]
+    },
+    "B0": 0.1,
+    "BURN_IN_START": "2025-01-01",
+    "B_ENG": 0.65,
+    "B_JAN": -0.45,
+    "B_PLAN": {
+      "1": 0.0,
+      "12": -0.4,
+      "3": -0.15,
+      "6": -0.3
+    },
+    "B_TENURE": 0.25,
+    "B_TIER": {
+      "low": -0.15,
+      "mid": 0.0,
+      "premium": 0.2
+    },
+    "CHURN_GRACE_DAYS": 7,
+    "CITY": "Bengaluru",
+    "DECAY_DAYS_RANGE": [
+      14,
+      28
+    ],
+    "DECAY_FLOOR": 0.15,
+    "FUNNEL_CONV": [
+      0.58,
+      0.62,
+      0.7,
+      0.62,
+      0.3,
+      0.62,
+      0.7,
+      0.78,
+      0.45
+    ],
+    "FUNNEL_TIER_MULT": {
+      "first_member_added": {
+        "low": 0.85,
+        "mid": 1.0,
+        "premium": 1.35
+      },
+      "subscription_paid": {
+        "low": 0.85,
+        "mid": 1.05,
+        "premium": 1.25
+      }
+    },
+    "GYM_SIZE_MAX": 400,
+    "GYM_SIZE_MIN": 40,
+    "JOIN_RATE_PER_MONTH": 0.15,
+    "JOIN_SEASON": {
+      "1": 2.4,
+      "10": 1.0,
+      "11": 0.8,
+      "12": 0.7,
+      "2": 1.3,
+      "3": 1.1,
+      "4": 0.95,
+      "5": 0.9,
+      "6": 0.85,
+      "7": 0.85,
+      "8": 0.85,
+      "9": 1.0
+    },
+    "MODEL": {
+      "cutoff_days_before_expiry": 14,
+      "max_expiry": "2026-10-24",
+      "min_expiry": "2026-02-15",
+      "risk_bands": {
+        "High": 0.5,
+        "Medium": 0.2
+      },
+      "save_rate_by_band": {
+        "High": 0.25,
+        "Low": 0.0,
+        "Medium": 0.15
+      },
+      "test_start": "2026-08-01",
+      "val_start": "2026-06-15"
+    },
+    "MONTHLY_PRICE_RANGE": {
+      "low": [
+        700,
+        1200
+      ],
+      "mid": [
+        1300,
+        2200
+      ],
+      "premium": [
+        2800,
+        4500
+      ]
+    },
+    "MONTH_FACTOR": {
+      "1": 1.32,
+      "10": 0.97,
+      "11": 0.95,
+      "12": 0.9,
+      "2": 1.12,
+      "3": 1.02,
+      "4": 0.98,
+      "5": 0.95,
+      "6": 0.92,
+      "7": 0.9,
+      "8": 0.95,
+      "9": 1.0
+    },
+    "NEW_GYM_SIZE_MULT": 0.45,
+    "N_ESTABLISHED_GYMS": 36,
+    "N_LANDING": 3000,
+    "PLAN_MIX": [
+      0.48,
+      0.3,
+      0.14,
+      0.08
+    ],
+    "PLAN_PRICE_MULT": {
+      "1": 1.0,
+      "12": 9.0,
+      "3": 2.7,
+      "6": 5.0
+    },
+    "ROSTER_ENTRY_DAYS_BASELINE": 120,
+    "SAAS_PLAN_PRICE": {
+      "BASIC": 199,
+      "FREE": 0,
+      "PREMIUM": 999,
+      "PROFESSIONAL": 499,
+      "PROFESSIONAL_PLUS": 799
+    },
+    "SEED": 42,
+    "STRATEGY": {
+      "at_risk_alert": {
+        "no_checkin_days": 10,
+        "return_rate": 0.3,
+        "returned_churner_renew_rate": 0.35
+      },
+      "bulk_import": {
+        "member_add_conv_rel_lift": 0.3,
+        "member_add_gap_median_h": 14.0,
+        "roster_entry_days": 14
+      },
+      "renewal_reminders": {
+        "offsets_days": [
+          -7,
+          -1,
+          3
+        ],
+        "would_be_churner_save_rate": 0.18
+      }
+    },
+    "TIER_SHARE": [
+      0.45,
+      0.4,
+      0.15
+    ],
+    "VISITS_PER_WEEK_MEAN": {
+      "low": 2.6,
+      "mid": 3.0,
+      "premium": 3.4
+    },
+    "WEEKDAY_FACTOR": [
+      1.2,
+      1.1,
+      1.05,
+      1.0,
+      0.9,
+      0.85,
+      0.5
+    ],
+    "WINDOW_END": "2026-10-31",
+    "WINDOW_START": "2026-01-01",
+    "data_note": "All data is synthetic, generated with SEED=42 to mirror the real Gymloop Firestore schema (RECON.md). No production data or PII was read. checkout_variant is a proposed Remote Config flag."
+  },
+  "churn": {
+    "avg_monthly_churn_pct": 14.32,
+    "by_attendance_band": [
+      {
+        "band": "<1",
+        "churn_pct": 83.78,
+        "churned": 2449,
+        "expiring": 2923
+      },
+      {
+        "band": "1–2",
+        "churn_pct": 70.69,
+        "churned": 3116,
+        "expiring": 4408
+      },
+      {
+        "band": "2–3",
+        "churn_pct": 49.88,
+        "churned": 2119,
+        "expiring": 4248
+      },
+      {
+        "band": "3–4",
+        "churn_pct": 26.57,
+        "churned": 1237,
+        "expiring": 4655
+      },
+      {
+        "band": "4+",
+        "churn_pct": 4.86,
+        "churned": 391,
+        "expiring": 8040
+      }
+    ],
+    "by_plan": [
+      {
+        "churn_at_expiry_pct": 35.49,
+        "churned": 5343,
+        "expiring": 15055,
+        "monthly_equiv_churn_pct": 35.49,
+        "plan_months": 1,
+        "plan_name": "Monthly"
+      },
+      {
+        "churn_at_expiry_pct": 39.72,
+        "churned": 2876,
+        "expiring": 7241,
+        "monthly_equiv_churn_pct": 15.52,
+        "plan_months": 3,
+        "plan_name": "Quarterly"
+      },
+      {
+        "churn_at_expiry_pct": 45.9,
+        "churned": 1266,
+        "expiring": 2758,
+        "monthly_equiv_churn_pct": 9.73,
+        "plan_months": 6,
+        "plan_name": "Half-yearly"
+      },
+      {
+        "churn_at_expiry_pct": 51.96,
+        "churned": 571,
+        "expiring": 1099,
+        "monthly_equiv_churn_pct": 5.93,
+        "plan_months": 12,
+        "plan_name": "Annual"
+      }
+    ],
+    "cohort_m3_retention_pct": {
+      "2026-01": 45.9526,
+      "2026-02": 52.3508,
+      "2026-03": 52.3927,
+      "2026-04": 51.5126,
+      "2026-05": 51.7843,
+      "2026-06": 48.4108,
+      "2026-07": 49.9617,
+      "2026-08": null,
+      "2026-09": null,
+      "2026-10": null
+    },
+    "definition": "Churned = did not renew within 7 days after subscription_expiry; monthly churn = churned expiries in month / members active on the 1st",
+    "km": {
+      "by_first_plan": {
+        "Half-yearly": {
+          "n": 2110,
+          "surv_180d": 0.4137,
+          "surv_90d": 1.0
+        },
+        "Monthly": {
+          "n": 7052,
+          "surv_180d": 0.1778,
+          "surv_90d": 0.2904
+        },
+        "Quarterly": {
+          "n": 4391,
+          "surv_180d": 0.3426,
+          "surv_90d": 0.4564
+        }
+      },
+      "events": 6978,
+      "median_survival_days": 91.0,
+      "n": 14762,
+      "surv_180d": 0.3252,
+      "surv_90d": 0.5013
+    },
+    "max_monthly_churn_pct": 15.63,
+    "min_monthly_churn_pct": 12.93,
+    "monthly": [
+      {
+        "active_at_start": 5068,
+        "churned": 775,
+        "expiring": 1948,
+        "month": "2026-01",
+        "monthly_churn_pct": 15.29,
+        "renewal_rate_pct": 60.22
+      },
+      {
+        "active_at_start": 6261,
+        "churned": 972,
+        "expiring": 2291,
+        "month": "2026-02",
+        "monthly_churn_pct": 15.52,
+        "renewal_rate_pct": 57.57
+      },
+      {
+        "active_at_start": 6372,
+        "churned": 856,
+        "expiring": 2276,
+        "month": "2026-03",
+        "monthly_churn_pct": 13.43,
+        "renewal_rate_pct": 62.39
+      },
+      {
+        "active_at_start": 6753,
+        "churned": 1020,
+        "expiring": 2602,
+        "month": "2026-04",
+        "monthly_churn_pct": 15.1,
+        "renewal_rate_pct": 60.8
+      },
+      {
+        "active_at_start": 6926,
+        "churned": 938,
+        "expiring": 2493,
+        "month": "2026-05",
+        "monthly_churn_pct": 13.54,
+        "renewal_rate_pct": 62.37
+      },
+      {
+        "active_at_start": 7238,
+        "churned": 936,
+        "expiring": 2503,
+        "month": "2026-06",
+        "monthly_churn_pct": 12.93,
+        "renewal_rate_pct": 62.6
+      },
+      {
+        "active_at_start": 7545,
+        "churned": 1179,
+        "expiring": 3024,
+        "month": "2026-07",
+        "monthly_churn_pct": 15.63,
+        "renewal_rate_pct": 61.01
+      },
+      {
+        "active_at_start": 7648,
+        "churned": 1105,
+        "expiring": 2890,
+        "month": "2026-08",
+        "monthly_churn_pct": 14.45,
+        "renewal_rate_pct": 61.76
+      },
+      {
+        "active_at_start": 7992,
+        "churned": 1075,
+        "expiring": 2855,
+        "month": "2026-09",
+        "monthly_churn_pct": 13.45,
+        "renewal_rate_pct": 62.35
+      },
+      {
+        "active_at_start": 8656,
+        "churned": 1200,
+        "expiring": 3271,
+        "month": "2026-10",
+        "monthly_churn_pct": 13.86,
+        "renewal_rate_pct": 63.31
+      }
+    ],
+    "renewal_rate_pct": 61.64
+  },
+  "exports": {
+    "api_calls": 0,
+    "events_by_name": {
+      "checkout_viewed": 1347,
+      "first_checkin_recorded": 87,
+      "first_member_added": 145,
+      "first_plan_created": 470,
+      "gym_profile_completed": 759,
+      "landing_visit": 3000,
+      "payment_attempted": 739,
+      "payment_failed": 52,
+      "signup_completed": 1098,
+      "signup_started": 1682,
+      "subscription_paid": 708,
+      "trial_started": 67
+    },
+    "mixpanel_file": "data/mixpanel_events.json",
+    "n_events": 10154,
+    "posthog_file": "data/posthog_events.csv"
+  },
+  "funnel": {
+    "by_tier": {
+      "low": [
+        {
+          "count": 1367,
+          "overall_conversion_pct": 100.0,
+          "step": "landing_visit",
+          "step_conversion_pct": null
+        },
+        {
+          "count": 739,
+          "overall_conversion_pct": 54.06,
+          "step": "signup_started",
+          "step_conversion_pct": 54.06
+        },
+        {
+          "count": 489,
+          "overall_conversion_pct": 35.77,
+          "step": "signup_completed",
+          "step_conversion_pct": 66.17
+        },
+        {
+          "count": 334,
+          "overall_conversion_pct": 24.43,
+          "step": "gym_profile_completed",
+          "step_conversion_pct": 68.3
+        },
+        {
+          "count": 207,
+          "overall_conversion_pct": 15.14,
+          "step": "first_plan_created",
+          "step_conversion_pct": 61.98
+        },
+        {
+          "count": 58,
+          "overall_conversion_pct": 4.24,
+          "step": "first_member_added",
+          "step_conversion_pct": 28.02
+        },
+        {
+          "count": 38,
+          "overall_conversion_pct": 2.78,
+          "step": "first_checkin_recorded",
+          "step_conversion_pct": 65.52
+        },
+        {
+          "count": 31,
+          "overall_conversion_pct": 2.27,
+          "step": "trial_started",
+          "step_conversion_pct": 81.58
+        },
+        {
+          "count": 22,
+          "overall_conversion_pct": 1.61,
+          "step": "checkout_viewed",
+          "step_conversion_pct": 70.97
+        },
+        {
+          "count": 8,
+          "overall_conversion_pct": 0.59,
+          "step": "subscription_paid",
+          "step_conversion_pct": 36.36
+        }
+      ],
+      "mid": [
+        {
+          "count": 1178,
+          "overall_conversion_pct": 100.0,
+          "step": "landing_visit",
+          "step_conversion_pct": null
+        },
+        {
+          "count": 680,
+          "overall_conversion_pct": 57.72,
+          "step": "signup_started",
+          "step_conversion_pct": 57.72
+        },
+        {
+          "count": 440,
+          "overall_conversion_pct": 37.35,
+          "step": "signup_completed",
+          "step_conversion_pct": 64.71
+        },
+        {
+          "count": 296,
+          "overall_conversion_pct": 25.13,
+          "step": "gym_profile_completed",
+          "step_conversion_pct": 67.27
+        },
+        {
+          "count": 178,
+          "overall_conversion_pct": 15.11,
+          "step": "first_plan_created",
+          "step_conversion_pct": 60.14
+        },
+        {
+          "count": 54,
+          "overall_conversion_pct": 4.58,
+          "step": "first_member_added",
+          "step_conversion_pct": 30.34
+        },
+        {
+          "count": 30,
+          "overall_conversion_pct": 2.55,
+          "step": "first_checkin_recorded",
+          "step_conversion_pct": 55.56
+        },
+        {
+          "count": 19,
+          "overall_conversion_pct": 1.61,
+          "step": "trial_started",
+          "step_conversion_pct": 63.33
+        },
+        {
+          "count": 11,
+          "overall_conversion_pct": 0.93,
+          "step": "checkout_viewed",
+          "step_conversion_pct": 57.89
+        },
+        {
+          "count": 6,
+          "overall_conversion_pct": 0.51,
+          "step": "subscription_paid",
+          "step_conversion_pct": 54.55
+        }
+      ],
+      "premium": [
+        {
+          "count": 455,
+          "overall_conversion_pct": 100.0,
+          "step": "landing_visit",
+          "step_conversion_pct": null
+        },
+        {
+          "count": 263,
+          "overall_conversion_pct": 57.8,
+          "step": "signup_started",
+          "step_conversion_pct": 57.8
+        },
+        {
+          "count": 169,
+          "overall_conversion_pct": 37.14,
+          "step": "signup_completed",
+          "step_conversion_pct": 64.26
+        },
+        {
+          "count": 129,
+          "overall_conversion_pct": 28.35,
+          "step": "gym_profile_completed",
+          "step_conversion_pct": 76.33
+        },
+        {
+          "count": 85,
+          "overall_conversion_pct": 18.68,
+          "step": "first_plan_created",
+          "step_conversion_pct": 65.89
+        },
+        {
+          "count": 33,
+          "overall_conversion_pct": 7.25,
+          "step": "first_member_added",
+          "step_conversion_pct": 38.82
+        },
+        {
+          "count": 19,
+          "overall_conversion_pct": 4.18,
+          "step": "first_checkin_recorded",
+          "step_conversion_pct": 57.58
+        },
+        {
+          "count": 17,
+          "overall_conversion_pct": 3.74,
+          "step": "trial_started",
+          "step_conversion_pct": 89.47
+        },
+        {
+          "count": 11,
+          "overall_conversion_pct": 2.42,
+          "step": "checkout_viewed",
+          "step_conversion_pct": 64.71
+        },
+        {
+          "count": 7,
+          "overall_conversion_pct": 1.54,
+          "step": "subscription_paid",
+          "step_conversion_pct": 63.64
+        }
+      ]
+    },
+    "checkout_views_per_day": 0.1447,
+    "landing_visits": 3000,
+    "largest_drop": {
+      "drop_off_pct": 69.15,
+      "from": "first_plan_created",
+      "median_hours": 35.54,
+      "step_conversion_pct": 30.85,
+      "to": "first_member_added"
+    },
+    "overall_conversion_pct": 0.7,
+    "paid": 21,
+    "second_drop": {
+      "drop_off_pct": 52.27,
+      "from": "checkout_viewed",
+      "step_conversion_pct": 47.73,
+      "to": "subscription_paid"
+    },
+    "steps": [
+      {
+        "count": 3000,
+        "drop_off_pct": null,
+        "ga4_event": "page_view",
+        "median_hours_from_prev": null,
+        "overall_conversion_pct": 100.0,
+        "step": "landing_visit",
+        "step_conversion_pct": null,
+        "step_no": 1
+      },
+      {
+        "count": 1682,
+        "drop_off_pct": 43.93,
+        "ga4_event": "page_view (/owner/register)",
+        "median_hours_from_prev": 0.07,
+        "overall_conversion_pct": 56.07,
+        "step": "signup_started",
+        "step_conversion_pct": 56.07,
+        "step_no": 2
+      },
+      {
+        "count": 1098,
+        "drop_off_pct": 34.72,
+        "ga4_event": "sign_up",
+        "median_hours_from_prev": 0.09,
+        "overall_conversion_pct": 36.6,
+        "step": "signup_completed",
+        "step_conversion_pct": 65.28,
+        "step_no": 3
+      },
+      {
+        "count": 759,
+        "drop_off_pct": 30.87,
+        "ga4_event": "(none — Onboarding step 1)",
+        "median_hours_from_prev": 0.51,
+        "overall_conversion_pct": 25.3,
+        "step": "gym_profile_completed",
+        "step_conversion_pct": 69.13,
+        "step_no": 4
+      },
+      {
+        "count": 470,
+        "drop_off_pct": 38.08,
+        "ga4_event": "(none — Onboarding step 2)",
+        "median_hours_from_prev": 1.94,
+        "overall_conversion_pct": 15.67,
+        "step": "first_plan_created",
+        "step_conversion_pct": 61.92,
+        "step_no": 5
+      },
+      {
+        "count": 145,
+        "drop_off_pct": 69.15,
+        "ga4_event": "member_added (is_first_member=true)",
+        "median_hours_from_prev": 35.54,
+        "overall_conversion_pct": 4.83,
+        "step": "first_member_added",
+        "step_conversion_pct": 30.85,
+        "step_no": 6
+      },
+      {
+        "count": 87,
+        "drop_off_pct": 40.0,
+        "ga4_event": "scan_processed (server)",
+        "median_hours_from_prev": 40.98,
+        "overall_conversion_pct": 2.9,
+        "step": "first_checkin_recorded",
+        "step_conversion_pct": 60.0,
+        "step_no": 7
+      },
+      {
+        "count": 67,
+        "drop_off_pct": 22.99,
+        "ga4_event": "trial_start (server)",
+        "median_hours_from_prev": 107.25,
+        "overall_conversion_pct": 2.23,
+        "step": "trial_started",
+        "step_conversion_pct": 77.01,
+        "step_no": 8
+      },
+      {
+        "count": 44,
+        "drop_off_pct": 34.33,
+        "ga4_event": "checkout_started",
+        "median_hours_from_prev": 221.1,
+        "overall_conversion_pct": 1.47,
+        "step": "checkout_viewed",
+        "step_conversion_pct": 65.67,
+        "step_no": 9
+      },
+      {
+        "count": 21,
+        "drop_off_pct": 52.27,
+        "ga4_event": "purchase (server, Razorpay webhook)",
+        "median_hours_from_prev": 0.18,
+        "overall_conversion_pct": 0.7,
+        "step": "subscription_paid",
+        "step_conversion_pct": 47.73,
+        "step_no": 10
+      }
+    ],
+    "strategy_steps": [
+      {
+        "count": 3000,
+        "drop_off_pct": null,
+        "ga4_event": "page_view",
+        "median_hours_from_prev": null,
+        "overall_conversion_pct": 100.0,
+        "step": "landing_visit",
+        "step_conversion_pct": null,
+        "step_no": 1
+      },
+      {
+        "count": 1682,
+        "drop_off_pct": 43.93,
+        "ga4_event": "page_view (/owner/register)",
+        "median_hours_from_prev": 0.07,
+        "overall_conversion_pct": 56.07,
+        "step": "signup_started",
+        "step_conversion_pct": 56.07,
+        "step_no": 2
+      },
+      {
+        "count": 1098,
+        "drop_off_pct": 34.72,
+        "ga4_event": "sign_up",
+        "median_hours_from_prev": 0.09,
+        "overall_conversion_pct": 36.6,
+        "step": "signup_completed",
+        "step_conversion_pct": 65.28,
+        "step_no": 3
+      },
+      {
+        "count": 759,
+        "drop_off_pct": 30.87,
+        "ga4_event": "(none — Onboarding step 1)",
+        "median_hours_from_prev": 0.51,
+        "overall_conversion_pct": 25.3,
+        "step": "gym_profile_completed",
+        "step_conversion_pct": 69.13,
+        "step_no": 4
+      },
+      {
+        "count": 470,
+        "drop_off_pct": 38.08,
+        "ga4_event": "(none — Onboarding step 2)",
+        "median_hours_from_prev": 1.94,
+        "overall_conversion_pct": 15.67,
+        "step": "first_plan_created",
+        "step_conversion_pct": 61.92,
+        "step_no": 5
+      },
+      {
+        "count": 188,
+        "drop_off_pct": 60.0,
+        "ga4_event": "member_added (is_first_member=true)",
+        "median_hours_from_prev": 13.89,
+        "overall_conversion_pct": 6.27,
+        "step": "first_member_added",
+        "step_conversion_pct": 40.0,
+        "step_no": 6
+      },
+      {
+        "count": 111,
+        "drop_off_pct": 40.96,
+        "ga4_event": "scan_processed (server)",
+        "median_hours_from_prev": 43.44,
+        "overall_conversion_pct": 3.7,
+        "step": "first_checkin_recorded",
+        "step_conversion_pct": 59.04,
+        "step_no": 7
+      },
+      {
+        "count": 84,
+        "drop_off_pct": 24.32,
+        "ga4_event": "trial_start (server)",
+        "median_hours_from_prev": 116.13,
+        "overall_conversion_pct": 2.8,
+        "step": "trial_started",
+        "step_conversion_pct": 75.68,
+        "step_no": 8
+      },
+      {
+        "count": 56,
+        "drop_off_pct": 33.33,
+        "ga4_event": "checkout_started",
+        "median_hours_from_prev": 228.94,
+        "overall_conversion_pct": 1.87,
+        "step": "checkout_viewed",
+        "step_conversion_pct": 66.67,
+        "step_no": 9
+      },
+      {
+        "count": 26,
+        "drop_off_pct": 53.57,
+        "ga4_event": "purchase (server, Razorpay webhook)",
+        "median_hours_from_prev": 0.19,
+        "overall_conversion_pct": 0.87,
+        "step": "subscription_paid",
+        "step_conversion_pct": 46.43,
+        "step_no": 10
+      }
+    ]
+  },
+  "issues": [
+    {
+      "chart": "fig_4_4_issue_a_member_add_dropoff.png",
+      "evidence": "69.2% of owners who created a plan never added a member (conversion 30.9%), the largest drop in the funnel; median 36 h between the two steps for those who did, and new gyms took a median 100 days to enter their existing roster one member at a time.",
+      "evidence_numbers": {
+        "drop_off_pct": 69.15,
+        "median_days_to_enter_roster": 100.0,
+        "median_hours_to_first_member": 35.54,
+        "step_conversion_pct": 30.85
+      },
+      "fix": "Bulk CSV/Excel member import (map name/phone/plan/expiry columns) plus an onboarding checklist that makes 'import your members' the next step after the first plan.",
+      "id": "a",
+      "metric": "first_plan_created → first_member_added step conversion",
+      "title": "Owners stall at adding their first member"
+    },
+    {
+      "chart": "fig_4_4_issue_b_silent_churn.png",
+      "evidence": "52% of churners (vs 5% of renewers) showed a >50% attendance decay in the 2 weeks before expiry, and 48% had a 10+ day gap with no check-in in their last 4 weeks — yet 0 renewal reminders or at-risk alerts were sent in the baseline.",
+      "evidence_numbers": {
+        "alertable_gap10_share_churners_pct": 48.43,
+        "churners_analysed": 4115,
+        "decay_share_churners_pct": 51.66,
+        "decay_share_renewers_pct": 4.54,
+        "reminders_sent_baseline": 0,
+        "visits_last_week_churned": 0.7643,
+        "visits_last_week_renewed": 3.8239
+      },
+      "fix": "Automated WhatsApp renewal reminders at expiry −7d / −1d / +3d, and an at-risk alert to the owner when a member has 10+ days with no check-in.",
+      "id": "b",
+      "metric": "share of churners whose check-ins in the last 2 weeks fell below 50% of their prior 4-week rate",
+      "title": "Silent churn — attendance decays before expiry and nobody is notified"
+    },
+    {
+      "chart": "fig_4_4_issue_c_checkout_abandonment.png",
+      "evidence": "52.3% of owners who opened checkout did not pay (conversion 47.7%), the second-largest funnel drop; abandonment is highest in the low tier (64%).",
+      "evidence_numbers": {
+        "by_plan": [
+          {
+            "checkout_viewed": 10,
+            "conversion_pct": 30.0,
+            "plan_tier": "BASIC",
+            "price_inr": 199,
+            "subscription_paid": 3
+          },
+          {
+            "checkout_viewed": 21,
+            "conversion_pct": 52.4,
+            "plan_tier": "PROFESSIONAL",
+            "price_inr": 499,
+            "subscription_paid": 11
+          },
+          {
+            "checkout_viewed": 5,
+            "conversion_pct": 100.0,
+            "plan_tier": "PROFESSIONAL_PLUS",
+            "price_inr": 799,
+            "subscription_paid": 5
+          },
+          {
+            "checkout_viewed": 8,
+            "conversion_pct": 25.0,
+            "plan_tier": "PREMIUM",
+            "price_inr": 999,
+            "subscription_paid": 2
+          }
+        ],
+        "by_tier": [
+          {
+            "checkout_viewed": 22,
+            "conversion_pct": 36.36,
+            "gym_tier": "low",
+            "subscription_paid": 8
+          },
+          {
+            "checkout_viewed": 11,
+            "conversion_pct": 54.55,
+            "gym_tier": "mid",
+            "subscription_paid": 6
+          },
+          {
+            "checkout_viewed": 11,
+            "conversion_pct": 63.64,
+            "gym_tier": "premium",
+            "subscription_paid": 7
+          }
+        ],
+        "drop_off_pct": 52.27,
+        "step_conversion_pct": 47.73
+      },
+      "fix": "Redesigned checkout (checkout_variant = new_design): one-screen plan summary with UPI-first Razorpay, monthly price and trial terms up front, fewer fields — validated by the 4.7 A/B test.",
+      "id": "c",
+      "metric": "checkout_viewed → subscription_paid conversion",
+      "title": "Checkout abandonment on the Gymloop subscription"
+    }
+  ],
+  "model": {
+    "best_model": "LogisticRegression",
+    "churn_rate": {
+      "test": 0.3742,
+      "train": 0.3836,
+      "validation": 0.384
+    },
+    "feature_importance": [
+      {
+        "feature": "visits_14d",
+        "importance": 0.1104,
+        "std": 0.0049
+      },
+      {
+        "feature": "visits_7d",
+        "importance": 0.0602,
+        "std": 0.0052
+      },
+      {
+        "feature": "gym_tier",
+        "importance": 0.0174,
+        "std": 0.001
+      },
+      {
+        "feature": "prev_renewals",
+        "importance": 0.0142,
+        "std": 0.0018
+      },
+      {
+        "feature": "trend_14v14",
+        "importance": 0.0116,
+        "std": 0.0012
+      },
+      {
+        "feature": "tenure_days",
+        "importance": 0.0035,
+        "std": 0.0005
+      },
+      {
+        "feature": "price",
+        "importance": 0.0024,
+        "std": 0.002
+      },
+      {
+        "feature": "plan_months",
+        "importance": 0.0006,
+        "std": 0.0008
+      }
+    ],
+    "features": [
+      "visits_7d",
+      "visits_14d",
+      "visits_30d",
+      "trend_14v14",
+      "days_since_last_visit",
+      "plan_months",
+      "price",
+      "tenure_days",
+      "prev_renewals",
+      "gym_size",
+      "preferred_slot",
+      "gym_tier"
+    ],
+    "justification": "RandomForest has the highest validation PR-AUC (0.680) but LogisticRegression is within the 0.005 tie margin (0.678), so the simpler, more explainable model is preferred for owner-facing risk scores. Test ROC-AUC 0.791, PR-AUC 0.661.",
+    "leakage_checks": {
+      "attendance_strictly_before_cutoff": true,
+      "cutoff": "membership_end - 14 days",
+      "excluded_post_cutoff_fields": [
+        "renewed",
+        "renewal_date",
+        "renewal_gap_days",
+        "churned",
+        "status",
+        "last_seen",
+        "attendance_count",
+        "members.renewal_count",
+        "reminders_sent",
+        "at_risk_alerted"
+      ],
+      "label_source": "renewal within 7 days after expiry (memberships.renewed) — not an input feature",
+      "max_single_feature_auc": 0.7586,
+      "single_feature_auc": {
+        "days_since_last_visit": 0.6835,
+        "gym_size": 0.5234,
+        "plan_months": 0.5354,
+        "prev_renewals": 0.6736,
+        "price": 0.5219,
+        "tenure_days": 0.617,
+        "trend_14v14": 0.5161,
+        "visits_14d": 0.7586,
+        "visits_30d": 0.7583,
+        "visits_7d": 0.7542
+      },
+      "single_feature_auc_ok": true,
+      "time_split": {
+        "test_expiry_gte": "2026-08-01",
+        "train_expiry_lt": "2026-06-15",
+        "val": [
+          "2026-06-15",
+          "2026-08-01"
+        ]
+      },
+      "train_test_member_overlap_note": "periods are split by expiry date; a member can appear in train and test with different periods (past behaviour only)"
+    },
+    "n": {
+      "test": 8281,
+      "train": 9693,
+      "validation": 4378
+    },
+    "prediction_point": "expiry - 14 days",
+    "selection_metric": "validation PR-AUC (tie margin 0.005 -> simpler model)",
+    "test": {
+      "LogisticRegression": {
+        "confusion_matrix": {
+          "fn": 875,
+          "fp": 1423,
+          "tn": 3759,
+          "tp": 2224
+        },
+        "f1": 0.6594,
+        "pr_auc": 0.6607,
+        "precision": 0.6098,
+        "recall": 0.7177,
+        "roc_auc": 0.7914,
+        "threshold": 0.4302
+      },
+      "RandomForest": {
+        "confusion_matrix": {
+          "fn": 632,
+          "fp": 1836,
+          "tn": 3346,
+          "tp": 2467
+        },
+        "f1": 0.6666,
+        "pr_auc": 0.6663,
+        "precision": 0.5733,
+        "recall": 0.7961,
+        "roc_auc": 0.7923,
+        "threshold": 0.3627
+      },
+      "XGBoost": {
+        "confusion_matrix": {
+          "fn": 553,
+          "fp": 2072,
+          "tn": 3110,
+          "tp": 2546
+        },
+        "f1": 0.6598,
+        "pr_auc": 0.6576,
+        "precision": 0.5513,
+        "recall": 0.8216,
+        "roc_auc": 0.786,
+        "threshold": 0.3133
+      }
+    },
+    "unit": "expiring membership period (baseline world)",
+    "validation": {
+      "LogisticRegression": {
+        "confusion_matrix": {
+          "fn": 395,
+          "fp": 767,
+          "tn": 1930,
+          "tp": 1286
+        },
+        "f1": 0.6888,
+        "pr_auc": 0.6777,
+        "precision": 0.6264,
+        "recall": 0.765,
+        "roc_auc": 0.7993,
+        "threshold": 0.4302
+      },
+      "RandomForest": {
+        "confusion_matrix": {
+          "fn": 270,
+          "fp": 996,
+          "tn": 1701,
+          "tp": 1411
+        },
+        "f1": 0.6903,
+        "pr_auc": 0.68,
+        "precision": 0.5862,
+        "recall": 0.8394,
+        "roc_auc": 0.7974,
+        "threshold": 0.3627
+      },
+      "XGBoost": {
+        "confusion_matrix": {
+          "fn": 227,
+          "fp": 1121,
+          "tn": 1576,
+          "tp": 1454
+        },
+        "f1": 0.6833,
+        "pr_auc": 0.673,
+        "precision": 0.5647,
+        "recall": 0.865,
+        "roc_auc": 0.7926,
+        "threshold": 0.3133
+      }
+    }
+  },
+  "nsm": {
+    "baseline": {
+      "active_gyms_avg_last8": 109.625,
+      "checkins_per_active_member_avg_last8": 3.4774,
+      "new_members_per_week_avg_last8": 412.625,
+      "renewal_rate_avg_last8_pct": 63.0535,
+      "wam_avg_last8": 6622.125,
+      "wam_first_week": 4598,
+      "wam_growth_pct": 51.8921,
+      "wam_last_week": 6984,
+      "wam_share_of_active_members_avg_last8_pct": 82.9724
+    },
+    "definition": "Weekly Active Members (WAM): members with at least 2 check-ins in a week (Mon–Sun), across all gyms",
+    "first_week": "2026-01-05",
+    "input_tree": [
+      {
+        "baseline_avg_last8wk": 6622.12,
+        "definition": "Members with >= 2 check-ins in an ISO week, all gyms",
+        "delta_pct": 28.8,
+        "level": "L0 (NSM)",
+        "metric": "Weekly Active Members",
+        "strategy_avg_last8wk": 8528.0
+      },
+      {
+        "baseline_avg_last8wk": 109.62,
+        "definition": "Gyms with >= 1 check-in that week",
+        "delta_pct": 21.0,
+        "level": "L1 breadth",
+        "metric": "Active gyms / week",
+        "strategy_avg_last8wk": 132.62
+      },
+      {
+        "baseline_avg_last8wk": 3.48,
+        "definition": "Check-ins / members with >= 1 check-in that week",
+        "delta_pct": -3.4,
+        "level": "L1 depth",
+        "metric": "Check-ins per active member",
+        "strategy_avg_last8wk": 3.36
+      },
+      {
+        "baseline_avg_last8wk": 63.05,
+        "definition": "Expiring memberships renewed within 7 days",
+        "delta_pct": 10.9,
+        "level": "L1 retention",
+        "metric": "Renewal rate (%)",
+        "strategy_avg_last8wk": 69.91
+      },
+      {
+        "baseline_avg_last8wk": 412.62,
+        "definition": "Members whose start_date falls in the week",
+        "delta_pct": 18.4,
+        "level": "L1 acquisition",
+        "metric": "New members added / week",
+        "strategy_avg_last8wk": 488.5
+      },
+      {
+        "baseline_avg_last8wk": 82.97,
+        "definition": "WAM / members with >= 1 check-in",
+        "delta_pct": -1.9,
+        "level": "L2 habit",
+        "metric": "WAM share of active members (%)",
+        "strategy_avg_last8wk": 81.4
+      }
+    ],
+    "last_week": "2026-10-19",
+    "strategy": {
+      "active_gyms_avg_last8": 132.625,
+      "checkins_per_active_member_avg_last8": 3.3574,
+      "new_members_per_week_avg_last8": 488.5,
+      "renewal_rate_avg_last8_pct": 69.9085,
+      "wam_avg_last8": 8528.0,
+      "wam_first_week": 4660,
+      "wam_growth_pct": 92.5107,
+      "wam_last_week": 8971,
+      "wam_share_of_active_members_avg_last8_pct": 81.3988
+    },
+    "wam_lift_last8_pct": 28.7804,
+    "weeks": 42
+  },
+  "predictions": {
+    "annualised_revenue_saved_inr": 11607236.0,
+    "band_thresholds": {
+      "High": 0.5,
+      "Medium": 0.2
+    },
+    "bands": [
+      {
+        "action": "Owner/manager calls within 48 h of the alert; renewal offer (e.g. 10% off a quarterly plan or a free PT session); log the outcome.",
+        "actual_churn_pct": 64.76,
+        "actual_churners": 1933,
+        "assumed_save_rate": 0.25,
+        "avg_plan_price_inr": 4315.0,
+        "band": "High",
+        "mean_predicted_pct": 66.37,
+        "members": 2985,
+        "members_saved": 483.2,
+        "revenue_saved_inr": 2085025.0,
+        "share_pct": 36.05
+      },
+      {
+        "action": "Automated WhatsApp sequence (−7d / −1d / +3d) plus a 'we miss you' nudge after 10 days without a check-in; no discount.",
+        "actual_churn_pct": 32.46,
+        "actual_churners": 922,
+        "assumed_save_rate": 0.15,
+        "avg_plan_price_inr": 4469.0,
+        "band": "Medium",
+        "mean_predicted_pct": 34.63,
+        "members": 2840,
+        "members_saved": 138.3,
+        "revenue_saved_inr": 618030.0,
+        "share_pct": 34.3
+      },
+      {
+        "action": "Standard renewal reminder only; ask for a referral or upsell a longer plan at renewal.",
+        "actual_churn_pct": 9.93,
+        "actual_churners": 244,
+        "assumed_save_rate": 0.0,
+        "avg_plan_price_inr": 4637.0,
+        "band": "Low",
+        "mean_predicted_pct": 10.74,
+        "members": 2456,
+        "members_saved": 0.0,
+        "revenue_saved_inr": 0.0,
+        "share_pct": 29.66
+      }
+    ],
+    "impact_formula": "members saved = actual churners in band x assumed save rate; ₹ = members saved x avg plan price of those churners",
+    "model": "LogisticRegression",
+    "test_months": [
+      "2026-08-01",
+      "2026-10-24"
+    ],
+    "total_members_saved": 621.5,
+    "total_revenue_saved_inr": 2703055.0
+  },
+  "strategy": {
+    "baseline": {
+      "active_members_oct31": 9788,
+      "alert_returns": 0,
+      "at_risk_alerts": 0,
+      "avg_monthly_churn_pct": 14.32,
+      "gyms_onboarded_2026": 87,
+      "member_add_conversion_pct": 30.85,
+      "member_fee_revenue_inr": 148474600,
+      "members_in_window": 20017,
+      "paid_subscriptions": 21,
+      "reminders_sent": 0,
+      "renewal_rate_pct": 61.55,
+      "saved_by_alert": 0,
+      "saved_by_reminder": 0,
+      "wam_avg_last8": 6622.125
+    },
+    "delta_pct": {
+      "active_members_oct31": 31.4,
+      "alert_returns": null,
+      "at_risk_alerts": null,
+      "avg_monthly_churn_pct": -16.6,
+      "gyms_onboarded_2026": 27.6,
+      "member_add_conversion_pct": 29.7,
+      "member_fee_revenue_inr": 25.3,
+      "members_in_window": 15.4,
+      "paid_subscriptions": 23.8,
+      "reminders_sent": null,
+      "renewal_rate_pct": 11.8,
+      "saved_by_alert": null,
+      "saved_by_reminder": null,
+      "wam_avg_last8": 28.8
+    },
+    "interventions": {
+      "at_risk_alert": {
+        "no_checkin_days": 10,
+        "return_rate": 0.3,
+        "returned_churner_renew_rate": 0.35
+      },
+      "bulk_import": {
+        "member_add_conv_rel_lift": 0.3,
+        "member_add_gap_median_h": 14.0,
+        "roster_entry_days": 14
+      },
+      "renewal_reminders": {
+        "offsets_days": [
+          -7,
+          -1,
+          3
+        ],
+        "would_be_churner_save_rate": 0.18
+      }
+    },
+    "monthly_churn": [
+      {
+        "month": "2026-01",
+        "monthly_churn_pct_baseline": 15.29,
+        "monthly_churn_pct_strategy": 12.43
+      },
+      {
+        "month": "2026-02",
+        "monthly_churn_pct_baseline": 15.52,
+        "monthly_churn_pct_strategy": 12.7
+      },
+      {
+        "month": "2026-03",
+        "monthly_churn_pct_baseline": 13.43,
+        "monthly_churn_pct_strategy": 11.61
+      },
+      {
+        "month": "2026-04",
+        "monthly_churn_pct_baseline": 15.1,
+        "monthly_churn_pct_strategy": 12.69
+      },
+      {
+        "month": "2026-05",
+        "monthly_churn_pct_baseline": 13.54,
+        "monthly_churn_pct_strategy": 11.41
+      },
+      {
+        "month": "2026-06",
+        "monthly_churn_pct_baseline": 12.93,
+        "monthly_churn_pct_strategy": 11.11
+      },
+      {
+        "month": "2026-07",
+        "monthly_churn_pct_baseline": 15.63,
+        "monthly_churn_pct_strategy": 12.69
+      },
+      {
+        "month": "2026-08",
+        "monthly_churn_pct_baseline": 14.45,
+        "monthly_churn_pct_strategy": 11.91
+      },
+      {
+        "month": "2026-09",
+        "monthly_churn_pct_baseline": 13.45,
+        "monthly_churn_pct_strategy": 11.53
+      },
+      {
+        "month": "2026-10",
+        "monthly_churn_pct_baseline": 13.86,
+        "monthly_churn_pct_strategy": 11.35
+      }
+    ],
+    "strategy": {
+      "active_members_oct31": 12862,
+      "alert_returns": 4126,
+      "at_risk_alerts": 13826,
+      "avg_monthly_churn_pct": 11.943,
+      "gyms_onboarded_2026": 111,
+      "member_add_conversion_pct": 40.0,
+      "member_fee_revenue_inr": 185986600,
+      "members_in_window": 23090,
+      "paid_subscriptions": 26,
+      "reminders_sent": 109191,
+      "renewal_rate_pct": 68.82,
+      "saved_by_alert": 1110,
+      "saved_by_reminder": 2984,
+      "wam_avg_last8": 8528.0
+    }
+  }
+}

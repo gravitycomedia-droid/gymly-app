@@ -1,0 +1,13 @@
+feature,importance,std
+visits_14d,0.11041,0.00495
+visits_7d,0.06019,0.00519
+gym_tier,0.01737,0.00105
+prev_renewals,0.01419,0.00184
+trend_14v14,0.01158,0.00124
+tenure_days,0.00351,0.00051
+price,0.00245,0.00195
+plan_months,0.0006,0.00077
+gym_size,-2e-05,6e-05
+visits_30d,-3e-05,4e-05
+days_since_last_visit,-4e-05,0.00029
+preferred_slot,-0.0012,0.00029

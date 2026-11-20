@@ -1,0 +1,4 @@
+band,members,share_pct,mean_predicted_pct,actual_churn_pct,actual_churners,assumed_save_rate,members_saved,avg_plan_price_inr,revenue_saved_inr,action
+High,2985,36.05,66.37,64.76,1933,0.25,483.2,4315.0,2085025.0,Owner/manager calls within 48 h of the alert; renewal offer (e.g. 10% off a quarterly plan or a free PT session); log the outcome.
+Medium,2840,34.3,34.63,32.46,922,0.15,138.3,4469.0,618030.0,Automated WhatsApp sequence (−7d / −1d / +3d) plus a 'we miss you' nudge after 10 days without a check-in; no discount.
+Low,2456,29.66,10.74,9.93,244,0.0,0.0,4637.0,0.0,Standard renewal reminder only; ask for a referral or upsell a longer plan at renewal.

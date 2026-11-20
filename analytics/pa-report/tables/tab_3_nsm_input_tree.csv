@@ -1,0 +1,7 @@
+level,metric,definition,baseline_avg_last8wk,strategy_avg_last8wk,delta_pct
+L0 (NSM),Weekly Active Members,"Members with >= 2 check-ins in an ISO week, all gyms",6622.12,8528.0,28.8
+L1 breadth,Active gyms / week,Gyms with >= 1 check-in that week,109.62,132.62,21.0
+L1 depth,Check-ins per active member,Check-ins / members with >= 1 check-in that week,3.48,3.36,-3.4
+L1 retention,Renewal rate (%),Expiring memberships renewed within 7 days,63.05,69.91,10.9
+L1 acquisition,New members added / week,Members whose start_date falls in the week,412.62,488.5,18.4
+L2 habit,WAM share of active members (%),WAM / members with >= 1 check-in,82.97,81.4,-1.9

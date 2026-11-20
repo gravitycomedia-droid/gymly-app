@@ -1,0 +1,3 @@
+checkout_variant,n,paid,attempts,failed,refunded,conversion,payment_fail_rate,refund_rate,ci_low,ci_high
+control,641,325,345,20,8,0.507,0.058,0.0246,0.4683,0.5457
+new_design,662,362,394,32,4,0.5468,0.0812,0.011,0.5089,0.5847

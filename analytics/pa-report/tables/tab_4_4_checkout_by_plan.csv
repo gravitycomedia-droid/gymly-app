@@ -1,0 +1,5 @@
+plan_tier,checkout_viewed,subscription_paid,conversion_pct,price_inr
+BASIC,10,3,30.0,199
+PROFESSIONAL,21,11,52.4,499
+PROFESSIONAL_PLUS,5,5,100.0,799
+PREMIUM,8,2,25.0,999
